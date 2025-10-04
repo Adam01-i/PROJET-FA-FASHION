@@ -1,22 +1,27 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
-import ProtectedAdminRoute from './components/ProtectedAdminRoute';
-import ProtectedAssistantRoute from './components/ProtectedAssistantRoute';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Cart from './pages/Cart';
-import Admin from './pages/Admin';
+// import ProtectedAdminRoute from './components/ProtectedAdminRoute';
+// import ProtectedAssistantRoute from './components/ProtectedAssistantRoute';
+// import Navbar from './components/home/Navbar';
+import Home from './components/home/Home';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import Cart from './components/home/Cart';
+import Admin from './components/admin/AdminContent';
 import Assistant from './pages/Assistant';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ToastProvider } from './hooks/ToastProvider';
+// import ProtectedAdminRoute from './components/security/ProtectedAdminRoute';
+// import ProtectedAssistantRoute from './components/security/ProtectedAssistantRoute';
+
 
 function AppContent() {
   const location = useLocation();
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <ToastProvider>
+      {/* <Navbar /> */}
       <AnimatePresence mode="wait">
         <motion.main
           key={location.pathname}
@@ -32,18 +37,19 @@ function AppContent() {
             <Route path="/register" element={<Register />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/admin" element={
-              <ProtectedAdminRoute>
+              // <ProtectedAdminRoute>
                 <Admin />
-              </ProtectedAdminRoute>
-            } />
+              // </ProtectedAdminRoute> 
+              }/>
             <Route path="/assistant" element={
-              <ProtectedAssistantRoute>
+              //  <ProtectedAssistantRoute>
                 <Assistant />
-              </ProtectedAssistantRoute>
+              //  </ProtectedAssistantRoute>
             } />
           </Routes>
         </motion.main>
       </AnimatePresence>
+      </ToastProvider>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { ShoppingCart } from 'lucide-react';
-import { Product } from '../types';
-import { useCart } from '../contexts/CartContext';
-import { formatXOF } from '../lib/currency';
+import { Product } from '../../types';
+import { useCart } from '../../contexts/CartContext';
+import { formatXOF } from '../../lib/currency';
 
 interface ProductCardProps {
   product: Product;

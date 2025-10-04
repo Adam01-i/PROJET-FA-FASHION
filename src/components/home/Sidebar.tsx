@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sliders } from 'lucide-react';
-import { Product } from '../types';
-import { formatXOF } from '../lib/currency';
+import { Product } from '../../types';
+import { formatXOF } from '../../lib/currency';
 
 interface SidebarProps {
   searchTerm: string;

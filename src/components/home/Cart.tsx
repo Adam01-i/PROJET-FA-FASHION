@@ -1,17 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, CreditCard } from 'lucide-react';
-import { useCart } from '../contexts/CartContext';
-import { stripePromise } from '../lib/stripe';
-import WavePaymentModal from '../components/WavePaymentModal';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import { formatXOF } from '../lib/currency';
+import { useCart } from '../../contexts/CartContext';
+import { stripePromise } from '../../lib/stripe';
+// import WavePaymentModal from '../WavePaymentModal';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { formatXOF } from '../../lib/currency';
 
 export default function Cart() {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = React.useState<'wave' | 'orange' | 'card' | null>(null);
-  const [isWaveModalOpen, setIsWaveModalOpen] = React.useState(false);
+  const [, setIsWaveModalOpen] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const { user } = useAuth();
 
@@ -102,15 +102,15 @@ export default function Cart() {
     }
   };
 
-  const handleWaveSuccess = () => {
-    clearCart();
-    alert('Paiement réussi ! Vous recevrez une confirmation par SMS.');
-  };
+  // const handleWaveSuccess = () => {
+  //   clearCart();
+  //   alert('Paiement réussi ! Vous recevrez une confirmation par SMS.');
+  // };
 
-  const handleWaveError = (error: Error) => {
-    console.error('Wave payment error:', error);
-    alert('Une erreur est survenue lors du paiement Wave. Veuillez réessayer.');
-  };
+  // const handleWaveError = (error: Error) => {
+  //   console.error('Wave payment error:', error);
+  //   alert('Une erreur est survenue lors du paiement Wave. Veuillez réessayer.');
+  // };
 
   if (items.length === 0) {
     return (
@@ -281,14 +281,14 @@ export default function Cart() {
         </div>
       </div>
 
-      <WavePaymentModal
+      {/* <WavePaymentModal
         isOpen={isWaveModalOpen}
         onClose={() => setIsWaveModalOpen(false)}
         onSuccess={handleWaveSuccess}
         onError={handleWaveError}
         amount={total}
         phoneNumber={user?.phone || ''}
-      />
+      /> */}
     </div>
   );
 }

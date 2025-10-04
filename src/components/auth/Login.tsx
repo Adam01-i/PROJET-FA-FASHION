@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { UserPlus } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { LogIn } from 'lucide-react';
 
-export default function Register() {
+export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signUp, error } = useAuth();
+  const { signIn, error } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await signUp(email, password);
+    await signIn(email, password);
     if (!error) {
-      navigate('/login');
+      navigate('/');
     }
   };
 
@@ -22,19 +22,19 @@ export default function Register() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <UserPlus className="h-12 w-12 text-indigo-600" />
+            <LogIn className="h-12 w-12 text-indigo-600" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Créer un compte
+            Connexion à votre compte
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Ou{' '}
-            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-              connectez-vous à votre compte existant
+            <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+              créez un nouveau compte
             </Link>
           </p>
         </div>
-
+        
         {error && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4">
             <div className="flex">
@@ -76,7 +76,7 @@ export default function Register() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="new-password"
+                autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -91,7 +91,7 @@ export default function Register() {
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Créer un compte
+              Se connecter
             </button>
           </div>
         </form>

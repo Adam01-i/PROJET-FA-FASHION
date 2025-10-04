@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import ProductCard from '../components/ProductCard';
-import Sidebar from '../components/Sidebar';
-import Footer from '../components/Footer';
-import { useProducts } from '../hooks/useProducts';
+import ProductCard from './ProductCard';
+import Sidebar from './Sidebar';
+import Footer from './Footer';
+import { useProducts } from '../../hooks/useProducts';
 import { ShoppingBag } from 'lucide-react';
-import Banner from '../components/Banner';
+import Banner from './Banner';
 
 export default function Home() {
   const { products, loading, error } = useProducts();
@@ -20,14 +20,14 @@ export default function Home() {
     if (searchTerm.trim()) {
       filtered = filtered.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchTerm.toLowerCase())
+        (p.description?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        String(p.category)?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filtre par catégories sélectionnées
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter(p => selectedCategories.includes(p.category));
+      filtered = filtered.filter(p => selectedCategories.includes(String(p.category)));
     }
 
     // Filtre par prix

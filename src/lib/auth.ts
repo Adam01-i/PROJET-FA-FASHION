@@ -1,3 +1,4 @@
+// src/lib/auth.ts
 import type { User } from '@supabase/supabase-js';
 
 export const ADMIN_EMAILS = [

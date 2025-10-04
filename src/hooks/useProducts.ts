@@ -7,27 +7,28 @@ export function useProducts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  async function fetchProducts() {
+  const fetchProducts = async () => {
     try {
       setLoading(true);
+      // Requête simple sans jointure complexe
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
       setProducts(data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      console.error('Error:', err);
+      setError('Erreur de chargement');
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  return { products, loading, error, fetchProducts };
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  return { products, loading, error, refetch: fetchProducts };
 }
