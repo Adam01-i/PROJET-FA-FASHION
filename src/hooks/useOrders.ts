@@ -11,7 +11,7 @@ export function useOrders() {
     fetchOrders();
   }, []);
 
-  async function fetchOrders() {
+  const fetchOrders = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -26,28 +26,58 @@ export function useOrders() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      setOrders(data || []);
+      
+      // Transformer les données pour correspondre à l'interface Order
+      const formattedOrders = (data || []).map(order => ({
+        ...order,
+        payment_method: order.payment_method || 'non spécifié',
+        order_items: order.order_items || []
+      }));
+      
+      setOrders(formattedOrders);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      console.error('Error fetching orders:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(String(err));
+      }
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function updateOrderStatus(orderId: string, status: string) {
+  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ status })
+        .update({ 
+          status, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', orderId);
 
       if (error) throw error;
-      await fetchOrders();
+      
+      // Mettre à jour l'état local
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, status } : order
+        )
+      );
+      
+      return true;
     } catch (err) {
+      console.error('Error updating order:', err);
       throw err;
     }
-  }
+  };
 
-  return { orders, loading, error, updateOrderStatus, fetchOrders };
+  return {
+    orders,
+    loading,
+    error,
+    updateOrderStatus,
+    refetch: fetchOrders
+  };
 }
