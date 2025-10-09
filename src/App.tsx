@@ -1,56 +1,114 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { CartProvider } from './contexts/CartContext';
-// import ProtectedAdminRoute from './components/ProtectedAdminRoute';
-// import ProtectedAssistantRoute from './components/ProtectedAssistantRoute';
-// import Navbar from './components/home/Navbar';
-import Home from './components/home/Home';
-import Login from './components/auth/Login';
-import Register from './components/auth/Register';
-import Cart from './components/home/Cart';
-import Admin from './components/admin/AdminContent';
-import Assistant from './pages/Assistant';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ToastProvider } from './hooks/ToastProvider';
-// import ProtectedAdminRoute from './components/security/ProtectedAdminRoute';
-// import ProtectedAssistantRoute from './components/security/ProtectedAssistantRoute';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { CartProvider } from "./contexts/CartContext";
+import Navbar from "./components/home/Navbar";
+import Home from "./components/home/Home";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Cart from "./components/home/Cart";
+import Admin from "./components/admin/AdminContent";
+import Assistant from "./pages/Assistant";
+import { AnimatePresence, motion } from "framer-motion";
+import { ToastProvider } from "./hooks/ToastProvider";
+import { ProtectedRoute, PublicOnlyRoute } from "./components/security/AuthRoutes";
 
+// Layout pour les routes publiques (avec navbar)
+function PublicLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Navbar />
+      <div className="pt-16">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// Layout pour les routes protégées (sans navbar)
+function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
+      {children}
+    </div>
+  );
+}
 
 function AppContent() {
   const location = useLocation();
+  
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ToastProvider>
-      {/* <Navbar /> */}
+    <ToastProvider>
       <AnimatePresence mode="wait">
-        <motion.main
+        <motion.div
           key={location.pathname}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="pt-0"
+          transition={{ duration: 0.25, ease: "easeOut" }}
         >
           <Routes location={location}>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/admin" element={
-              // <ProtectedAdminRoute>
-                <Admin />
-              // </ProtectedAdminRoute> 
-              }/>
-            <Route path="/assistant" element={
-              //  <ProtectedAssistantRoute>
-                <Assistant />
-              //  </ProtectedAssistantRoute>
+            {/* Routes publiques avec navbar */}
+            <Route path="/" element={
+              <PublicLayout>
+                <Home />
+              </PublicLayout>
             } />
+            
+            <Route path="/login" element={
+              <PublicOnlyRoute>
+                <PublicLayout>
+                  <Login />
+                </PublicLayout>
+              </PublicOnlyRoute>
+            } />
+            
+            <Route path="/register" element={
+              <PublicOnlyRoute>
+                <PublicLayout>
+                  <Register />
+                </PublicLayout>
+              </PublicOnlyRoute>
+            } />
+            
+            <Route path="/cart" element={
+              <ProtectedRoute>
+                <PublicLayout>
+                  <Cart />
+                </PublicLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Routes protégées sans navbar */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <ProtectedLayout>
+                    <Admin />
+                  </ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/assistant"
+              element={
+                <ProtectedRoute requiredRole="assistant">
+                  <ProtectedLayout>
+                    <Assistant />
+                  </ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
-        </motion.main>
+        </motion.div>
       </AnimatePresence>
-      </ToastProvider>
-    </div>
+    </ToastProvider>
   );
 }
 
