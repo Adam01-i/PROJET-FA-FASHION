@@ -38,6 +38,15 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Layout pour l'authentification (sans navbar, fond spécial)
+function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      {children}
+    </div>
+  );
+}
+
 function AppContent() {
   const location = useLocation();
   
@@ -59,22 +68,24 @@ function AppContent() {
               </PublicLayout>
             } />
             
+            {/* Routes d'authentification sans navbar */}
             <Route path="/login" element={
               <PublicOnlyRoute>
-                <PublicLayout>
+                <AuthLayout>
                   <Login />
-                </PublicLayout>
+                </AuthLayout>
               </PublicOnlyRoute>
             } />
             
             <Route path="/register" element={
               <PublicOnlyRoute>
-                <PublicLayout>
+                <AuthLayout>
                   <Register />
-                </PublicLayout>
+                </AuthLayout>
               </PublicOnlyRoute>
             } />
             
+            {/* Route panier protégée avec navbar */}
             <Route path="/cart" element={
               <ProtectedRoute>
                 <PublicLayout>
@@ -105,6 +116,18 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
+
+            {/* Route de fallback */}
+            <Route path="*" element={
+              <PublicLayout>
+                <div className="flex items-center justify-center min-h-[50vh]">
+                  <div className="text-center">
+                    <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
+                    <p className="text-lg text-gray-600">Page non trouvée</p>
+                  </div>
+                </div>
+              </PublicLayout>
+            } />
           </Routes>
         </motion.div>
       </AnimatePresence>

@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const images = [
-  "/img2.png",
   "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1920&q=80",
-  "img4.jpg",
 ];
 
 export default function Banner() {

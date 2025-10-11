@@ -2,8 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, CreditCard } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
-import { stripePromise } from '../../lib/stripe';
-// import WavePaymentModal from '../WavePaymentModal';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatXOF } from '../../lib/currency';
@@ -69,9 +67,6 @@ export default function Cart() {
         return;
       }
 
-      const stripe = await stripePromise;
-      if (!stripe) throw new Error('Stripe failed to load');
-
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -86,14 +81,6 @@ export default function Cart() {
         }),
       });
 
-      const session = await response.json();
-      const result = await stripe.redirectToCheckout({
-        sessionId: session.id,
-      });
-
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
     } catch (error) {
       console.error('Error during checkout:', error);
       alert('Une erreur est survenue lors du paiement. Veuillez réessayer.');

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserPlus, Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -10,34 +10,92 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signUp, error } = useAuth();
+  const [localError, setLocalError] = useState<string | null>(null);
+  const { signUp, error: authError, isAuthenticated, userRole } = useAuth();
   const navigate = useNavigate();
+
+  // Fonction de redirection basée sur le rôle
+  const redirectBasedOnRole = useCallback((role: string | null) => {
+    console.log('🔄 Redirection basée sur le rôle:', role);
+    
+    switch (role) {
+      case 'admin':
+        navigate('/admin');
+        break;
+      case 'assistant':
+        navigate('/assistant');
+        break;
+      case 'client':
+      default:
+        navigate('/');
+        break;
+    }
+  }, [navigate]);
+
+  // Redirection automatique si déjà connecté
+  useEffect(() => {
+    if (isAuthenticated && userRole) {
+      console.log('✅ Utilisateur connecté, redirection vers:', userRole);
+      redirectBasedOnRole(userRole);
+    }
+  }, [isAuthenticated, userRole, redirectBasedOnRole]);
+
+  // Gestion des erreurs d'authentification
+  useEffect(() => {
+    if (authError) {
+      setLocalError(authError);
+    }
+  }, [authError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
     
+    // Validations
     if (password !== confirmPassword) {
-      alert('Les mots de passe ne correspondent pas');
+      setLocalError('Les mots de passe ne correspondent pas');
       return;
     }
 
     if (password.length < 6) {
-      alert('Le mot de passe doit contenir au moins 6 caractères');
+      setLocalError('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setLocalError('Veuillez entrer une adresse email valide');
       return;
     }
 
     setIsLoading(true);
     try {
       await signUp(email, password);
-      if (!error) {
-        navigate('/login');
-      }
-    } catch (err) {
+      
+      // Si on arrive ici sans erreur, l'utilisateur est connecté automatiquement
+      // La redirection se fera via le useEffect ci-dessus
+      
+    } catch (err: unknown) {
       console.error('Registration error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Une erreur inattendue est survenue';
+      setLocalError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Si déjà authentifié, afficher message de chargement
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirection en cours...</p>
+          <p className="text-sm text-gray-500 mt-2">Rôle: {userRole}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -81,14 +139,25 @@ export default function Register() {
 
           {/* Carte du formulaire */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            {error && (
+            {/* Message d'information temporaire */}
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start space-x-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm text-yellow-800">
+                  <strong>Mode développement activé :</strong> La confirmation par email est temporairement désactivée. Vous serez connecté automatiquement après l'inscription.
+                </p>
+              </div>
+            </div>
+
+            {/* Affichage des erreurs */}
+            {(localError || authError) && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3 animate-fade-in">
                 <div className="flex-shrink-0 w-5 h-5 text-red-400 mt-0.5">
                   <svg fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <p className="text-sm text-red-700 flex-1">{error}</p>
+                <p className="text-sm text-red-700 flex-1">{localError || authError}</p>
               </div>
             )}
 

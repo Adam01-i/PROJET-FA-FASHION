@@ -1,30 +1,87 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { LogIn, Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { LogIn, Eye, EyeOff, Mail, Lock } from "lucide-react";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, error } = useAuth();
+  const { signIn, userRole, isAuthenticated, error } = useAuth();
   const navigate = useNavigate();
+
+  // Fonction de redirection basée sur le rôle
+  const redirectBasedOnRole = useCallback(
+    (role: string | null) => {
+      console.log("🔄 Redirection basée sur le rôle:", role);
+
+      switch (role) {
+        case "admin":
+          console.log("🎯 Redirection vers /admin");
+          navigate("/admin");
+          break;
+        case "assistant":
+          console.log("🎯 Redirection vers /assistant");
+          navigate("/assistant");
+          break;
+        case "client":
+        default:
+          console.log("🎯 Redirection vers /");
+          navigate("/");
+          break;
+      }
+    },
+    [navigate]
+  );
+
+  // Redirection automatique si déjà connecté
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Récupère la dernière session enregistrée (sécurité)
+    const storedSession = localStorage.getItem(
+      "sb-" + import.meta.env.VITE_SUPABASE_URL + "-auth-token"
+    );
+    console.log("📦 Session locale trouvée ?", !!storedSession);
+
+    if (userRole) {
+      console.log("✅ Redirection selon rôle:", userRole);
+      redirectBasedOnRole(userRole);
+    } else {
+      console.log(
+        "⚠️ Pas de rôle encore chargé, redirection par défaut vers /"
+      );
+      navigate("/");
+    }
+  }, [isAuthenticated, userRole, navigate, redirectBasedOnRole]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      console.log("🔐 Tentative de connexion...");
       await signIn(email, password);
-      if (!error) {
-        navigate('/');
-      }
+      // La redirection se fera automatiquement via le useEffect
     } catch (err) {
-      console.error('Login error:', err);
+      console.error("❌ Erreur de connexion:", err);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Si l'utilisateur est déjà connecté, afficher un message de chargement
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirection en cours...</p>
+          <p className="text-sm text-gray-500 mt-2">Rôle: {userRole}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -36,7 +93,8 @@ export default function Login() {
           </div>
           <h1 className="text-4xl font-bold mb-4">Bienvenue sur KShop</h1>
           <p className="text-lg text-indigo-100">
-            Votre destination shopping préférée. Découvrez une expérience d'achat exceptionnelle.
+            Votre destination shopping préférée. Découvrez une expérience
+            d'achat exceptionnelle.
           </p>
         </div>
       </div>
@@ -52,13 +110,11 @@ export default function Login() {
           </div>
 
           <div className="text-center lg:text-left mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">
-              Connexion
-            </h2>
+            <h2 className="text-3xl font-bold text-gray-900">Connexion</h2>
             <p className="mt-2 text-sm text-gray-600">
-              Pas encore de compte ?{' '}
-              <Link 
-                to="/register" 
+              Pas encore de compte ?{" "}
+              <Link
+                to="/register"
                 className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
               >
                 Créer un compte
@@ -72,7 +128,11 @@ export default function Login() {
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3 animate-fade-in">
                 <div className="flex-shrink-0 w-5 h-5 text-red-400 mt-0.5">
                   <svg fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <p className="text-sm text-red-700 flex-1">{error}</p>
@@ -82,7 +142,10 @@ export default function Login() {
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Champ Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Adresse email
                 </label>
                 <div className="relative">
@@ -105,7 +168,10 @@ export default function Login() {
 
               {/* Champ Mot de passe */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Mot de passe
                 </label>
                 <div className="relative">
@@ -149,7 +215,7 @@ export default function Login() {
                     Connexion...
                   </>
                 ) : (
-                  'Se connecter'
+                  "Se connecter"
                 )}
               </button>
             </form>
@@ -157,7 +223,8 @@ export default function Login() {
             {/* Ligne séparatrice */}
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-xs text-center text-gray-500">
-                En vous connectant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.
+                En vous connectant, vous acceptez nos conditions d'utilisation
+                et notre politique de confidentialité.
               </p>
             </div>
           </div>

@@ -1,6 +1,22 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase, getUserRole, UserRole, createUserProfile } from '../lib/supabase';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
+import {
+  User,
+  Session,
+  AuthChangeEvent,
+  Subscription,
+} from "@supabase/supabase-js";
+import {
+  supabase,
+  getUserRole,
+  UserRole,
+  createUserProfile,
+} from "../lib/supabase";
 
 interface AuthContextType {
   user: User | null;
@@ -25,22 +41,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const initializedRef = useRef(false);
+  const authStateChangeRef = useRef(false);
+
   useEffect(() => {
-    // Initialisation de l'authentification
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const { data } = await supabase.auth.getSession();
+        const session = data.session;
+
         if (session?.user) {
           setSession(session);
           setUser(session.user);
           const role = await getUserRole(session.user);
           setUserRole(role);
+        } else {
+          setSession(null);
+          setUser(null);
+          setUserRole(null);
         }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Erreur d\'initialisation';
-        setError(errorMessage);
-        console.error('Erreur initialisation auth:', err);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Erreur init auth";
+        setError(msg);
+        console.error("❌ Auth init error:", err);
       } finally {
         setLoading(false);
       }
@@ -48,110 +74,139 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    // Écoute des changements d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          try {
+    // 👇 Typage propre de la souscription Supabase
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, session: Session | null) => {
+        if (authStateChangeRef.current) return;
+        authStateChangeRef.current = true;
+
+        try {
+          if (session?.user) {
+            setSession(session);
+            setUser(session.user);
             const role = await getUserRole(session.user);
             setUserRole(role);
-            
-            // Créer/mettre à jour le profil après connexion
-            if (event === 'SIGNED_IN') {
+
+            if (event === "SIGNED_IN") {
               await createUserProfile(session.user);
             }
-          } catch (err) {
-            console.error('Erreur mise à jour rôle:', err);
+          } else {
+            setSession(null);
+            setUser(null);
+            setUserRole(null);
           }
-        } else {
-          setUserRole(null);
+          setError(null);
+        } catch (err: unknown) {
+          console.error("⚠️ Erreur dans onAuthStateChange:", err);
+        } finally {
+          setTimeout(() => {
+            authStateChangeRef.current = false;
+          }, 300);
         }
-        
-        setLoading(false);
-        setError(null);
       }
     );
 
-    return () => subscription.unsubscribe();
+    // ✅ Pas d'erreur TS ici : `listener.subscription` est bien typé
+    const subscription: Subscription = listener.subscription;
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  // --------------------
+  //  MÉTHODES D'AUTH
+  // --------------------
+
+  const signIn = async (email: string, password: string): Promise<void> => {
     try {
-      setError(null);
       setLoading(true);
-      
-      const { error } = await supabase.auth.signInWithPassword({ 
-        email: email.trim().toLowerCase(), 
-        password 
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
       });
-      
       if (error) throw error;
+
+      if (data.user) {
+        // 🔥 charge le rôle immédiatement après login
+        const role = await getUserRole(data.user);
+        setUserRole(role);
+        setUser(data.user);
+        setSession(data.session ?? null);
+      }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur de connexion';
-      setError(errorMessage);
+      const message =
+        err instanceof Error ? err.message : "Erreur de connexion";
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string): Promise<void> => {
     try {
-      setError(null);
       setLoading(true);
-      
-      const { error } = await supabase.auth.signUp({ 
-        email: email.trim().toLowerCase(), 
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
         password,
         options: {
-          data: {
-            role: 'client'
-          }
-        }
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
-      
       if (error) throw error;
+
+      if (data.user && !data.session) {
+        throw new Error(
+          "Veuillez confirmer votre email avant de vous connecter."
+        );
+      }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Erreur lors de l'inscription";
-      setError(errorMessage);
+      const message =
+        err instanceof Error ? err.message : "Erreur d'inscription";
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<void> => {
     try {
-      setError(null);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      initializedRef.current = false; // ✅ Reconnexion propre
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur de déconnexion';
-      setError(errorMessage);
+      const message = err instanceof Error ? err.message : "Erreur déconnexion";
+      setError(message);
       throw err;
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = async (email: string): Promise<void> => {
     try {
-      setError(null);
       const { error } = await supabase.auth.resetPasswordForEmail(
-        email.trim().toLowerCase()
+        email.trim().toLowerCase(),
+        {
+          redirectTo: `${window.location.origin}/reset-password`,
+        }
       );
       if (error) throw error;
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur réinitialisation mot de passe';
-      setError(errorMessage);
+      const message =
+        err instanceof Error ? err.message : "Erreur reset mot de passe";
+      setError(message);
       throw err;
     }
   };
 
-  const clearError = () => setError(null);
+  const clearError = (): void => setError(null);
 
-  const value = {
+  const value: AuthContextType = {
     user,
     session,
     userRole,
@@ -165,17 +220,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearError,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error("useAuth doit être utilisé dans un AuthProvider");
   }
   return context;
 }

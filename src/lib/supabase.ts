@@ -8,9 +8,9 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      detectSessionInUrl: false, // ⚠️ Empêche les rechargements infinis
       flowType: 'pkce',
-      storage: window.localStorage
+      storage: window.localStorage,
     },
   }
 );
@@ -18,67 +18,50 @@ export const supabase = createClient(
 // Types
 export type UserRole = 'admin' | 'assistant' | 'client';
 
-// Récupération des rôles depuis la base de données
+// Récupération du rôle utilisateur depuis la base
 export async function getUserRoleFromDB(userId: string): Promise<UserRole> {
   try {
     const { data, error } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
-      console.warn('Profil non trouvé, utilisation du rôle par défaut');
-      return 'client';
-    }
-
+    if (error || !data?.role) return 'client';
     return data.role as UserRole;
-  } catch (error) {
-    console.error('Erreur lors de la récupération du rôle:', error);
+  } catch {
     return 'client';
   }
 }
 
-// Fonction pour créer ou mettre à jour le profil utilisateur
+// Création / mise à jour du profil
 export async function createUserProfile(user: User): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('profiles')
-      .upsert({
-        id: user.id,
-        email: user.email,
-        phone: user.phone, // Support téléphone
-        role: 'client', // Rôle par défaut
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'id'
-      });
+  const { data: existing } = await supabase
+    .from('profiles')
+    .select('id, role')
+    .eq('id', user.id)
+    .maybeSingle();
 
-    if (error && error.code !== '23505') {
-      console.error('Erreur création profil:', error);
-      throw error;
-    }
-  } catch (error) {
-    console.error('Erreur dans createUserProfile:', error);
-    throw error;
+  if (!existing) {
+    await supabase.from('profiles').insert({
+      id: user.id,
+      email: user.email ?? '',
+      role: 'client',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+  } else {
+    await supabase
+      .from('profiles')
+      .update({
+        email: user.email ?? '',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
   }
 }
 
-// Vérification des rôles administrateur/assistant
-export async function isAdmin(user: User | null): Promise<boolean> {
-  if (!user) return false;
-  const role = await getUserRoleFromDB(user.id);
-  return role === 'admin';
-}
-
-export async function isAssistant(user: User | null): Promise<boolean> {
-  if (!user) return false;
-  const role = await getUserRoleFromDB(user.id);
-  return role === 'assistant';
-}
-
-// Fonction utilitaire pour obtenir le rôle utilisateur
+// Fonction pour obtenir le rôle utilisateur
 export async function getUserRole(user: User | null): Promise<UserRole> {
   if (!user) return 'client';
   return await getUserRoleFromDB(user.id);
