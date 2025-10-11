@@ -18,16 +18,16 @@ export default function Login() {
 
       switch (role) {
         case "admin":
-          console.log("🎯 Redirection vers /admin");
+          console.log("Redirection vers /admin");
           navigate("/admin");
           break;
         case "assistant":
-          console.log("🎯 Redirection vers /assistant");
+          console.log("Redirection vers /assistant");
           navigate("/assistant");
           break;
         case "client":
         default:
-          console.log("🎯 Redirection vers /");
+          console.log("Redirection vers /");
           navigate("/");
           break;
       }
