@@ -20,7 +20,7 @@ export interface Product {
   image_url: string | null;
   category_id: string | null;
   stock_quantity: number;
-  is_active: boolean;
+  is_public: boolean;
   created_at: string;
   updated_at?: string;
 }

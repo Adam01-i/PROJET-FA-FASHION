@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Product } from '../types';
 
-export function useProducts() {
+// Dans useProducts.ts
+export function useProducts(onlyPublic: boolean = false) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -10,14 +11,18 @@ export function useProducts() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      // Requête simple sans jointure complexe
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from('products')
-        .select(`
-          *,
-          category:categories(name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
+
+      // Filtrer seulement les produits publics si demandé
+      if (onlyPublic) {
+        query = query.eq('is_public', true);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setProducts(data || []);
@@ -31,7 +36,7 @@ export function useProducts() {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [onlyPublic]);
 
-  return { products, loading, error, refetch: fetchProducts, refetchProducts: fetchProducts };
+  return { products, loading, error, refetch: fetchProducts, refetchProducts: fetchProducts};
 }
