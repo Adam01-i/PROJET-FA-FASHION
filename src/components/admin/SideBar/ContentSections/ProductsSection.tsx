@@ -4,6 +4,7 @@ import { useProducts } from "../../../../hooks/useProducts";
 import { supabase } from "../../../../lib/supabase";
 import { Product } from "../../../../types";
 import { useToastContext } from "../../../../hooks/ToastProvider";
+import ProductModal from "../Modals/ProductModal"; // Assurez-vous d'importer le modal
 
 interface ProductsSectionProps {
   searchTerm: string;
@@ -14,10 +15,19 @@ function formatXOF(amount: number): string {
   return amount.toLocaleString("fr-FR", { style: "currency", currency: "XOF" });
 }
 
-export default function ProductsSection({ searchTerm, onAddClick }: ProductsSectionProps) {
-  const { products } = useProducts();
+export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
+  const { products, refetchProducts } = useProducts();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [currentProduct, setCurrentProduct] = useState({
+    name: "",
+    description: "",
+    price: 0,
+    stock_quantity: 0,
+    category_id: "",
+    image_url: "",
+  });
   const { success, error: toastError } = useToastContext();
 
   // Filtrage simple
@@ -35,8 +45,7 @@ export default function ProductsSection({ searchTerm, onAddClick }: ProductsSect
       if (error) throw error;
       
       success("Produit supprimé", "Le produit a été supprimé avec succès");
-      // Recharger la page après un court délai pour voir le toast
-      setTimeout(() => window.location.reload(), 1000);
+      refetchProducts(); // Utiliser refetch au lieu de reload
     } catch (error) {
       console.error("Error:", error);
       toastError("Erreur", "Erreur lors de la suppression du produit");
@@ -50,7 +59,84 @@ export default function ProductsSection({ searchTerm, onAddClick }: ProductsSect
     }
     
     setEditingProduct(product);
+    setCurrentProduct({
+      name: product.name,
+      description: product.description || "",
+      price: product.price,
+      stock_quantity: product.stock_quantity,
+      category_id: product.category_id || "",
+      image_url: product.image_url || "",
+    });
     setIsEditModalOpen(true);
+  };
+
+  const handleAddClick = () => {
+    setEditingProduct(null);
+    setCurrentProduct({
+      name: "",
+      description: "",
+      price: 0,
+      stock_quantity: 0,
+      category_id: "",
+      image_url: "",
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleProductChange = (product: typeof currentProduct) => {
+    setCurrentProduct(product);
+  };
+
+  const handleSubmitProduct = async (productData: typeof currentProduct) => {
+    try {
+      if (editingProduct) {
+        // Mode édition
+        const { error } = await supabase
+          .from("products")
+          .update({
+            name: productData.name,
+            description: productData.description,
+            price: productData.price,
+            stock_quantity: productData.stock_quantity,
+            category_id: productData.category_id,
+            image_url: productData.image_url,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", editingProduct.id);
+
+        if (error) throw error;
+      } else {
+        // Mode ajout
+        const { error } = await supabase.from("products").insert([
+          {
+            name: productData.name,
+            description: productData.description,
+            price: productData.price,
+            stock_quantity: productData.stock_quantity,
+            category_id: productData.category_id,
+            image_url: productData.image_url,
+          },
+        ]);
+
+        if (error) throw error;
+      }
+
+      // Recharger les produits
+      await refetchProducts();
+    } catch (error) {
+      console.error("Error saving product:", error);
+      throw error;
+    }
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingProduct(null);
+  };
+
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+    setEditingProduct(null);
   };
 
   // Statistiques simples
@@ -60,6 +146,17 @@ export default function ProductsSection({ searchTerm, onAddClick }: ProductsSect
 
   return (
     <>
+    {/* Bouton Ajouter */}
+      <div className="mb-6 flex justify-end">
+        <button
+          onClick={handleAddClick}
+          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Ajouter un produit
+        </button>
+      </div>
+      
       {/* Statistiques simplifiées */}
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-4 border border-gray-200">
@@ -99,6 +196,8 @@ export default function ProductsSection({ searchTerm, onAddClick }: ProductsSect
         </div>
       </div>
 
+      
+
       {/* Tableau simplifié */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="overflow-x-auto">
@@ -134,7 +233,7 @@ export default function ProductsSection({ searchTerm, onAddClick }: ProductsSect
                       </p>
                       {!searchTerm && (
                         <button
-                          onClick={onAddClick}
+                          onClick={handleAddClick}
                           className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                         >
                           Ajouter un produit
@@ -226,23 +325,27 @@ export default function ProductsSection({ searchTerm, onAddClick }: ProductsSect
         </div>
       </div>
 
-      {/* Modal simplifié - à adapter selon vos besoins */}
-      {isEditModalOpen && editingProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Modifier le produit</h2>
-            <p className="text-gray-600 mb-4">Fonctionnalité en cours de développement...</p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal d'édition */}
+      <ProductModal
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
+        product={currentProduct}
+        onProductChange={handleProductChange}
+        mode="edit"
+        existingProduct={editingProduct}
+        onSubmit={handleSubmitProduct}
+      />
+
+      {/* Modal d'ajout */}
+      <ProductModal
+        isOpen={isAddModalOpen}
+        onClose={closeAddModal}
+        product={currentProduct}
+        onProductChange={handleProductChange}
+        mode="add"
+        existingProduct={null}
+        onSubmit={handleSubmitProduct}
+      />
     </>
   );
 }

@@ -52,6 +52,7 @@ export default function ProductModal({
   const [isUploading, setIsUploading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [uploadError, setUploadError] = useState<string>("");
+  const [isInitialized, setIsInitialized] = useState(false);
   const { success, error: toastError } = useToastContext();
 
   // Charger les catégories
@@ -76,34 +77,42 @@ export default function ProductModal({
     }
   }, [isOpen, toastError]);
 
-  // Reset form when modal opens/closes or mode changes
+  // Reset form when modal opens - CORRECTION ICI
   useEffect(() => {
-    if (isOpen && mode === "add") {
-      onProductChange({
-        name: "",
-        description: "",
-        price: 0,
-        stock_quantity: 0,
-        category_id: "",
-        image_url: "",
-      });
-      setImagePreview("");
-      setUploadError("");
-    } else if (isOpen && mode === "edit" && existingProduct) {
-      onProductChange({
-        name: existingProduct.name,
-        description: existingProduct.description || "",
-        price: existingProduct.price,
-        stock_quantity: existingProduct.stock_quantity,
-        category_id: existingProduct.category_id || "",
-        image_url: existingProduct.image_url || "",
-      });
-      setImagePreview(existingProduct.image_url || "");
-      setUploadError("");
+    if (isOpen && !isInitialized) {
+      if (mode === "add") {
+        onProductChange({
+          name: "",
+          description: "",
+          price: 0,
+          stock_quantity: 0,
+          category_id: "",
+          image_url: "",
+        });
+        setImagePreview("");
+        setUploadError("");
+      } else if (mode === "edit" && existingProduct) {
+        onProductChange({
+          name: existingProduct.name,
+          description: existingProduct.description || "",
+          price: existingProduct.price,
+          stock_quantity: existingProduct.stock_quantity,
+          category_id: existingProduct.category_id || "",
+          image_url: existingProduct.image_url || "",
+        });
+        setImagePreview(existingProduct.image_url || "");
+        setUploadError("");
+      }
+      setIsInitialized(true);
     }
-  }, [isOpen, mode, existingProduct, onProductChange]);
+    
+    // Reset initialization when modal closes
+    if (!isOpen) {
+      setIsInitialized(false);
+    }
+  }, [isOpen, mode, existingProduct, onProductChange, isInitialized]);
 
-  // Generate image preview when image_url changes
+  // Generate image preview when image_url changes - CORRECTION ICI
   useEffect(() => {
     if (product.image_url) {
       setImagePreview(product.image_url);

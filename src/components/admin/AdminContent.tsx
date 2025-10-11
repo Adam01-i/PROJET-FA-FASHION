@@ -6,26 +6,12 @@ import ProductsSection from './SideBar/ContentSections/ProductsSection';
 import OrdersSection from './SideBar/ContentSections/OrdersSection';
 import UsersSection from './SideBar/ContentSections/UsersSection';
 import SettingsSection from './SideBar/ContentSections/SettingsSection';
-import ProductModal from './SideBar/Modals/ProductModal';
-import { supabase } from '../../lib/supabase';
-import { useToastContext } from '../../hooks/ToastProvider';
 
 export default function AdminContent() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [, setIsAddModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const { success, error: toastError } = useToastContext();
-
-  // État pour le nouveau produit (corrigé pour correspondre au type attendu)
-  const [newProduct, setNewProduct] = useState({
-    name: '',
-    description: '',
-    price: 0,
-    stock_quantity: 0,
-    category_id: '',
-    image_url: ''
-  });
 
   const getTabTitle = () => {
     switch (activeTab) {
@@ -40,51 +26,6 @@ export default function AdminContent() {
 
   const showSearch = activeTab !== 'settings' && activeTab !== 'dashboard';
   const showAddButton = activeTab === 'products';
-
-  // Handler for submitting the new product (corrigé pour le type)
-  const handleProductSubmit = async (productData: {
-    name: string;
-    description: string;
-    price: number;
-    stock_quantity: number;
-    category_id: string;
-    image_url: string;
-  }) => {
-    try {
-      const { error } = await supabase
-        .from('products')
-        .insert([{
-          name: productData.name,
-          description: productData.description,
-          price: productData.price,
-          stock_quantity: productData.stock_quantity,
-          category_id: productData.category_id,
-          image_url: productData.image_url
-        }]);
-
-      if (error) throw error;
-
-      success("Produit ajouté", "Le produit a été ajouté avec succès");
-      setIsAddModalOpen(false);
-      
-      // Reset form
-      setNewProduct({
-        name: '',
-        description: '',
-        price: 0,
-        stock_quantity: 0,
-        category_id: '',
-        image_url: ''
-      });
-
-      // Recharger la page après un court délai pour voir le toast
-      setTimeout(() => window.location.reload(), 1000);
-      
-    } catch (error) {
-      console.error('Error adding product:', error);
-      toastError("Erreur", "Erreur lors de l'ajout du produit");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -106,8 +47,6 @@ export default function AdminContent() {
             onSearchChange={setSearchTerm}
             showSearch={showSearch}
             showAddButton={showAddButton}
-            onAddClick={() => setIsAddModalOpen(true)}
-            addButtonLabel="Ajouter un produit"
             title={getTabTitle()}
           />
 
@@ -139,15 +78,6 @@ export default function AdminContent() {
         </div>
       </div>
 
-      {/* Modal d'ajout de produit */}
-      <ProductModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        product={newProduct}
-        onProductChange={setNewProduct}
-        onSubmit={handleProductSubmit}
-        mode="add"
-      />
     </div>
   );
 }

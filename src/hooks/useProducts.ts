@@ -33,5 +33,5 @@ export function useProducts() {
     fetchProducts();
   }, []);
 
-  return { products, loading, error, refetch: fetchProducts };
+  return { products, loading, error, refetch: fetchProducts, refetchProducts: fetchProducts };
 }
