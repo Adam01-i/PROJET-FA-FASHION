@@ -2,12 +2,14 @@
 export interface Product {
   id: string;
   name: string;
-  description: string;
+  description?: string;
+  short_description?: string;
   price: number;
   image_url: string | null;
   category_id: string | null;
   stock_quantity: number;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface User {

@@ -13,7 +13,10 @@ export function useProducts() {
       // Requête simple sans jointure complexe
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          category:categories(name)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

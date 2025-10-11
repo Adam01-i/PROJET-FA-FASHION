@@ -1,0 +1,270 @@
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { LogOut, Menu, X, Package, MessageCircle, ClipboardList, Shield, CheckCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+
+export default function NavbarAssistant() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+    setIsMenuOpen(false);
+  };
+
+  const handleNavClick = () => {
+    setIsMenuOpen(false);
+  };
+
+  const isActiveRoute = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+  return (
+    <>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        isScrolled 
+          ? 'bg-white shadow-2xl backdrop-blur-xl bg-opacity-95 border-b border-indigo-100' 
+          : 'bg-gradient-to-r from-indigo-600 to-indigo-700'
+      }`}>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
+            {/* Logo et titre Assistant */}
+            <Link 
+              to="/assistant" 
+              className="flex items-center space-x-4 group"
+              onClick={handleNavClick}
+            >
+              <div className={`p-3 rounded-2xl transition-all duration-300 group-hover:scale-110 ${
+                isScrolled 
+                  ? 'bg-indigo-100 shadow-lg' 
+                  : 'bg-white bg-opacity-20 backdrop-blur-sm'
+              }`}>
+                <Shield className={`h-7 w-7 transition-colors ${
+                  isScrolled ? 'text-indigo-600' : 'text-white'
+                }`} />
+              </div>
+              <div className="flex flex-col">
+                <span className={`text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent transition-all ${
+                  isScrolled 
+                    ? 'from-indigo-600 to-indigo-800' 
+                    : 'from-white to-indigo-100'
+                }`}>
+                  K-Shop
+                </span>
+                <span className={`text-xs font-semibold tracking-wider ${
+                  isScrolled ? 'text-indigo-400' : 'text-indigo-200'
+                }`}>
+                  PANEL ASSISTANT
+                </span>
+              </div>
+            </Link>
+
+            {/* Navigation Assistant - Desktop */}
+            <div className="hidden lg:flex items-center space-x-2">
+              <Link
+                to="/assistant/orders"
+                className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  isActiveRoute('/assistant/orders') 
+                    ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-200' 
+                    : isScrolled
+                    ? 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
+                    : 'text-white hover:bg-white hover:bg-opacity-20 hover:backdrop-blur-sm'
+                }`}
+              >
+                <Package className="h-5 w-5" />
+                <span>Commandes</span>
+              </Link>
+              
+              <Link
+                to="/assistant/support"
+                className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  isActiveRoute('/assistant/support') 
+                    ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-200' 
+                    : isScrolled
+                    ? 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
+                    : 'text-white hover:bg-white hover:bg-opacity-20 hover:backdrop-blur-sm'
+                }`}
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span>Support</span>
+              </Link>
+              
+              <Link
+                to="/assistant/inventory"
+                className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  isActiveRoute('/assistant/inventory') 
+                    ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-200' 
+                    : isScrolled
+                    ? 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
+                    : 'text-white hover:bg-white hover:bg-opacity-20 hover:backdrop-blur-sm'
+                }`}
+              >
+                <ClipboardList className="h-5 w-5" />
+                <span>Inventaire</span>
+              </Link>
+
+              {/* Nouveau bouton Valider Commande */}
+              <Link
+                to="/orders/validate"
+                className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  isActiveRoute('/orders/validate') 
+                    ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-200' 
+                    : isScrolled
+                    ? 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
+                    : 'text-white hover:bg-white hover:bg-opacity-20 hover:backdrop-blur-sm'
+                }`}
+              >
+                <CheckCircle className="h-5 w-5" />
+                <span>Valider Commande</span>
+              </Link>
+            </div>
+
+            {/* Actions utilisateur */}
+            <div className="flex items-center space-x-4">
+              {user && (
+                <div className="flex items-center space-x-4">
+                  <div className={`hidden xl:flex flex-col items-end ${
+                    isScrolled ? 'text-gray-600' : 'text-white'
+                  }`}>
+                    <span className="text-sm font-semibold">Assistant</span>
+                    <span className="text-xs opacity-80 truncate max-w-[180px]">
+                      {user.email}
+                    </span>
+                  </div>
+                  
+                  <div className="hidden md:block w-px h-8 bg-gray-300 bg-opacity-50"></div>
+                  
+                  <button
+                    onClick={handleSignOut}
+                    className={`group p-3 rounded-2xl transition-all duration-300 transform hover:scale-110 ${
+                      isScrolled 
+                        ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-lg' 
+                        : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30 hover:backdrop-blur-sm'
+                    }`}
+                    title="Déconnexion"
+                  >
+                    <LogOut className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Bouton menu mobile */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className={`lg:hidden p-3 rounded-2xl transition-all duration-300 transform hover:scale-110 ${
+                  isScrolled 
+                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-lg' 
+                    : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30 hover:backdrop-blur-sm'
+                }`}
+              >
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Menu mobile Assistant */}
+        <div className={`lg:hidden transition-all duration-500 overflow-hidden ${
+          isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        } ${
+          isScrolled 
+            ? 'bg-white border-t border-indigo-100 shadow-lg' 
+            : 'bg-indigo-700 border-t border-indigo-500 backdrop-blur-xl'
+        }`}>
+          <div className="px-6 py-6">
+            <div className="space-y-3">
+              <Link
+                to="/assistant/orders"
+                className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 ${
+                  isActiveRoute('/assistant/orders')
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300'
+                    : isScrolled
+                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-md'
+                }`}
+                onClick={handleNavClick}
+              >
+                <Package className="h-5 w-5" />
+                <span>Gestion Commandes</span>
+              </Link>
+              
+              <Link
+                to="/assistant/support"
+                className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 ${
+                  isActiveRoute('/assistant/support')
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300'
+                    : isScrolled
+                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-md'
+                }`}
+                onClick={handleNavClick}
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span>Support Client</span>
+              </Link>
+              
+              <Link
+                to="/assistant/inventory"
+                className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 ${
+                  isActiveRoute('/assistant/inventory')
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300'
+                    : isScrolled
+                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-md'
+                }`}
+                onClick={handleNavClick}
+              >
+                <ClipboardList className="h-5 w-5" />
+                <span>Vérification Inventaire</span>
+              </Link>
+
+              {/* Nouveau bouton Valider Commande - Mobile */}
+              <Link
+                to="/orders/validate"
+                className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 ${
+                  isActiveRoute('/orders/validate')
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300'
+                    : isScrolled
+                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-md'
+                }`}
+                onClick={handleNavClick}
+              >
+                <CheckCircle className="h-5 w-5" />
+                <span>Validation Commandes</span>
+              </Link>
+
+              {/* Section utilisateur mobile */}
+              {user && (
+                <div className={`mt-4 p-4 rounded-2xl border ${
+                  isScrolled 
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
+                    : 'bg-indigo-600 border-indigo-500 text-white'
+                }`}>
+                  <p className="text-sm font-semibold">Connecté en tant que :</p>
+                  <p className="text-sm opacity-90 truncate">{user.email}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Espacement pour le contenu */}
+      <div className="h-20"></div>
+    </>
+  );
+}
