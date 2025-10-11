@@ -11,7 +11,7 @@ import Home from "./components/home/Home";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import Cart from "./components/home/Cart";
-import Admin from "./components/admin/AdminContent";
+import Admin from "./components/admin/AdminLayout";
 import Assistant from "./pages/Assistant";
 import { AnimatePresence, motion } from "framer-motion";
 import { ToastProvider } from "./hooks/ToastProvider";

@@ -25,7 +25,6 @@ export default function AdminContent() {
   };
 
   const showSearch = activeTab !== 'settings' && activeTab !== 'dashboard';
-  const showAddButton = activeTab === 'products';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -46,7 +45,6 @@ export default function AdminContent() {
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             showSearch={showSearch}
-            showAddButton={showAddButton}
             title={getTabTitle()}
           />
 
