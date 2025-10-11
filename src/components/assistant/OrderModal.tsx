@@ -57,7 +57,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ order, onClose, onUpdateStatus 
 
             <div className="border-t border-gray-200 pt-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Méthode de Paiement</h3>
-              <p className="text-sm text-gray-900 capitalize">{order.payment_method || 'Non spécifié'}</p>
+              {/* <p className="text-sm text-gray-900 capitalize">{order.payment_method || 'Non spécifié'}</p> */}
             </div>
 
             <div className="border-t border-gray-200 pt-4">
