@@ -1,3 +1,4 @@
+// hooks/useOrders.ts
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Order } from '../types';
@@ -11,7 +12,7 @@ export function useOrders() {
     fetchOrders();
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (): Promise<void> => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -21,33 +22,23 @@ export function useOrders() {
           order_items (
             *,
             product:products (*)
-          )
+          ),
+          user:profiles!user_id (*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Transformer les données pour correspondre à l'interface Order
-      const formattedOrders = (data || []).map(order => ({
-        ...order,
-        payment_method: order.payment_method || 'non spécifié',
-        order_items: order.order_items || []
-      }));
-      
-      setOrders(formattedOrders);
+      setOrders(data || []);
     } catch (err) {
       console.error('Error fetching orders:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError(String(err));
-      }
+      setError('Erreur de chargement des commandes');
     } finally {
       setLoading(false);
     }
   };
 
-  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+  const updateOrderStatus = async (orderId: string, status: Order['status']): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from('orders')
@@ -59,7 +50,6 @@ export function useOrders() {
 
       if (error) throw error;
       
-      // Mettre à jour l'état local
       setOrders(prevOrders =>
         prevOrders.map(order =>
           order.id === orderId ? { ...order, status } : order
@@ -73,11 +63,46 @@ export function useOrders() {
     }
   };
 
+  const updatePaymentStatus = async (
+    orderId: string, 
+    paymentStatus: Order['payment_status'], 
+    paymentProof?: string
+  ): Promise<boolean> => {
+    try {
+      const updates: { payment_status: Order['payment_status']; payment_proof?: string } = { 
+        payment_status: paymentStatus 
+      };
+      
+      if (paymentProof) {
+        updates.payment_proof = paymentProof;
+      }
+
+      const { error } = await supabase
+        .from('orders')
+        .update(updates)
+        .eq('id', orderId);
+
+      if (error) throw error;
+      
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, ...updates } : order
+        )
+      );
+      
+      return true;
+    } catch (err) {
+      console.error('Error updating payment status:', err);
+      throw err;
+    }
+  };
+
   return {
     orders,
     loading,
     error,
     updateOrderStatus,
+    updatePaymentStatus,
     refetch: fetchOrders
   };
 }

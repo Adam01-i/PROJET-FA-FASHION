@@ -36,6 +36,7 @@ export function useProducts(onlyPublic: boolean = false) {
 
   useEffect(() => {
     fetchProducts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onlyPublic]);
 
   return { products, loading, error, refetch: fetchProducts, refetchProducts: fetchProducts};
