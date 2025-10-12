@@ -40,7 +40,7 @@ export default function AdminLayout() {
         />
 
         {/* Main content */}
-        <div className="flex-1 lg:ml-0 min-h-screen flex flex-col overflow-y-auto sticky top-0">
+        <div className="flex-1 flex flex-col min-h-screen">
           {/* NavBar */}
           <NavBar
             onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
@@ -51,7 +51,7 @@ export default function AdminLayout() {
           />
 
           {/* Content Area */}
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 overflow-y-auto">
             {activeTab === 'dashboard' && (
               <Dashboard />
             )}

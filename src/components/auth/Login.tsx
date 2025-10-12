@@ -91,7 +91,7 @@ export default function Login() {
           <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-8">
             <LogIn className="h-12 w-12 text-white" />
           </div>
-          <h1 className="text-4xl font-bold mb-4">Bienvenue sur KShop</h1>
+          <h1 className="text-4xl font-bold mb-4">Bienvenue sur Fa-Fashion</h1>
           <p className="text-lg text-indigo-100">
             Votre destination shopping préférée. Découvrez une expérience
             d'achat exceptionnelle.
@@ -111,15 +111,29 @@ export default function Login() {
 
           <div className="text-center lg:text-left mb-8">
             <h2 className="text-3xl font-bold text-gray-900">Connexion</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Pas encore de compte ?{" "}
+
+            {/* Lien vers le menu principal - Version stylée */}
+            <div className="mt-4">
               <Link
-                to="/register"
-                className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
+                to="/"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
               >
-                Créer un compte
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
+                </svg>
+                Retour à l'accueil
               </Link>
-            </p>
+            </div>
           </div>
 
           {/* Carte du formulaire */}
@@ -218,6 +232,15 @@ export default function Login() {
                   "Se connecter"
                 )}
               </button>
+              <p className="mt-2 text-sm text-gray-600">
+                Pas encore de compte ?{" "}
+                <Link
+                  to="/register"
+                  className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
+                >
+                  Créer un compte
+                </Link>
+              </p>
             </form>
 
             {/* Ligne séparatrice */}

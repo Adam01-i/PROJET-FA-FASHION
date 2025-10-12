@@ -5,7 +5,13 @@ import OrdersItem from "./SideBarItems/OrdersItem";
 import UsersItem from "./SideBarItems/UsersItem";
 import SettingsItem from "./SideBarItems/SettingsItem";
 
-export type Tab = "dashboard" | "inventory"| "products" | "orders" | "users" | "settings";
+export type Tab =
+  | "dashboard"
+  | "inventory"
+  | "products"
+  | "orders"
+  | "users"
+  | "settings";
 
 interface SideBarProps {
   activeTab: Tab;
@@ -14,7 +20,12 @@ interface SideBarProps {
   onCloseMobile?: () => void;
 }
 
-export default function SideBar({activeTab, onTabChange, isMobileOpen = false, onCloseMobile,}: SideBarProps) {
+export default function SideBar({
+  activeTab,
+  onTabChange,
+  isMobileOpen = false,
+  onCloseMobile,
+}: SideBarProps) {
   return (
     <>
       {/* Mobile overlay */}
@@ -28,12 +39,12 @@ export default function SideBar({activeTab, onTabChange, isMobileOpen = false, o
       {/* Sidebar */}
       <div
         className={`
-        fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-white shadow-xl border-r border-gray-200
-        transform transition-transform duration-300 ease-in-out
-        ${isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        h-screen
-      `}
+  fixed lg:sticky top-0 inset-y-0 left-0 z-50
+  w-64 bg-white shadow-xl border-r border-gray-200
+  transform transition-transform duration-300 ease-in-out
+  ${isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+  h-screen
+  `}
       >
         {/* Header */}
         <div className="p-6 border-b border-gray-100">

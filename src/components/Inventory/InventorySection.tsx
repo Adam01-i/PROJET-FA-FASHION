@@ -353,14 +353,14 @@ export default function InventorySection() {
     <div className="space-y-6">
       {/* En-tête avec titre et actions */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div>
+        {/* <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
             Gestion de l'inventaire
           </h1>
           <p className="text-gray-600 mt-1">
             Suivi et gestion des stocks de vos produits
           </p>
-        </div>
+        </div> */}
         <div className="flex items-center space-x-3 mt-4 lg:mt-0">
           <button
             onClick={handleExportInventory}
@@ -382,7 +382,6 @@ export default function InventorySection() {
           </button>
         </div>
       </div>
-
       {/* Statistiques dynamiques */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-4 border border-gray-200">
@@ -443,7 +442,6 @@ export default function InventorySection() {
           </div>
         </div>
       </div>
-
       {/* Alertes de stock faible dynamiques */}
       {lowStockAlerts.length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
@@ -484,7 +482,6 @@ export default function InventorySection() {
         </div>
       )}
 
-      {/* Barre de recherche et filtres */}
       <div className="bg-white rounded-xl p-4 border border-gray-200">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           {/* Recherche */}
@@ -500,100 +497,105 @@ export default function InventorySection() {
           </div>
 
           {/* Filtres et vue */}
-          <div className="flex items-center space-x-4">
-            {/* Sélecteur de catégorie */}
-            <select
-              value={filters.category}
-              onChange={(e) => handleFilterChange("category", e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="all">Toutes catégories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-
-            {/* Sélecteur de statut de stock */}
-            <select
-              value={filters.stockStatus}
-              onChange={(e) =>
-                handleFilterChange(
-                  "stockStatus",
-                  e.target.value as InventoryFilters["stockStatus"]
-                )
-              }
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="all">Tous les stocks</option>
-              <option value="in_stock">En stock</option>
-              <option value="low_stock">Stock faible</option>
-              <option value="out_of_stock">Rupture</option>
-            </select>
-
-            {/* Sélecteur de tri */}
-            <select
-              value={filters.sortBy}
-              onChange={(e) =>
-                handleFilterChange(
-                  "sortBy",
-                  e.target.value as InventoryFilters["sortBy"]
-                )
-              }
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="name">Nom</option>
-              <option value="stock">Stock</option>
-              <option value="sales">Ventes</option>
-              <option value="revenue">Revenu</option>
-            </select>
-
-            {/* Sélecteur d'ordre de tri */}
-            <select
-              value={filters.sortOrder}
-              onChange={(e) =>
-                handleFilterChange(
-                  "sortOrder",
-                  e.target.value as InventoryFilters["sortOrder"]
-                )
-              }
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="asc">Croissant</option>
-              <option value="desc">Décroissant</option>
-            </select>
-
-            {/* Boutons de vue */}
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 ${
-                  viewMode === "grid"
-                    ? "bg-indigo-100 text-indigo-600"
-                    : "text-gray-600"
-                }`}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Première ligne de filtres */}
+            <div className="flex flex-wrap gap-2">
+              {/* Sélecteur de catégorie */}
+              <select
+                value={filters.category}
+                onChange={(e) => handleFilterChange("category", e.target.value)}
+                className="flex-1 min-w-[150px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
-                <Grid3X3 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 ${
-                  viewMode === "list"
-                    ? "bg-indigo-100 text-indigo-600"
-                    : "text-gray-600"
-                }`}
+                <option value="all">Toutes catégories</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Sélecteur de statut de stock */}
+              <select
+                value={filters.stockStatus}
+                onChange={(e) =>
+                  handleFilterChange(
+                    "stockStatus",
+                    e.target.value as InventoryFilters["stockStatus"]
+                  )
+                }
+                className="flex-1 min-w-[140px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
-                <List className="h-4 w-4" />
-              </button>
+                <option value="all">Tous les stocks</option>
+                <option value="in_stock">En stock</option>
+                <option value="low_stock">Stock faible</option>
+                <option value="out_of_stock">Rupture</option>
+              </select>
+            </div>
+
+            {/* Deuxième ligne de filtres */}
+            <div className="flex flex-wrap gap-2">
+              {/* Sélecteur de tri */}
+              <select
+                value={filters.sortBy}
+                onChange={(e) =>
+                  handleFilterChange(
+                    "sortBy",
+                    e.target.value as InventoryFilters["sortBy"]
+                  )
+                }
+                className="flex-1 min-w-[120px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="name">Nom</option>
+                <option value="stock">Stock</option>
+                <option value="sales">Ventes</option>
+                <option value="revenue">Revenu</option>
+              </select>
+
+              {/* Sélecteur d'ordre de tri */}
+              <select
+                value={filters.sortOrder}
+                onChange={(e) =>
+                  handleFilterChange(
+                    "sortOrder",
+                    e.target.value as InventoryFilters["sortOrder"]
+                  )
+                }
+                className="flex-1 min-w-[120px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="asc">Croissant</option>
+                <option value="desc">Décroissant</option>
+              </select>
+
+              {/* Boutons de vue */}
+              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 ${
+                    viewMode === "grid"
+                      ? "bg-indigo-100 text-indigo-600"
+                      : "text-gray-600"
+                  }`}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 ${
+                    viewMode === "list"
+                      ? "bg-indigo-100 text-indigo-600"
+                      : "text-gray-600"
+                  }`}
+                >
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Liste des produits */}
       {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {filteredProducts.map((product) => {
             const productSale = productSales.find(
               (s) => s.product_id === product.id
@@ -604,7 +606,7 @@ export default function InventorySection() {
                 className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
               >
                 {/* Image du produit */}
-                <div className="h-48 bg-gray-100 relative">
+                <div className="h-40 sm:h-48 bg-gray-100 relative">
                   {product.image_url ? (
                     <img
                       src={product.image_url}
@@ -618,11 +620,11 @@ export default function InventorySection() {
                   ) : null}
                   {!product.image_url && (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Package className="h-12 w-12 text-gray-400" />
+                      <Package className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
                     </div>
                   )}
                   <div
-                    className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${getStockStatusColor(
+                    className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${getStockStatusColor(
                       product.stock_quantity
                     )}`}
                   >
@@ -631,22 +633,22 @@ export default function InventorySection() {
                 </div>
 
                 {/* Informations du produit */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
+                <div className="p-3 sm:p-4">
+                  <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1 text-sm sm:text-base">
                     {product.name}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-2">
                     {product.description}
                   </p>
 
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between text-sm">
+                  <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
+                    <div className="flex justify-between text-xs sm:text-sm">
                       <span className="text-gray-600">Prix:</span>
                       <span className="font-semibold text-gray-900">
                         {formatXOF(product.price)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-xs sm:text-sm">
                       <span className="text-gray-600">Stock:</span>
                       <span className="font-semibold text-gray-900">
                         {product.stock_quantity} unités
@@ -654,13 +656,13 @@ export default function InventorySection() {
                     </div>
                     {productSale && (
                       <>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs sm:text-sm">
                           <span className="text-gray-600">Ventes:</span>
                           <span className="font-semibold text-green-600">
                             {productSale.quantity_sold}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs sm:text-sm">
                           <span className="text-gray-600">Revenu:</span>
                           <span className="font-semibold text-green-600">
                             {formatXOF(productSale.total_revenue)}
@@ -675,31 +677,31 @@ export default function InventorySection() {
           })}
         </div>
       ) : (
-        /* Vue liste */
+        /* Vue liste - Section corrigée */
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Produit
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Catégorie
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Prix
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Stock
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ventes
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Revenu
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -714,42 +716,42 @@ export default function InventorySection() {
                   );
                   return (
                     <tr key={product.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex items-center">
-                          <div className="h-10 w-10 flex-shrink-0">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
                             {product.image_url ? (
                               <img
                                 src={product.image_url}
                                 alt={product.name}
-                                className="h-10 w-10 rounded-lg object-cover"
+                                className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg object-cover"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
                                   target.style.display = "none";
                                 }}
                               />
                             ) : (
-                              <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                                <Package className="h-5 w-5 text-gray-400" />
+                              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                               </div>
                             )}
                           </div>
-                          <div className="ml-4">
+                          <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">
                               {product.name}
                             </div>
-                            <div className="text-sm text-gray-500 line-clamp-1">
+                            <div className="text-xs text-gray-500 line-clamp-1">
                               {product.description}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-gray-900">
                         {category?.name || "Non catégorisé"}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
                         {formatXOF(product.price)}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <span
                           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStockStatusColor(
                             product.stock_quantity
@@ -758,14 +760,14 @@ export default function InventorySection() {
                           {product.stock_quantity} unités
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-gray-900">
                         {productSale?.quantity_sold || 0}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-green-600">
+                      <td className="px-4 py-3 text-sm font-medium text-green-600">
                         {formatXOF(productSale?.total_revenue || 0)}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                      <td className="px-4 py-3 text-sm font-medium">
+                        <div className="flex items-center space-x-1 sm:space-x-2">
                           <button
                             onClick={() =>
                               handleUpdateStock(
@@ -776,11 +778,11 @@ export default function InventorySection() {
                             disabled={
                               product.stock_quantity === 0 || isUpdatingStock
                             }
-                            className="text-gray-600 hover:text-gray-900 disabled:opacity-50 transition-colors"
+                            className="text-gray-600 hover:text-gray-900 disabled:opacity-50 transition-colors p-1"
                           >
-                            <Minus className="h-4 w-4" />
+                            <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
                           </button>
-                          <span className="text-sm font-medium w-8 text-center">
+                          <span className="text-xs sm:text-sm font-medium w-6 sm:w-8 text-center">
                             {product.stock_quantity}
                           </span>
                           <button
@@ -791,15 +793,15 @@ export default function InventorySection() {
                               )
                             }
                             disabled={isUpdatingStock}
-                            className="text-gray-600 hover:text-gray-900 disabled:opacity-50 transition-colors"
+                            className="text-gray-600 hover:text-gray-900 disabled:opacity-50 transition-colors p-1"
                           >
-                            <Plus className="h-4 w-4" />
+                            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                           </button>
                           <button
                             onClick={() => setSelectedProduct(product)}
-                            className="text-indigo-600 hover:text-indigo-900 transition-colors"
+                            className="text-indigo-600 hover:text-indigo-900 transition-colors p-1"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                           </button>
                         </div>
                       </td>
@@ -811,7 +813,7 @@ export default function InventorySection() {
           </div>
         </div>
       )}
-
+      
       {/* Message vide */}
       {filteredProducts.length === 0 && !loading && (
         <div className="bg-white rounded-xl p-12 text-center border border-gray-200">

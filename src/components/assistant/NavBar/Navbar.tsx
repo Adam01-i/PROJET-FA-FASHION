@@ -85,7 +85,7 @@ export default function Navbar({ activeTab, onTabChange }: NavbarAssistantProps)
                     ? 'from-indigo-600 to-indigo-800' 
                     : 'from-white to-indigo-100'
                 }`}>
-                  K-Shop
+                  Fa-Fashion
                 </span>
                 <span className={`text-xs font-semibold tracking-wider ${
                   isScrolled ? 'text-indigo-400' : 'text-indigo-200'

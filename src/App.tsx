@@ -11,7 +11,12 @@ import Navbar from "./components/home/Navbar";
 import Home from "./components/home/Home";
 import Cart from "./components/home/Cart";
 
-import { ProtectedRoute, PublicOnlyRoute } from "./security/AuthRoutes";
+import { 
+  ProtectedRoute, 
+  PublicOnlyRoute, 
+  PublicRoute, 
+  RoleBasedRedirect 
+} from "./security";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 
@@ -65,14 +70,16 @@ function AppContent() {
           transition={{ duration: 0.25, ease: "easeOut" }}
         >
           <Routes location={location}>
-            {/* Routes publiques avec navbar */}
+            {/* Route d'accueil - Avec restriction IMMÉDIATE pour admins/assistants */}
             <Route path="/" element={
-              <PublicLayout>
-                <Home />
-              </PublicLayout>
+              <PublicRoute>
+                <PublicLayout>
+                  <Home />
+                </PublicLayout>
+              </PublicRoute>
             } />
             
-            {/* Routes d'authentification sans navbar */}
+            {/* Routes d'authentification sans navbar - Uniquement non connectés */}
             <Route path="/login" element={
               <PublicOnlyRoute>
                 <AuthLayout>
@@ -89,18 +96,18 @@ function AppContent() {
               </PublicOnlyRoute>
             } />
             
-            {/* Route panier protégée avec navbar */}
+            {/* Route panier - Uniquement clients connectés */}
             <Route path="/cart" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="client">
                 <PublicLayout>
                   <Cart />
                 </PublicLayout>
               </ProtectedRoute>
             } />
 
-            {/* Routes protégées sans navbar */}
+            {/* Routes ADMIN - Strictement réservées aux admins */}
             <Route
-              path="/admin"
+              path="/admin/*"
               element={
                 <ProtectedRoute requiredRole="admin">
                   <ProtectedLayout>
@@ -110,8 +117,9 @@ function AppContent() {
               }
             />
             
+            {/* Routes ASSISTANT - Strictement réservées aux assistants */}
             <Route
-              path="/assistant"
+              path="/assistant/*"
               element={
                 <ProtectedRoute requiredRole="assistant">
                   <ProtectedLayout>
@@ -121,17 +129,8 @@ function AppContent() {
               }
             />
 
-            {/* Route de fallback */}
-            <Route path="*" element={
-              <PublicLayout>
-                <div className="flex items-center justify-center min-h-[50vh]">
-                  <div className="text-center">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
-                    <p className="text-lg text-gray-600">Page non trouvée</p>
-                  </div>
-                </div>
-              </PublicLayout>
-            } />
+            {/* Route de fallback - Redirection IMMÉDIATE selon le rôle */}
+            <Route path="*" element={<RoleBasedRedirect />} />
           </Routes>
         </motion.div>
       </AnimatePresence>

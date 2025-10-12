@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
-  TrendingUp,
+  // TrendingUp,
   Users,
   ShoppingCart,
   Package,
   DollarSign,
-  Eye,
+  // Eye,
   ShoppingBag,
   ArrowUp,
   ArrowDown,
@@ -24,11 +24,11 @@ import RevenueSection from "./sections/RevenueSection";
 import OrdersSection from "../SideBar/ContentSections/OrdersSection";
 import UsersSection from "../SideBar/ContentSections/UsersSection";
 import ProductsSection from "../SideBar/ContentSections/ProductsSection";
-import SalesPerformanceSection from "./sections/SalesPerformanceSection";
+// import SalesPerformanceSection from "./sections/SalesPerformanceSection";
 import RecentActivitySection from "./sections/RecentActivitySection";
 import PopularProductsSection from "./sections/PopularProductsSection";
-import PerformanceMetricsSection from "./sections/PerformanceMetricsSection";
-import MonthlyGoalsSection from "./sections/MonthlyGoalsSection";
+// import PerformanceMetricsSection from "./sections/PerformanceMetricsSection";
+// import MonthlyGoalsSection from "./sections/MonthlyGoalsSection";
 
 // Types pour les données du dashboard
 interface DashboardStats {
@@ -251,9 +251,9 @@ export default function Dashboard() {
       case "revenue":
         return <RevenueSection />;
       case "orders":
-        return <OrdersSection searchTerm={searchTerm}/>;
+        return <OrdersSection searchTerm={searchTerm} />;
       case "users":
-        return <UsersSection searchTerm={searchTerm}/>;
+        return <UsersSection searchTerm={searchTerm} />;
       case "products":
         return (
           <ProductsSection
@@ -261,16 +261,16 @@ export default function Dashboard() {
             onAddClick={() => setIsAddModalOpen(true)}
           />
         );
-      case "sales-performance":
-        return <SalesPerformanceSection />;
+      // case "sales-performance":
+      //   return <SalesPerformanceSection />;
       case "recent-activity":
         return <RecentActivitySection />;
       case "popular-products":
         return <PopularProductsSection />;
-      case "performance":
-        return <PerformanceMetricsSection />;
-      case "goals":
-        return <MonthlyGoalsSection />;
+      // case "performance":
+      //   return <PerformanceMetricsSection />;
+      // case "goals":
+      //   return <MonthlyGoalsSection />;
       case "overview":
       default:
         return renderOverview();
@@ -281,12 +281,12 @@ export default function Dashboard() {
     <div className="space-y-6 animate-fade-in">
       {/* Header avec filtres */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
+        {/* <div>
           <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
           <p className="text-gray-600 mt-1">
             Aperçu de votre performance commerciale
           </p>
-        </div>
+        </div> */}
 
         <div className="flex items-center space-x-3">
           <div className="flex bg-gray-100 rounded-lg p-1">
@@ -349,13 +349,24 @@ export default function Dashboard() {
           onClick={() => setActiveSection("users")}
         />
 
-        <StatCard
+        {/* <StatCard
           title="Taux de Conversion"
           value={`${stats.conversionRate}%`}
           growth={2.1}
           icon={TrendingUp}
           color="orange"
           onClick={() => setActiveSection("performance")}
+        /> */}
+
+        <StatCard
+          title="Produits Populaires"
+          value={
+            topProducts.length > 0 ? `${topProducts[0].product_name}` : "Aucun"
+          }
+          growth={15.8}
+          icon={Package}
+          color="orange"
+          onClick={() => setActiveSection("popular-products")}
         />
       </div>
 
@@ -433,7 +444,7 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              <Eye className="h-5 w-5 text-gray-400" />
+              {/* <Eye className="h-5 w-5 text-gray-400" /> */}
               <button
                 onClick={() => setActiveSection("recent-activity")}
                 className="flex items-center px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors"
@@ -512,7 +523,7 @@ export default function Dashboard() {
       {/* Métriques supplémentaires */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Produits populaires */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        {/* <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
               Produits Populaires
@@ -557,10 +568,10 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Performance */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        {/* <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Performance</h3>
             <button
@@ -619,10 +630,10 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Objectifs */}
-        <div className="bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl shadow-lg p-6 text-white">
+        {/* <div className="bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Objectifs du Mois</h3>
             <button
@@ -680,7 +691,7 @@ export default function Dashboard() {
               Voir les détails
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Section produits à faible stock */}

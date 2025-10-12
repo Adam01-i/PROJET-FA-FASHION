@@ -24,7 +24,7 @@ function AuthLoading() {
   );
 }
 
-// Route protégée avec vérification de rôle
+// Route protégée avec vérification de rôle stricte
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const { user, userRole, loading } = useAuth();
   const location = useLocation();
@@ -35,11 +35,19 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Vérification stricte du rôle
   if (requiredRole && userRole !== requiredRole) {
-    // Rediriger vers la page appropriée selon le rôle
-    const redirectPath = userRole === 'admin' ? '/admin' : 
-                        userRole === 'assistant' ? '/assistant' : '/';
-    return <Navigate to={redirectPath} replace />;
+    // Rediriger vers l'interface appropriée selon le rôle réel de l'utilisateur
+    switch (userRole) {
+      case 'admin':
+        return <Navigate to="/admin" replace />;
+      case 'assistant':
+        return <Navigate to="/assistant" replace />;
+      case 'client':
+        return <Navigate to="/" replace />;
+      default:
+        return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
@@ -52,11 +60,31 @@ export function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
   if (loading) return <AuthLoading />;
 
   if (user) {
-    // Rediriger vers la page appropriée selon le rôle
-    const redirectPath = userRole === 'admin' ? '/admin' : 
-                        userRole === 'assistant' ? '/assistant' : '/';
-    return <Navigate to={redirectPath} replace />;
+    // Rediriger strictement vers l'interface appropriée
+    switch (userRole) {
+      case 'admin':
+        return <Navigate to="/admin" replace />;
+      case 'assistant':
+        return <Navigate to="/assistant" replace />;
+      case 'client':
+        return <Navigate to="/" replace />;
+      default:
+        return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
+}
+
+// Route spécifique pour chaque rôle
+export function AdminRoute({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute requiredRole="admin">{children}</ProtectedRoute>;
+}
+
+export function AssistantRoute({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute requiredRole="assistant">{children}</ProtectedRoute>;
+}
+
+export function ClientRoute({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute requiredRole="client">{children}</ProtectedRoute>;
 }

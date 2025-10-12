@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { UserPlus, Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { UserPlus, Eye, EyeOff, Mail, Lock } from "lucide-react";
 
 export default function Register() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -15,27 +15,30 @@ export default function Register() {
   const navigate = useNavigate();
 
   // Fonction de redirection basée sur le rôle
-  const redirectBasedOnRole = useCallback((role: string | null) => {
-    console.log('🔄 Redirection basée sur le rôle:', role);
-    
-    switch (role) {
-      case 'admin':
-        navigate('/admin');
-        break;
-      case 'assistant':
-        navigate('/assistant');
-        break;
-      case 'client':
-      default:
-        navigate('/');
-        break;
-    }
-  }, [navigate]);
+  const redirectBasedOnRole = useCallback(
+    (role: string | null) => {
+      console.log("🔄 Redirection basée sur le rôle:", role);
+
+      switch (role) {
+        case "admin":
+          navigate("/admin");
+          break;
+        case "assistant":
+          navigate("/assistant");
+          break;
+        case "client":
+        default:
+          navigate("/");
+          break;
+      }
+    },
+    [navigate]
+  );
 
   // Redirection automatique si déjà connecté
   useEffect(() => {
     if (isAuthenticated && userRole) {
-      console.log('✅ Utilisateur connecté, redirection vers:', userRole);
+      console.log("✅ Utilisateur connecté, redirection vers:", userRole);
       redirectBasedOnRole(userRole);
     }
   }, [isAuthenticated, userRole, redirectBasedOnRole]);
@@ -50,34 +53,33 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-    
+
     // Validations
     if (password !== confirmPassword) {
-      setLocalError('Les mots de passe ne correspondent pas');
+      setLocalError("Les mots de passe ne correspondent pas");
       return;
     }
 
     if (password.length < 6) {
-      setLocalError('Le mot de passe doit contenir au moins 6 caractères');
+      setLocalError("Le mot de passe doit contenir au moins 6 caractères");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setLocalError('Veuillez entrer une adresse email valide');
+      setLocalError("Veuillez entrer une adresse email valide");
       return;
     }
 
     setIsLoading(true);
     try {
       await signUp(email, password);
-      
-      // Si on arrive ici sans erreur, l'utilisateur est connecté automatiquement
-      // La redirection se fera via le useEffect ci-dessus
-      
     } catch (err: unknown) {
-      console.error('Registration error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Une erreur inattendue est survenue';
+      console.error("Registration error:", err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Une erreur inattendue est survenue";
       setLocalError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -105,9 +107,10 @@ export default function Register() {
           <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-8">
             <UserPlus className="h-12 w-12 text-white" />
           </div>
-          <h1 className="text-4xl font-bold mb-4">Rejoignez KShop</h1>
+          <h1 className="text-4xl font-bold mb-4">Rejoignez Fa-Fasion</h1>
           <p className="text-lg text-green-100">
-            Créez votre compte et profitez d'une expérience shopping unique avec des avantages exclusifs.
+            Créez votre compte et profitez d'une expérience shopping unique avec
+            des avantages exclusifs.
           </p>
         </div>
       </div>
@@ -126,45 +129,58 @@ export default function Register() {
             <h2 className="text-3xl font-bold text-gray-900">
               Créer un compte
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Déjà membre ?{' '}
-              <Link 
-                to="/login" 
-                className="font-semibold text-green-600 hover:text-green-500 transition-colors duration-200"
+
+            {/* Lien vers le menu principal - Version stylée */}
+            <div className="mt-4">
+              <Link
+                to="/"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
               >
-                Se connecter
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
+                </svg>
+                Retour à l'accueil
               </Link>
-            </p>
+            </div>
           </div>
 
           {/* Carte du formulaire */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            {/* Message d'information temporaire */}
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start space-x-3">
-              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm text-yellow-800">
-                  <strong>Mode développement activé :</strong> La confirmation par email est temporairement désactivée. Vous serez connecté automatiquement après l'inscription.
-                </p>
-              </div>
-            </div>
-
             {/* Affichage des erreurs */}
             {(localError || authError) && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3 animate-fade-in">
                 <div className="flex-shrink-0 w-5 h-5 text-red-400 mt-0.5">
                   <svg fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
-                <p className="text-sm text-red-700 flex-1">{localError || authError}</p>
+                <p className="text-sm text-red-700 flex-1">
+                  {localError || authError}
+                </p>
               </div>
             )}
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Champ Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Adresse email
                 </label>
                 <div className="relative">
@@ -187,7 +203,10 @@ export default function Register() {
 
               {/* Champ Mot de passe */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Mot de passe
                 </label>
                 <div className="relative">
@@ -221,7 +240,10 @@ export default function Register() {
 
               {/* Champ Confirmation mot de passe */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Confirmer le mot de passe
                 </label>
                 <div className="relative">
@@ -257,16 +279,20 @@ export default function Register() {
               <div className="space-y-2">
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>Sécurité du mot de passe</span>
-                  <span className={password.length >= 6 ? 'text-green-600' : ''}>
-                    {password.length >= 6 ? '✓ Sécurisé' : 'Faible'}
+                  <span
+                    className={password.length >= 6 ? "text-green-600" : ""}
+                  >
+                    {password.length >= 6 ? "✓ Sécurisé" : "Faible"}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <div 
+                  <div
                     className={`h-1.5 rounded-full transition-all duration-300 ${
-                      password.length >= 6 ? 'bg-green-600 w-full' : 
-                      password.length >= 4 ? 'bg-yellow-500 w-2/3' : 
-                      'bg-red-500 w-1/3'
+                      password.length >= 6
+                        ? "bg-green-600 w-full"
+                        : password.length >= 4
+                        ? "bg-yellow-500 w-2/3"
+                        : "bg-red-500 w-1/3"
                     }`}
                   ></div>
                 </div>
@@ -284,15 +310,25 @@ export default function Register() {
                     Création du compte...
                   </>
                 ) : (
-                  'Créer mon compte'
+                  "Créer mon compte"
                 )}
               </button>
+              <p className="mt-2 text-sm text-gray-600">
+                Déjà membre ?{" "}
+                <Link
+                  to="/login"
+                  className="font-semibold text-green-600 hover:text-green-500 transition-colors duration-200"
+                >
+                  Se connecter
+                </Link>
+              </p>
             </form>
 
             {/* Ligne séparatrice */}
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-xs text-center text-gray-500">
-                En créant un compte, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.
+                En créant un compte, vous acceptez nos conditions d'utilisation
+                et notre politique de confidentialité.
               </p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { Search, Bell, User, LogOut, Menu } from 'lucide-react';
+import { Search, User, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useState } from 'react';
 import ConfirmationModal from '../../../ui/ConfirmationModal';   
@@ -22,7 +22,7 @@ export default function NavBar({
   showAddButton = false,
   onAddClick,
   addButtonLabel = "Ajouter",
-  title
+  title, 
 }: NavBarProps) {
   const { signOut } = useAuth();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -94,10 +94,10 @@ export default function NavBar({
               )}
 
               {/* Notifications */}
-              <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors group">
+              {/* <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors group">
                 <Bell className="h-5 w-5 text-gray-600 group-hover:text-indigo-600" />
                 <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
+              </button> */}
 
               {/* User Menu */}
               <div className="flex items-center space-x-3">
