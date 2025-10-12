@@ -7,7 +7,7 @@ import OrdersSection from './SideBar/ContentSections/OrdersSection';
 import UsersSection from './SideBar/ContentSections/UsersSection';
 import SettingsSection from './SideBar/ContentSections/SettingsSection';
 
-export default function AdminContent() {
+export default function AdminLayout() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [, setIsAddModalOpen] = useState(false);

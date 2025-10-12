@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X, Package, MessageCircle, ClipboardList, Shield, CheckCircle } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import ConfirmationModal from '../../components/ui/ConfirmationModal'; 
+import { useNavigate } from 'react-router-dom';
+import { LogOut, Menu, X, Package, ClipboardList, Shield } from 'lucide-react';
+import { useAuth } from '../../../contexts/AuthContext';
+import ConfirmationModal from '../../ui/ConfirmationModal';
 
-export default function NavbarAssistant() {
+interface NavbarAssistantProps {
+  activeTab: string;
+  onTabChange: (tab: 'orders' | 'support' | 'inventory' | 'validate') => void;
+}
+
+export default function Navbar({ activeTab, onTabChange }: NavbarAssistantProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -43,13 +47,17 @@ export default function NavbarAssistant() {
     setIsLogoutModalOpen(false);
   };
 
-  const handleNavClick = () => {
+  const handleNavClick = (tab: 'orders' | 'inventory') => {
+    onTabChange(tab);
     setIsMenuOpen(false);
   };
 
-  const isActiveRoute = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
-  };
+  const isActive = (tab: string) => activeTab === tab;
+
+  const navItems = [
+    { key: 'orders' as const, icon: Package, label: 'Commandes', mobileLabel: 'Gestion Commandes' },
+    { key: 'inventory' as const, icon: ClipboardList, label: 'Inventaire', mobileLabel: 'Vérification Inventaire' },
+  ];
 
   return (
     <>
@@ -61,11 +69,7 @@ export default function NavbarAssistant() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
             {/* Logo et titre Assistant */}
-            <Link 
-              to="/assistant" 
-              className="flex items-center space-x-4 group"
-              onClick={handleNavClick}
-            >
+            <div className="flex items-center space-x-4 group">
               <div className={`p-3 rounded-2xl transition-all duration-300 group-hover:scale-110 ${
                 isScrolled 
                   ? 'bg-indigo-100 shadow-lg' 
@@ -89,66 +93,29 @@ export default function NavbarAssistant() {
                   PANEL ASSISTANT
                 </span>
               </div>
-            </Link>
+            </div>
 
             {/* Navigation Assistant - Desktop */}
             <div className="hidden lg:flex items-center space-x-2">
-              <Link
-                to="/assistant/orders"
-                className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  isActiveRoute('/assistant/orders') 
-                    ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-200' 
-                    : isScrolled
-                    ? 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
-                    : 'text-white hover:bg-white hover:bg-opacity-20 hover:backdrop-blur-sm'
-                }`}
-              >
-                <Package className="h-5 w-5" />
-                <span>Commandes</span>
-              </Link>
-              
-              <Link
-                to="/assistant/support"
-                className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  isActiveRoute('/assistant/support') 
-                    ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-200' 
-                    : isScrolled
-                    ? 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
-                    : 'text-white hover:bg-white hover:bg-opacity-20 hover:backdrop-blur-sm'
-                }`}
-              >
-                <MessageCircle className="h-5 w-5" />
-                <span>Support</span>
-              </Link>
-              
-              <Link
-                to="/assistant/inventory"
-                className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  isActiveRoute('/assistant/inventory') 
-                    ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-200' 
-                    : isScrolled
-                    ? 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
-                    : 'text-white hover:bg-white hover:bg-opacity-20 hover:backdrop-blur-sm'
-                }`}
-              >
-                <ClipboardList className="h-5 w-5" />
-                <span>Inventaire</span>
-              </Link>
-
-              {/* Nouveau bouton Valider Commande */}
-              <Link
-                to="/orders/validate"
-                className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  isActiveRoute('/orders/validate') 
-                    ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-200' 
-                    : isScrolled
-                    ? 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
-                    : 'text-white hover:bg-white hover:bg-opacity-20 hover:backdrop-blur-sm'
-                }`}
-              >
-                <CheckCircle className="h-5 w-5" />
-                <span>Valider Commande</span>
-              </Link>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => handleNavClick(item.key)}
+                    className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                      isActive(item.key)
+                        ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-200' 
+                        : isScrolled
+                        ? 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
+                        : 'text-white hover:bg-white hover:bg-opacity-20 hover:backdrop-blur-sm'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Actions utilisateur */}
@@ -205,66 +172,25 @@ export default function NavbarAssistant() {
         }`}>
           <div className="px-6 py-6">
             <div className="space-y-3">
-              <Link
-                to="/assistant/orders"
-                className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 ${
-                  isActiveRoute('/assistant/orders')
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300'
-                    : isScrolled
-                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-md'
-                }`}
-                onClick={handleNavClick}
-              >
-                <Package className="h-5 w-5" />
-                <span>Gestion Commandes</span>
-              </Link>
-              
-              <Link
-                to="/assistant/support"
-                className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 ${
-                  isActiveRoute('/assistant/support')
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300'
-                    : isScrolled
-                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-md'
-                }`}
-                onClick={handleNavClick}
-              >
-                <MessageCircle className="h-5 w-5" />
-                <span>Support Client</span>
-              </Link>
-              
-              <Link
-                to="/assistant/inventory"
-                className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 ${
-                  isActiveRoute('/assistant/inventory')
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300'
-                    : isScrolled
-                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-md'
-                }`}
-                onClick={handleNavClick}
-              >
-                <ClipboardList className="h-5 w-5" />
-                <span>Vérification Inventaire</span>
-              </Link>
-
-              {/* Nouveau bouton Valider Commande - Mobile */}
-              <Link
-                to="/orders/validate"
-                className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 ${
-                  isActiveRoute('/orders/validate')
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300'
-                    : isScrolled
-                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-md'
-                }`}
-                onClick={handleNavClick}
-              >
-                <CheckCircle className="h-5 w-5" />
-                <span>Validation Commandes</span>
-              </Link>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => handleNavClick(item.key)}
+                    className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 w-full text-left ${
+                      isActive(item.key)
+                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300'
+                        : isScrolled
+                        ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-md'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.mobileLabel}</span>
+                  </button>
+                );
+              })}
 
               {/* Bouton déconnexion mobile */}
               <button

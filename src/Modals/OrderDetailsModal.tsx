@@ -11,10 +11,10 @@ import {
   X,
   Printer,
 } from "lucide-react";
-import { Order } from "../../../../types";
+import { Order } from "../types";
 // Corrigez les imports - utilisez les fonctions depuis le fichier correct
-import { generateInvoicePDF, downloadInvoicePDF, generateAdvancedInvoicePDF } from '../utils/InvoiceGenerator'; 
-import { useParsedSettings } from '../../../../hooks/useSiteSettings';
+import { generateInvoicePDF, downloadInvoicePDF, generateAdvancedInvoicePDF } from '../utils/invoiceGenerator'; 
+import { useParsedSettings } from '../hooks/useSiteSettings';
 
 interface OrderDetailsModalProps {
   order: Order;
