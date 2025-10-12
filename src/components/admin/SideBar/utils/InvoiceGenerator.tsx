@@ -3,7 +3,7 @@ import {
   generateInvoicePDF, 
   downloadInvoicePDF, 
   generateAdvancedInvoicePDF 
-} from '../utils/InvoiceGenerator';
+} from './InvoiceGenerator';
 
 interface InvoiceGeneratorProps {
   order: Order;
