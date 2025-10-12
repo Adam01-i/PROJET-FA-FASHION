@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+// import { motion } from "framer-motion";
 import ProductCard from "./ProductCard";
 import { useCart } from "../../contexts/CartContext";
 import { supabase } from "../../lib/supabase";
 import { Product } from "../../models";
 
-const images = [
-  "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1920&q=80",
-];
+// const images = [
+//   "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1920&q=80",
+// ];
 
 export default function Home() {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // const [currentIndex, setCurrentIndex] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
@@ -41,12 +41,12 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setCurrentIndex((prev) => (prev + 1) % images.length);
+  //   }, 5000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   const handleAddToCart = (product: Product) => {
     addToCart({
@@ -62,7 +62,7 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Bannière */}
-      <div
+      {/* <div
         className="relative w-full h-screen flex items-center justify-center text-white pt-16 overflow-hidden"
         style={{
           backgroundImage: `url('${images[currentIndex]}')`,
@@ -122,7 +122,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Section produits */}
       <section id="products" className="py-16 bg-gray-50">
