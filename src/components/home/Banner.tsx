@@ -18,7 +18,7 @@ export default function Banner() {
 
   return (
     <div
-      className="relative w-full h-screen flex items-center justify-center text-white pt-16 overflow-hidden"
+      className="relative w-full h-screen flex items-center justify-center text-white overflow-hidden"
       style={{
         backgroundImage: `url('${images[currentIndex]}')`,
         backgroundSize: "cover",
@@ -37,7 +37,7 @@ export default function Banner() {
           transition={{ duration: 0.6 }}
         >
           Bienvenue sur{" "}
-          <span className="text-indigo-400">KoundoulShop</span>
+          <span className="text-indigo-400">Fa-Fashion</span>
         </motion.h1>
 
         <motion.p

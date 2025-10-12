@@ -1,17 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Eye } from 'lucide-react';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image_url: string;
-  category?: {
-    name: string;
-  };
-  stock_quantity: number;
-}
+import { formatXOF } from '../../lib/currency';
+import { Product } from '../../models';
 
 interface ProductCardProps {
   product: Product;
@@ -19,10 +9,10 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
-  const categoryName = product.category?.name || 'Non catégorisé';
+  const categoryName = (product.category as any)?.name || 'Non catégorisé';
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="relative group">
         <img 
           src={product.image_url || '/api/placeholder/300/200'} 
@@ -41,9 +31,9 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
       
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-lg text-gray-800">{product.name}</h3>
-          <span className="text-blue-600 font-bold text-lg">
-            {product.price.toFixed(2)}€
+          <h3 className="font-semibold text-lg text-gray-800 line-clamp-1">{product.name}</h3>
+          <span className="text-indigo-600 font-bold text-lg">
+            {formatXOF(product.price)}
           </span>
         </div>
         
@@ -52,11 +42,14 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
         </p>
         
         <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mb-3">
-          {categoryName} {/* Afficher le nom de la catégorie, pas l'objet */}
+          {categoryName}
         </span>
         
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">
+          <span className={`text-sm ${
+            product.stock_quantity > 5 ? 'text-green-600' : 
+            product.stock_quantity > 0 ? 'text-orange-600' : 'text-red-600'
+          }`}>
             Stock: {product.stock_quantity}
           </span>
           <button
@@ -65,7 +58,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
             className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
               product.stock_quantity === 0
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
             }`}
           >
             <ShoppingCart className="w-4 h-4" />

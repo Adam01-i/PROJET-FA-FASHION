@@ -10,6 +10,7 @@ import { CartProvider } from "./contexts/CartContext";
 import Navbar from "./components/home/Navbar";
 import Home from "./components/home/Home";
 import Cart from "./components/home/Cart";
+import Footer from "./components/home/Footer"
 
 import { 
   ProtectedRoute, 
@@ -34,6 +35,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
       <div className="pt-16">
         {children}
       </div>
+      <Footer />
     </div>
   );
 }
