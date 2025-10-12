@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useOrders } from '../hooks/useOrders';
-import { Order } from '../types'; 
-import NavbarAssistant from '../components/assistant/NavbarAssistant';
-import OrderStats from '../components/assistant/OrderStats';
-import OrderSearch from '../components/assistant/OrderSearch';
-import OrdersTable from '../components/assistant/OrdersTable';
-import OrderModal from '../components/assistant/OrderModal';
+import { useOrders } from '../../hooks/useOrders';
+import { Order } from '../../types'; 
+import NavbarAssistant from './NavbarAssistant';
+import OrderStats from './OrderStats';
+import OrderSearch from './OrderSearch';
+import OrdersTable from './OrdersTable';
+import OrderModal from './OrderModal';
 
 export default function Assistant() {
   const [searchTerm, setSearchTerm] = useState('');
