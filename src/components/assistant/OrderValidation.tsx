@@ -13,7 +13,7 @@ import {
   Send,
   Printer
 } from 'lucide-react';
-import { Order } from '../types';
+import { Order } from '../../types';
 
 // Données mockées pour la démo
 const mockOrder: Order = {

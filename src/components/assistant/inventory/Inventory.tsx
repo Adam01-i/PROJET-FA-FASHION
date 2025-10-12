@@ -7,11 +7,11 @@ import {
 } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 import { Product } from '../types';
-import NavbarAssistant from '../components/NavbarAssistant';
-import InventoryStats from '../components/inventory/InventoryStats';
-import ProductsTable from '../components/inventory/ProductsTable';
-import StockModal from '../components/inventory/StockModal';
-import ProductModal from '../components/inventory/ProductModal';
+import NavbarAssistant from '../components/assistant/NavbarAssistant';
+import InventoryStats from '../components/assistant/inventory/InventoryStats';
+import ProductsTable from '../components/assistant/inventory/ProductsTable';
+import StockModal from '../components/assistant/inventory/StockModal';
+import ProductModal from '../components/assistant/inventory/ProductModal';
 
 type StockAlertLevel = 'low' | 'out' | 'normal';
 type SortField = 'name' | 'stock' | 'price' | 'sales' | 'updated';

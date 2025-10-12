@@ -6,7 +6,7 @@ import {
   TrendingUp,
   AlertCircle
 } from 'lucide-react';
-import { Product } from '../../types';
+import { Product } from '../../../types';
 import { useMemo } from 'react';
 
 interface InventoryStatsProps {

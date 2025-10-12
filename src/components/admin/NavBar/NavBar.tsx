@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search, Bell, User, LogOut, Menu } from 'lucide-react';
 
 interface NavBarProps {

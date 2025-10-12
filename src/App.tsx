@@ -12,7 +12,7 @@ import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import Cart from "./components/home/Cart";
 import Admin from "./components/admin/AdminLayout";
-import Assistant from "./pages/Assistant";
+import Assistant from "./components/assistant/Assistant";
 import { AnimatePresence, motion } from "framer-motion";
 import { ToastProvider } from "./hooks/ToastProvider";
 import { ProtectedRoute, PublicOnlyRoute } from "./components/security/AuthRoutes";

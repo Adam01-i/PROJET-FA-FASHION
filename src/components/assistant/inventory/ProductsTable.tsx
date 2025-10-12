@@ -8,7 +8,7 @@ import {
   ChevronRight,
   Search
 } from 'lucide-react';
-import { Product } from '../../types';
+import { Product } from '../../../types';
 
 type SortField = 'name' | 'stock' | 'price' | 'sales' | 'updated';
 type SortDirection = 'asc' | 'desc';

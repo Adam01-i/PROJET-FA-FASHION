@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useOrders } from '../hooks/useOrders';
 import { CheckCircle, Search, ArrowLeft, Package } from 'lucide-react';
 import { Order } from '../types';
-import NavbarAssistant from '../components/NavbarAssistant';
+import NavbarAssistant from '../components/assistant/NavbarAssistant';
 
 export default function OrderValidationList() {
   const [searchTerm, setSearchTerm] = useState('');

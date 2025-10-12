@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOrders } from '../hooks/useOrders';
 import { Order } from '../types'; 
-import NavbarAssistant from '.././components/NavbarAssistant';
+import NavbarAssistant from '../components/assistant/NavbarAssistant';
 import OrderStats from '../components/assistant/OrderStats';
 import OrderSearch from '../components/assistant/OrderSearch';
 import OrdersTable from '../components/assistant/OrdersTable';

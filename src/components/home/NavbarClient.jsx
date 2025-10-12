@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate,  } from 'react-router-dom';
-import { ShoppingCart, User, Home, LogOut, Search, Menu, X } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useCart } from '../contexts/CartContext';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, User, Home, LogOut, Search, Menu, X, Heart, Package } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext';
 
-export default function Navbar() {
+export default function NavbarClient() {
   const { user, signOut } = useAuth();
   const { itemCount } = useCart();
   const navigate = useNavigate();
@@ -12,7 +12,6 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Effet pour détecter le scroll
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -27,7 +26,7 @@ export default function Navbar() {
     setIsMenuOpen(false);
   };
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
@@ -41,7 +40,6 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Navbar principale */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled 
           ? 'bg-white shadow-lg backdrop-blur-md bg-opacity-95' 
@@ -98,7 +96,33 @@ export default function Navbar() {
             </div>
 
             {/* Actions utilisateur */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              {/* Favoris */}
+              <Link 
+                to="/wishlist" 
+                className={`p-3 rounded-xl transition-all duration-300 ${
+                  isScrolled 
+                    ? 'hover:bg-indigo-50 text-indigo-600' 
+                    : 'hover:bg-white hover:bg-opacity-20 text-white'
+                }`}
+                onClick={handleNavClick}
+              >
+                <Heart className="h-6 w-6" />
+              </Link>
+
+              {/* Commandes */}
+              <Link 
+                to="/orders" 
+                className={`p-3 rounded-xl transition-all duration-300 ${
+                  isScrolled 
+                    ? 'hover:bg-indigo-50 text-indigo-600' 
+                    : 'hover:bg-white hover:bg-opacity-20 text-white'
+                }`}
+                onClick={handleNavClick}
+              >
+                <Package className="h-6 w-6" />
+              </Link>
+
               {/* Panier */}
               <Link 
                 to="/cart" 
@@ -117,7 +141,7 @@ export default function Navbar() {
                 )}
               </Link>
 
-              {/* Utilisateur connecté */}
+              {/* Utilisateur */}
               {user ? (
                 <div className="flex items-center space-x-3">
                   <span className={`text-sm font-medium hidden md:block ${
@@ -167,7 +191,7 @@ export default function Navbar() {
 
         {/* Menu mobile */}
         <div className={`lg:hidden transition-all duration-300 overflow-hidden ${
-          isMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+          isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         } ${
           isScrolled 
             ? 'bg-white border-t border-gray-200' 
@@ -200,29 +224,55 @@ export default function Navbar() {
               </button>
             </form>
 
-            {/* Liens supplémentaires pour mobile */}
-            <div className="flex space-x-4">
+            {/* Liens mobile pour client */}
+            <div className="grid grid-cols-2 gap-3">
               <Link
                 to="/products"
-                className={`flex-1 text-center py-3 rounded-xl font-medium transition-colors ${
+                className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
                   isScrolled
                     ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
                     : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
                 }`}
                 onClick={handleNavClick}
               >
-                Produits
+                <Package className="h-5 w-5" />
+                <span>Produits</span>
               </Link>
               <Link
                 to="/categories"
-                className={`flex-1 text-center py-3 rounded-xl font-medium transition-colors ${
+                className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
                   isScrolled
                     ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
                     : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
                 }`}
                 onClick={handleNavClick}
               >
-                Catégories
+                <Search className="h-5 w-5" />
+                <span>Catégories</span>
+              </Link>
+              <Link
+                to="/wishlist"
+                className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
+                  isScrolled
+                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                    : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
+                }`}
+                onClick={handleNavClick}
+              >
+                <Heart className="h-5 w-5" />
+                <span>Favoris</span>
+              </Link>
+              <Link
+                to="/orders"
+                className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
+                  isScrolled
+                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                    : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
+                }`}
+                onClick={handleNavClick}
+              >
+                <Package className="h-5 w-5" />
+                <span>Commandes</span>
               </Link>
             </div>
           </div>
