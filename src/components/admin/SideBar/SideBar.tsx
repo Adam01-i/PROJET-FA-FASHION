@@ -1,10 +1,11 @@
 import DashboardItem from "./SideBarItems/DashboardItem";
+import InventoryItem from "./SideBarItems/InventoryItem";
 import ProductsItem from "./SideBarItems/ProductsItem";
 import OrdersItem from "./SideBarItems/OrdersItem";
 import UsersItem from "./SideBarItems/UsersItem";
 import SettingsItem from "./SideBarItems/SettingsItem";
 
-export type Tab = "dashboard" | "products" | "orders" | "users" | "settings";
+export type Tab = "dashboard" | "inventory"| "products" | "orders" | "users" | "settings";
 
 interface SideBarProps {
   activeTab: Tab;
@@ -13,12 +14,7 @@ interface SideBarProps {
   onCloseMobile?: () => void;
 }
 
-export default function SideBar({
-  activeTab,
-  onTabChange,
-  isMobileOpen = false,
-  onCloseMobile,
-}: SideBarProps) {
+export default function SideBar({activeTab, onTabChange, isMobileOpen = false, onCloseMobile,}: SideBarProps) {
   return (
     <>
       {/* Mobile overlay */}
@@ -65,6 +61,10 @@ export default function SideBar({
               totalUsers: 1245,
               totalProducts: 89,
             }}
+          />
+          <InventoryItem
+            active={activeTab === "inventory"}
+            onClick={() => onTabChange("inventory")}
           />
           <ProductsItem
             active={activeTab === "products"}

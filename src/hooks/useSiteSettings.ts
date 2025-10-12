@@ -5,18 +5,26 @@ import {
   SocialLinks,
   PaymentMethods,
   ShippingSettings,
-  InvoiceSettings,
-  SiteSettingsData
+  InvoiceSettings
 } from '../models';
 
-// Valeurs par défaut cohérentes avec les nouvelles tables
+// Interface pour combiner tous les paramètres (à définir localement)
+interface SiteSettingsData {
+  store: StoreSettings;
+  socialLinks: SocialLinks;
+  paymentMethods: PaymentMethods;
+  shipping: ShippingSettings;
+  invoiceSettings: InvoiceSettings;
+}
+
+// Valeurs par défaut vides - les données viendront de la base de données
 const defaultStoreSettings: StoreSettings = {
   id: '',
-  name: 'E-Shop',
-  description: 'Votre boutique en ligne',
-  email: 'contact@eshop.com',
-  phone: '+221 33 123 45 67',
-  address: '123 Avenue du Commerce, Dakar, Sénégal',
+  name: '',
+  description: '',
+  email: '',
+  phone: '',
+  address: '',
   currency: 'XOF',
   logo_url: '',
   favicon_url: '',
@@ -30,17 +38,19 @@ const defaultSocialLinks: SocialLinks = {
   twitter_url: '',
   instagram_url: '',
   linkedin_url: '',
+  youtube_url: '',
+  tiktok_url: '',
   created_at: '',
   updated_at: ''
 };
 
 const defaultPaymentMethods: PaymentMethods = {
   id: '',
-  wave_enabled: true,
-  orange_money_enabled: true,
+  wave_enabled: false,
+  orange_money_enabled: false,
   credit_card_enabled: false,
-  mobile_money_enabled: true,
-  cash_on_delivery_enabled: true,
+  mobile_money_enabled: false,
+  cash_on_delivery_enabled: false,
   bank_transfer_enabled: false,
   wave_instructions: '',
   orange_money_instructions: '',
@@ -51,38 +61,29 @@ const defaultPaymentMethods: PaymentMethods = {
 
 const defaultShippingSettings: ShippingSettings = {
   id: '',
-  enabled: true,
-  cost: 2000,
-  free_shipping_threshold: 50000,
-  delivery_time: '2-5 jours ouvrables',
-  home_delivery_enabled: true,
-  pickup_in_store_enabled: true,
-  delivery_fee: 2000,
+  enabled: false,
+  cost: 0,
+  free_shipping_threshold: 0,
+  delivery_time: '',
+  home_delivery_enabled: false,
+  pickup_in_store_enabled: false,
+  delivery_fee: 0,
   created_at: '',
   updated_at: ''
 };
 
 const defaultInvoiceSettings: InvoiceSettings = {
   id: '',
-  company_name: 'VOTRE BOUTIQUE',
-  company_address: '123 Avenue du Commerce',
-  company_city: 'Dakar',
-  company_country: 'Sénégal',
-  company_phone: '+221 33 123 45 67',
-  company_email: 'contact@votreboutique.sn',
+  company_name: '',
+  company_address: '',
+  company_city: '',
+  company_country: '',
+  company_phone: '',
+  company_email: '',
   company_website: '',
   company_tax_id: '',
   company_logo_url: '',
-  // company_rccm: '',
-  // company_id_nat: '',
   company_account_number: '',
-  // invoice_prefix: 'FACT',
-  // invoice_next_number: 1,
-  // invoice_due_days: 30,
-  // invoice_terms: 'Paiement à réception de la facture',
-  // invoice_notes: 'Merci pour votre confiance !',
-  // invoice_payment_terms: 'Paiement à 30 jours',
-  // invoice_legal_notice: '',
   created_at: '',
   updated_at: ''
 };
@@ -105,13 +106,13 @@ export function useSiteSettings() {
       setLoading(true);
       setError(null);
 
-      // Récupérer toutes les données des différentes tables
+      // Récupérer toutes les données des différentes tables depuis la base de données
       const [
-        { data: storeData, error: storeError },
-        { data: socialData, error: socialError },
-        { data: paymentData, error: paymentError },
-        { data: shippingData, error: shippingError },
-        { data: invoiceData, error: invoiceError }
+        { data: storeData},
+        { data: socialData},
+        { data: paymentData},
+        { data: shippingData},
+        { data: invoiceData}
       ] = await Promise.all([
         supabase.from('store_settings').select('*').limit(1).single(),
         supabase.from('social_links').select('*').limit(1).single(),
@@ -120,14 +121,7 @@ export function useSiteSettings() {
         supabase.from('invoice_settings').select('*').limit(1).single()
       ]);
 
-      // Gérer les erreurs
-      if (storeError) console.error('Store settings error:', storeError);
-      if (socialError) console.error('Social links error:', socialError);
-      if (paymentError) console.error('Payment methods error:', paymentError);
-      if (shippingError) console.error('Shipping settings error:', shippingError);
-      if (invoiceError) console.error('Invoice settings error:', invoiceError);
-
-      // Combiner toutes les données
+      // Combiner toutes les données réelles de la base de données
       const combinedSettings: SiteSettingsData = {
         store: storeData || defaultStoreSettings,
         socialLinks: socialData || defaultSocialLinks,
@@ -227,7 +221,7 @@ export function useSiteSettings() {
   };
 }
 
-// Hook pour la compatibilité (peut être supprimé plus tard)
+// Hook pour la compatibilité
 export function useParsedSettings() {
   const { settings, loading, error } = useSiteSettings();
   

@@ -4,7 +4,7 @@ import { useProducts } from "../../../../hooks/useProducts";
 import { supabase } from "../../../../lib/supabase";
 import { Product } from "../../../../models";
 import { useToastContext } from "../../../../hooks/ToastProvider";
-import ProductModal from "../Modals/ProductModal";
+import ProductModal from "../../Modals/ProductModal";
 
 interface ProductsSectionProps {
   searchTerm: string;
@@ -16,7 +16,7 @@ function formatXOF(amount: number): string {
 }
 
 export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
-  const { products, refetchProducts } = useProducts();
+  const { products, refetch } = useProducts();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -55,7 +55,7 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
           ? "Le produit a été retiré de la vue publique" 
           : "Le produit est maintenant visible par les clients"
       );
-      refetchProducts();
+      refetch();
     } catch (error) {
       console.error("Error toggling publication:", error);
       toastError("Erreur", "Erreur lors de la modification de la visibilité du produit");
@@ -132,7 +132,7 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
       }
 
       // Recharger les produits
-      await refetchProducts();
+      await refetch();
     } catch (error) {
       console.error("Error saving product:", error);
       throw error;

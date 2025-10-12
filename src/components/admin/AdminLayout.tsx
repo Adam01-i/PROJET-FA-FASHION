@@ -2,6 +2,7 @@ import { useState } from 'react';
 import NavBar from './NavBar/NavBar';
 import SideBar, { Tab } from './SideBar/SideBar';
 import DashboardSection from './SideBar/ContentSections/DashboardSection';
+import InventorySection from '../Inventory/InventorySection';
 import ProductsSection from './SideBar/ContentSections/ProductsSection';
 import OrdersSection from './SideBar/ContentSections/OrdersSection';
 import UsersSection from './SideBar/ContentSections/UsersSection';
@@ -16,6 +17,7 @@ export default function AdminLayout() {
   const getTabTitle = () => {
     switch (activeTab) {
       case 'dashboard': return 'Tableau de bord';
+      case 'inventory': return 'Gestion des inventaire';
       case 'products': return 'Gestion des produits';
       case 'orders': return 'Gestion des commandes';
       case 'users': return 'Gestion des utilisateurs';
@@ -24,10 +26,10 @@ export default function AdminLayout() {
     }
   };
 
-  const showSearch = activeTab !== 'settings' && activeTab !== 'dashboard';
+  const showSearch = activeTab !== 'settings' && activeTab !== 'dashboard' && activeTab !== 'inventory';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 ">
       <div className="flex">
         {/* Sidebar */}
         <SideBar
@@ -38,7 +40,7 @@ export default function AdminLayout() {
         />
 
         {/* Main content */}
-        <div className="flex-1 lg:ml-0 min-h-screen flex flex-col">
+        <div className="flex-1 lg:ml-0 min-h-screen flex flex-col overflow-y-auto sticky top-0">
           {/* NavBar */}
           <NavBar
             onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
@@ -54,6 +56,10 @@ export default function AdminLayout() {
               <DashboardSection />
             )}
             
+            {activeTab === 'inventory' && (
+              <InventorySection/>
+            )}
+
             {activeTab === 'products' && (
               <ProductsSection 
                 searchTerm={searchTerm}

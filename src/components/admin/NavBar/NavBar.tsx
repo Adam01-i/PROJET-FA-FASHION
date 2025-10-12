@@ -36,8 +36,6 @@ export default function NavBar({
     try {
       setIsLoggingOut(true);
       await signOut();
-      // Redirection optionnelle
-      // window.location.href = '/login';
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
     } finally {

@@ -18,12 +18,12 @@ import {
   InventoryStats,
   LowStockAlert,
   InventoryFilters,
-} from "../../../models";
-import { useToastContext } from "../../../hooks/ToastProvider";
-import { useProducts } from "../../../hooks/useProducts";
-import { useCategories } from "../../../hooks/useCategories";
-import { useProductSales } from "../../../hooks/useProductSales";
-import { useInventoryStats } from "../../../hooks/useInventoryStats";
+} from "../../models";
+import { useToastContext } from "../../hooks/ToastProvider";
+import { useProducts } from "../../hooks/useProducts";
+import { useCategories } from "../../hooks/useCategories";
+import { useProductSales } from "../../hooks/useProductSales";
+import { useInventoryStats } from "../../hooks/useInventoryStats";
 
 export default function InventorySection() {
   const {
