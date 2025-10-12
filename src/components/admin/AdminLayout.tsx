@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import NavBar from './NavBar/NavBar';
 import SideBar, { Tab } from './SideBar/SideBar';
-import DashboardSection from './SideBar/ContentSections/DashboardSection';
+import Dashboard from './Dashboard/Dashboard';
 import InventorySection from '../Inventory/InventorySection';
 import ProductsSection from './SideBar/ContentSections/ProductsSection';
 import OrdersSection from './SideBar/ContentSections/OrdersSection';
@@ -53,7 +53,7 @@ export default function AdminLayout() {
           {/* Content Area */}
           <main className="flex-1 p-6">
             {activeTab === 'dashboard' && (
-              <DashboardSection />
+              <Dashboard />
             )}
             
             {activeTab === 'inventory' && (
