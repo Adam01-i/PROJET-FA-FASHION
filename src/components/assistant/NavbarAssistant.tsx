@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, Menu, X, Package, MessageCircle, ClipboardList, Shield, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import ConfirmationModal from '../../components/ui/ConfirmationModal'; 
 
 export default function NavbarAssistant() {
   const { user, signOut } = useAuth();
@@ -9,6 +10,8 @@ export default function NavbarAssistant() {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,10 +21,26 @@ export default function NavbarAssistant() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
-    setIsMenuOpen(false);
+  const handleSignOutClick = () => {
+    setIsLogoutModalOpen(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await signOut();
+      navigate('/login');
+      setIsMenuOpen(false);
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    } finally {
+      setIsLoggingOut(false);
+      setIsLogoutModalOpen(false);
+    }
+  };
+
+  const handleCancelLogout = () => {
+    setIsLogoutModalOpen(false);
   };
 
   const handleNavClick = () => {
@@ -148,7 +167,7 @@ export default function NavbarAssistant() {
                   <div className="hidden md:block w-px h-8 bg-gray-300 bg-opacity-50"></div>
                   
                   <button
-                    onClick={handleSignOut}
+                    onClick={handleSignOutClick}
                     className={`group p-3 rounded-2xl transition-all duration-300 transform hover:scale-110 ${
                       isScrolled 
                         ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:shadow-lg' 
@@ -247,6 +266,19 @@ export default function NavbarAssistant() {
                 <span>Validation Commandes</span>
               </Link>
 
+              {/* Bouton déconnexion mobile */}
+              <button
+                onClick={handleSignOutClick}
+                className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 w-full ${
+                  isScrolled
+                    ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-md'
+                    : 'bg-red-600 text-white hover:bg-red-500 hover:shadow-md'
+                }`}
+              >
+                <LogOut className="h-5 w-5" />
+                <span>Se déconnecter</span>
+              </button>
+
               {/* Section utilisateur mobile */}
               {user && (
                 <div className={`mt-4 p-4 rounded-2xl border ${
@@ -265,6 +297,19 @@ export default function NavbarAssistant() {
 
       {/* Espacement pour le contenu */}
       <div className="h-20"></div>
+
+      {/* Modal de confirmation de déconnexion */}
+      <ConfirmationModal
+        isOpen={isLogoutModalOpen}
+        onClose={handleCancelLogout}
+        onConfirm={handleConfirmLogout}
+        title="Se déconnecter"
+        message="Êtes-vous sûr de vouloir vous déconnecter ?"
+        confirmText="Se déconnecter"
+        cancelText="Annuler"
+        variant="danger"
+        isLoading={isLoggingOut}
+      />
     </>
   );
 }

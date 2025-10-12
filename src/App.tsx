@@ -6,16 +6,20 @@ import {
 } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
+
 import Navbar from "./components/home/Navbar";
 import Home from "./components/home/Home";
+import Cart from "./components/home/Cart";
+
+import { ProtectedRoute, PublicOnlyRoute } from "./components/security/AuthRoutes";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
-import Cart from "./components/home/Cart";
+
 import Admin from "./components/admin/AdminLayout";
-import Assistant from "./components/assistant/Assistant";
+import Assistant from "./components/assistant/AssistantLayout";
+
 import { AnimatePresence, motion } from "framer-motion";
 import { ToastProvider } from "./hooks/ToastProvider";
-import { ProtectedRoute, PublicOnlyRoute } from "./components/security/AuthRoutes";
 
 // Layout pour les routes publiques (avec navbar)
 function PublicLayout({ children }: { children: React.ReactNode }) {
