@@ -1,16 +1,11 @@
-// hooks/useOrders.ts
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Order } from '../types';
+import { Order } from '../models';
 
 export function useOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
 
   const fetchOrders = async (): Promise<void> => {
     try {
@@ -50,12 +45,6 @@ export function useOrders() {
 
       if (error) throw error;
       
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === orderId ? { ...order, status } : order
-        )
-      );
-      
       return true;
     } catch (err) {
       console.error('Error updating order:', err);
@@ -84,12 +73,6 @@ export function useOrders() {
 
       if (error) throw error;
       
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === orderId ? { ...order, ...updates } : order
-        )
-      );
-      
       return true;
     } catch (err) {
       console.error('Error updating payment status:', err);
@@ -97,12 +80,137 @@ export function useOrders() {
     }
   };
 
+  const createOrder = async (orderData: {
+    user_id: string;
+    total_amount: number;
+    shipping_address?: Order['shipping_address'];
+    payment_method?: Order['payment_method'];
+    order_items: Array<{
+      product_id: string;
+      quantity: number;
+      price: number;
+    }>;
+  }) => {
+    try {
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert([{
+          user_id: orderData.user_id,
+          total_amount: orderData.total_amount,
+          shipping_address: orderData.shipping_address,
+          payment_method: orderData.payment_method,
+          status: 'pending',
+          payment_status: 'pending'
+        }])
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Créer les order_items
+      const orderItems = orderData.order_items.map(item => ({
+        ...item,
+        order_id: order.id
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      return order;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Erreur de création de commande');
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+
+    // Abonnement en temps réel aux commandes
+    const subscription = supabase
+      .channel('orders_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        async (payload) => {
+          // Pour les mises à jour, recharger les données complètes
+          if (payload.eventType === 'UPDATE') {
+            // Recharger la commande mise à jour avec ses relations
+            const { data: updatedOrder } = await supabase
+              .from('orders')
+              .select(`
+                *,
+                order_items (
+                  *,
+                  product:products (*)
+                ),
+                user:profiles!user_id (*)
+              `)
+              .eq('id', payload.new.id)
+              .single();
+
+            if (updatedOrder) {
+              setOrders(prev => 
+                prev.map(order => 
+                  order.id === payload.new.id ? updatedOrder : order
+                )
+              );
+            }
+          } else if (payload.eventType === 'INSERT') {
+            // Charger la nouvelle commande avec ses relations
+            const { data: newOrder } = await supabase
+              .from('orders')
+              .select(`
+                *,
+                order_items (
+                  *,
+                  product:products (*)
+                ),
+                user:profiles!user_id (*)
+              `)
+              .eq('id', payload.new.id)
+              .single();
+
+            if (newOrder) {
+              setOrders(prev => [newOrder, ...prev]);
+            }
+          } else if (payload.eventType === 'DELETE') {
+            setOrders(prev => prev.filter(order => order.id !== payload.old.id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_items'
+        },
+        () => {
+          // Recharger les commandes quand les items changent
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   return {
     orders,
     loading,
     error,
     updateOrderStatus,
     updatePaymentStatus,
+    createOrder,
     refetch: fetchOrders
   };
 }

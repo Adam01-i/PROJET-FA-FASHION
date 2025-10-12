@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, Settings, Mail, Phone, MapPin, Loader2, Globe, Truck, CreditCard, FileText } from 'lucide-react';
-import { SiteSettingsData } from '../../../../types';
+import { SiteSettingsData } from '../../../../models';
 import { useSiteSettings } from '../../../../hooks/useSiteSettings';
 import { useToastContext } from '../../../../hooks/ToastProvider';
 

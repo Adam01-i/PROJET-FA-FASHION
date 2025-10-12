@@ -3,7 +3,7 @@ import { MoreVertical, Mail, User, Shield, CheckCircle, Star, Phone, Calendar } 
 import { useUsers } from '../../../../hooks/useUsers';
 import { supabase } from '../../../../lib/supabase';
 import { useToastContext } from '../../../../hooks/ToastProvider';
-import { User as UserType } from '../../../../types';
+import { User as UserType } from '../../../../models';
 
 interface UsersSectionProps {
   searchTerm: string;

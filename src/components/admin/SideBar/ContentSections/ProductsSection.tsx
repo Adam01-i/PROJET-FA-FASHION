@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Edit, Plus, Package, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useProducts } from "../../../../hooks/useProducts";
 import { supabase } from "../../../../lib/supabase";
-import { Product } from "../../../../types";
+import { Product } from "../../../../models";
 import { useToastContext } from "../../../../hooks/ToastProvider";
 import ProductModal from "../Modals/ProductModal";
 

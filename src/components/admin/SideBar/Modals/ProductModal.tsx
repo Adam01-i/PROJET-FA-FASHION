@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Plus, X, Save, Upload } from "lucide-react";
 import { supabase } from "../../../../lib/supabase";
-import { Product } from "../../../../types";
-import { Category } from "../../../../types";
+import { Product } from "../../../../models";
+import { Category } from "../../../../models";
 import { useToastContext } from "../../../../hooks/ToastProvider";
 
 interface ProductModalProps {

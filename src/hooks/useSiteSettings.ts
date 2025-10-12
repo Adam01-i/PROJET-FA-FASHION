@@ -7,7 +7,7 @@ import {
   ShippingSettings,
   InvoiceSettings,
   SiteSettingsData
-} from '../types';
+} from '../models';
 
 // Valeurs par défaut cohérentes avec les nouvelles tables
 const defaultStoreSettings: StoreSettings = {

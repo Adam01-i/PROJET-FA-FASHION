@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { User } from '../types';
+import { User } from '../models';
 
 export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);

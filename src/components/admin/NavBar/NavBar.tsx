@@ -1,7 +1,7 @@
 import { Search, Bell, User, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useState } from 'react';
-import ConfirmationModal from '../../ui/ConfirmationModal';   
+import ConfirmationModal from '../../../ui/ConfirmationModal';   
 
 interface NavBarProps {
   onToggleSidebar: () => void;

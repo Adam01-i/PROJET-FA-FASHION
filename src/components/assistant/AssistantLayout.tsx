@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Navbar from './NavBar/Navbar';
 import OrdersSection from '../admin/SideBar/ContentSections/OrdersSection';
-// import InventorySection from './Inventory/Inventory'; // À créer
+import InventorySection from './Inventory/InventorySection'; // À créer
 
 export default function AssistantLayout() {
   const [activeTab, setActiveTab] = useState<'orders' | 'support' | 'inventory' | 'validate'>('orders');
@@ -11,8 +11,8 @@ export default function AssistantLayout() {
     switch (activeTab) {
       case 'orders':
         return <OrdersSection searchTerm={searchTerm} />;
-      // case 'inventory':
-      //   return <InventorySection />;
+      case 'inventory':
+        return <InventorySection />;
       default:
         return <OrdersSection searchTerm={searchTerm} />;
     }

@@ -1,4 +1,4 @@
-import { Order, SiteSettingsData } from '../types';
+import { Order, SiteSettingsData } from '../models';
 import { generateInvoiceHTML } from '../templates/invoiceTemplate';
 import { Html2PdfOptions } from './invoiceUtils';
 

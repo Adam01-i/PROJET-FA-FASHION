@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Menu, X, Package, ClipboardList, Shield } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import ConfirmationModal from '../../ui/ConfirmationModal';
+import ConfirmationModal from '../../../ui/ConfirmationModal';
 
 interface NavbarAssistantProps {
   activeTab: string;
-  onTabChange: (tab: 'orders' | 'support' | 'inventory' | 'validate') => void;
+  onTabChange: (tab: 'orders' | 'inventory') => void;
 }
 
 export default function Navbar({ activeTab, onTabChange }: NavbarAssistantProps) {

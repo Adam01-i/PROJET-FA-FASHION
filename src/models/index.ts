@@ -123,7 +123,6 @@ export interface ShippingSettings {
 
 export interface InvoiceSettings {
   id: string;
-  // Informations de l'entreprise
   company_name: string;
   company_address: string;
   company_city: string;
@@ -133,28 +132,72 @@ export interface InvoiceSettings {
   company_website?: string;
   company_tax_id?: string;
   company_logo_url?: string;
-  // company_rccm?: string;
-  // company_id_nat?: string;
   company_account_number?: string;
-  
-  // Paramètres de facture
-  // invoice_prefix: string;
-  // invoice_next_number: number;
-  // invoice_due_days: number;
-  // invoice_terms: string;
-  // invoice_notes?: string;
-  // invoice_payment_terms?: string;
-  // invoice_legal_notice?: string;
-  
   created_at: string;
   updated_at: string;
 }
 
 // Interface pour tous les paramètres combinés
-export interface SiteSettingsData {
-  store: StoreSettings;
-  socialLinks: SocialLinks;
-  paymentMethods: PaymentMethods;
-  shipping: ShippingSettings;
-  invoiceSettings: InvoiceSettings;
+
+export interface InventoryStats {
+  totalProducts: number;
+  lowStockProducts: number;
+  outOfStockProducts: number;
+  totalValue: number;
+  totalSales: number;
+  assistantSales: number;
+}
+
+export interface ProductSale {
+  product_id: string;
+  product_name: string;
+  quantity_sold: number;
+  total_revenue: number;
+  stock_quantity: number;
+  image_url?: string;
+  category?: string;
+}
+
+export interface LowStockAlert {
+  product_id: string;
+  product_name: string;
+  current_stock: number;
+  threshold: number;
+  last_restock_date?: string;
+  urgency: 'low' | 'medium' | 'high';
+}
+
+export interface InventoryFilters {
+  category: string;
+  stockStatus: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock';
+  sortBy: 'name' | 'stock' | 'sales' | 'revenue';
+  sortOrder: 'asc' | 'desc';
+}
+
+// À ajouter à vos interfaces
+export interface StockAlert {
+  id: string;
+  product_id: string;
+  product?: Product;
+  threshold: number;
+  urgency: 'low' | 'medium' | 'high';
+  is_active: boolean;
+  notified_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockMovement {
+  id: string;
+  product_id: string;
+  product?: Product;
+  movement_type: 'in' | 'out' | 'adjustment';
+  quantity: number;
+  previous_stock: number;
+  new_stock: number;
+  reason?: string;
+  created_by?: string;
+  created_by_user?: User;
+  created_at: string;
+  updated_at: string;
 }

@@ -11,7 +11,7 @@ import Navbar from "./components/home/Navbar";
 import Home from "./components/home/Home";
 import Cart from "./components/home/Cart";
 
-import { ProtectedRoute, PublicOnlyRoute } from "./components/security/AuthRoutes";
+import { ProtectedRoute, PublicOnlyRoute } from "./security/AuthRoutes";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 

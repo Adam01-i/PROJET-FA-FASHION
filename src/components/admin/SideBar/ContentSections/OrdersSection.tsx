@@ -12,7 +12,7 @@ import {
   User,
   Phone
 } from 'lucide-react';
-import { Order } from '../../../../types';
+import { Order } from '../../../../models';
 import { useOrders } from '../../../../hooks/useOrders';
 import { useToastContext } from '../../../../hooks/ToastProvider';
 import OrderDetailsModal from '../../../../Modals/OrderDetailsModal';
