@@ -3,7 +3,7 @@ import {
   Package,
   AlertTriangle,
   TrendingUp,
-  DollarSign,
+  // DollarSign,
   Search,
   Plus,
   Minus,
@@ -436,9 +436,9 @@ export default function InventorySection() {
                 {formatXOF(stats.totalValue)}
               </p>
             </div>
-            <div className="p-2 bg-purple-100 rounded-lg">
+            {/* <div className="p-2 bg-purple-100 rounded-lg">
               <DollarSign className="h-6 w-6 text-purple-600" />
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -813,7 +813,7 @@ export default function InventorySection() {
           </div>
         </div>
       )}
-      
+
       {/* Message vide */}
       {filteredProducts.length === 0 && !loading && (
         <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
