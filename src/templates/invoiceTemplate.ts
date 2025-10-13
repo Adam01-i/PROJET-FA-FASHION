@@ -1,4 +1,4 @@
-import { Order, SiteSettingsData } from '../models';
+import { Order } from '../models';
 import { 
   formatXOF, 
   formatDate, 

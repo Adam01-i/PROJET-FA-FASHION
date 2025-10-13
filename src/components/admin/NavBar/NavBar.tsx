@@ -1,7 +1,7 @@
 import { Search, User, LogOut, Menu } from 'lucide-react';
-import { useAuth } from '../../../contexts/AuthContext';
-import { useState } from 'react';
-import ConfirmationModal from '../../../ui/ConfirmationModal';   
+import { useEffect, useState } from 'react';
+import ConfirmationModal from '../../../ui/ConfirmationModal';
+import { supabase } from "../../../lib/supabase";
 
 interface NavBarProps {
   onToggleSidebar: () => void;
@@ -22,20 +22,37 @@ export default function NavBar({
   showAddButton = false,
   onAddClick,
   addButtonLabel = "Ajouter",
-  title, 
+  title,
 }: NavBarProps) {
-  const { signOut } = useAuth();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<any>(null);
 
-  const handleLogoutClick = () => {
-    setIsLogoutModalOpen(true);
-  };
+  // ✅ Récupérer l'utilisateur connecté
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user);
+    };
+    fetchUser();
 
+    // Écouter les changements d'authentification
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  // ✅ Déconnexion Supabase
   const handleConfirmLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await signOut();
+      await supabase.auth.signOut();
+      window.location.href = "/login"; // redirige vers la page de login
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
     } finally {
@@ -44,9 +61,8 @@ export default function NavBar({
     }
   };
 
-  const handleCancelLogout = () => {
-    setIsLogoutModalOpen(false);
-  };
+  const handleLogoutClick = () => setIsLogoutModalOpen(true);
+  const handleCancelLogout = () => setIsLogoutModalOpen(false);
 
   return (
     <>
@@ -61,7 +77,7 @@ export default function NavBar({
               >
                 <Menu className="h-5 w-5 text-gray-600" />
               </button>
-              
+
               <h1 className="text-2xl font-bold text-gray-900 font-display">
                 {title}
               </h1>
@@ -93,31 +109,31 @@ export default function NavBar({
                 </button>
               )}
 
-              {/* Notifications */}
-              {/* <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors group">
-                <Bell className="h-5 w-5 text-gray-600 group-hover:text-indigo-600" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
-              </button> */}
-
-              {/* User Menu */}
+              {/* User Info */}
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
                   <User className="h-4 w-4 text-white" />
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900">Administrateur</p>
-                  <p className="text-xs text-gray-500">Admin</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {user?.email || "Utilisateur"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {user ? "Connecté" : "Invité"}
+                  </p>
                 </div>
               </div>
 
               {/* Logout */}
-              <button 
-                onClick={handleLogoutClick}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors group"
-                title="Se déconnecter"
-              >
-                <LogOut className="h-5 w-5 text-gray-600 group-hover:text-red-600" />
-              </button>
+              {user && (
+                <button
+                  onClick={handleLogoutClick}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors group"
+                  title="Se déconnecter"
+                >
+                  <LogOut className="h-5 w-5 text-gray-600 group-hover:text-red-600" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -139,7 +155,7 @@ export default function NavBar({
         </div>
       </nav>
 
-      {/* Modal de confirmation de déconnexion */}
+      {/* ✅ Modal de confirmation de déconnexion */}
       <ConfirmationModal
         isOpen={isLogoutModalOpen}
         onClose={handleCancelLogout}

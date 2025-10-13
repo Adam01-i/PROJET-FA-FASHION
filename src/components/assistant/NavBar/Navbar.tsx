@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Menu, X, Package, ClipboardList, Shield } from 'lucide-react';
-import { useAuth } from '../../../contexts/AuthContext';
+import { supabase } from '../../../lib/supabase';
 import ConfirmationModal from '../../../ui/ConfirmationModal';
 
 interface NavbarAssistantProps {
@@ -10,12 +10,31 @@ interface NavbarAssistantProps {
 }
 
 export default function Navbar({ activeTab, onTabChange }: NavbarAssistantProps) {
-  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<any>(null);
+
+  // ✅ Récupérer l'utilisateur connecté
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user);
+    };
+    fetchUser();
+
+    // Écouter les changements d'authentification
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,14 +44,11 @@ export default function Navbar({ activeTab, onTabChange }: NavbarAssistantProps)
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSignOutClick = () => {
-    setIsLogoutModalOpen(true);
-  };
-
+  // ✅ Déconnexion Supabase
   const handleConfirmLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await signOut();
+      await supabase.auth.signOut();
       navigate('/login');
       setIsMenuOpen(false);
     } catch (error) {
@@ -43,9 +59,8 @@ export default function Navbar({ activeTab, onTabChange }: NavbarAssistantProps)
     }
   };
 
-  const handleCancelLogout = () => {
-    setIsLogoutModalOpen(false);
-  };
+  const handleSignOutClick = () => setIsLogoutModalOpen(true);
+  const handleCancelLogout = () => setIsLogoutModalOpen(false);
 
   const handleNavClick = (tab: 'orders' | 'inventory') => {
     onTabChange(tab);
@@ -193,17 +208,19 @@ export default function Navbar({ activeTab, onTabChange }: NavbarAssistantProps)
               })}
 
               {/* Bouton déconnexion mobile */}
-              <button
-                onClick={handleSignOutClick}
-                className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 w-full ${
-                  isScrolled
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-md'
-                    : 'bg-red-600 text-white hover:bg-red-500 hover:shadow-md'
-                }`}
-              >
-                <LogOut className="h-5 w-5" />
-                <span>Se déconnecter</span>
-              </button>
+              {user && (
+                <button
+                  onClick={handleSignOutClick}
+                  className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 w-full ${
+                    isScrolled
+                      ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-md'
+                      : 'bg-red-600 text-white hover:bg-red-500 hover:shadow-md'
+                  }`}
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span>Se déconnecter</span>
+                </button>
+              )}
 
               {/* Section utilisateur mobile */}
               {user && (

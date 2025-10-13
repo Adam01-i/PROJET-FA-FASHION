@@ -1,17 +1,85 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, MessageCircle } from 'lucide-react';
-import { useCart } from '../../contexts/CartContext';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 import { formatXOF } from '../../lib/currency';
-import { Order} from '../../models';
+import { Order } from '../../models';
+
+// Interface pour les items du panier
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+  stock_quantity: number;
+}
 
 export default function Cart() {
-  const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
+  const [items, setItems] = useState<CartItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { user } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<any>(null);
 
+  // ✅ Récupérer l'utilisateur connecté
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user);
+    };
+    fetchUser();
+
+    // Écouter les changements d'authentification
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  // ✅ Récupérer le panier depuis localStorage
+  useEffect(() => {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        setItems(JSON.parse(savedCart));
+      } catch (error) {
+        console.error('Error parsing cart from localStorage:', error);
+        setItems([]);
+      }
+    }
+  }, []);
+
+  // ✅ Sauvegarder le panier dans localStorage à chaque changement
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(items));
+  }, [items]);
+
+  // ✅ Calculer le total
+  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  // ✅ Fonctions de gestion du panier
+  const removeFromCart = (productId: string) => {
+    setItems(prev => prev.filter(item => item.id !== productId));
+  };
+
+  const updateQuantity = (productId: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    
+    setItems(prev => prev.map(item => 
+      item.id === productId 
+        ? { ...item, quantity: Math.min(newQuantity, item.stock_quantity) }
+        : item
+    ));
+  };
+
+  const clearCart = () => {
+    setItems([]);
+  };
+
+  // ✅ Créer une commande dans Supabase
   const createOrder = async (): Promise<Order> => {
     if (!user) throw new Error('Vous devez être connecté pour effectuer un achat');
 
@@ -44,7 +112,7 @@ export default function Cart() {
     return order;
   };
 
-  const generateWhatsAppMessage = (order: Order, orderItems: typeof items) => {
+  const generateWhatsAppMessage = (order: Order, orderItems: CartItem[]) => {
     const itemsText = orderItems.map(item => 
       `• ${item.quantity}x ${item.name} - ${formatXOF(item.price * item.quantity)}`
     ).join('\n');
@@ -62,6 +130,11 @@ export default function Cart() {
     try {
       setIsProcessing(true);
       
+      if (!user) {
+        alert('Veuillez vous connecter pour passer une commande');
+        return;
+      }
+
       // Créer la commande dans la base de données
       const order = await createOrder();
       
@@ -203,16 +276,23 @@ export default function Cart() {
             <div className="mt-6 space-y-4">
               <button
                 onClick={handleWhatsAppOrder}
-                disabled={isProcessing}
+                disabled={isProcessing || !user}
                 className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white ${
-                  isProcessing
+                  isProcessing || !user
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-green-600 hover:bg-green-700'
                 }`}
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
-                {isProcessing ? 'Création de la commande...' : 'Commander via WhatsApp'}
+                {!user ? 'Connexion requise' : 
+                 isProcessing ? 'Création de la commande...' : 'Commander via WhatsApp'}
               </button>
+
+              {!user && (
+                <p className="text-xs text-red-600 text-center">
+                  Veuillez vous connecter pour passer commande
+                </p>
+              )}
 
               <p className="text-xs text-gray-500 text-center">
                 Vous serez redirigé vers WhatsApp pour finaliser votre commande avec notre assistant.

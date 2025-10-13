@@ -374,7 +374,7 @@ export default function OrderDetailsModal({
                       href={order.payment_proof}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 text-center text-sm flex items-center justify-center"
+                      className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 text-center text-sm flex items-center justify-center"
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Voir la preuve de paiement

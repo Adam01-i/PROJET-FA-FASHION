@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
 import { UserPlus, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -11,8 +11,52 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const { signUp, error: authError, isAuthenticated, userRole } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  // ✅ Récupérer l'utilisateur connecté
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user);
+      
+      // Récupérer le rôle depuis la table profiles
+      if (data?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+        
+        setUserRole(profile?.role || 'client');
+      }
+    };
+    fetchUser();
+
+    // Écouter les changements d'authentification
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user || null);
+      
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        setUserRole(profile?.role || 'client');
+      } else {
+        setUserRole(null);
+      }
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
 
   // Fonction de redirection basée sur le rôle
   const redirectBasedOnRole = useCallback(
@@ -37,22 +81,17 @@ export default function Register() {
 
   // Redirection automatique si déjà connecté
   useEffect(() => {
-    if (isAuthenticated && userRole) {
+    if (user && userRole) {
       console.log("✅ Utilisateur connecté, redirection vers:", userRole);
       redirectBasedOnRole(userRole);
     }
-  }, [isAuthenticated, userRole, redirectBasedOnRole]);
+  }, [user, userRole, redirectBasedOnRole]);
 
-  // Gestion des erreurs d'authentification
-  useEffect(() => {
-    if (authError) {
-      setLocalError(authError);
-    }
-  }, [authError]);
-
+  // ✅ Inscription Supabase
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
+    setIsSuccess(false);
 
     // Validations
     if (password !== confirmPassword) {
@@ -73,7 +112,43 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      await signUp(email, password);
+      // Inscription avec Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        setLocalError(error.message);
+        return;
+      }
+
+      if (data.user) {
+        // ✅ Inscription réussie - afficher message de succès
+        setIsSuccess(true);
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        
+        // Créer le profil utilisateur avec rôle par défaut 'client'
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: data.user.id,
+              email: data.user.email,
+              role: 'client',
+              created_at: new Date().toISOString(),
+            }
+          ]);
+
+        if (profileError) {
+          console.error("Erreur création profil:", profileError);
+        }
+      }
     } catch (err: unknown) {
       console.error("Registration error:", err);
       const errorMessage =
@@ -87,7 +162,7 @@ export default function Register() {
   };
 
   // Si déjà authentifié, afficher message de chargement
-  if (isAuthenticated) {
+  if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -101,21 +176,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Section gauche - Illustration */}
-      <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center bg-gradient-to-br from-green-600 to-emerald-700">
-        <div className="max-w-md text-center text-white px-8">
-          <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-8">
-            <UserPlus className="h-12 w-12 text-white" />
-          </div>
-          <h1 className="text-4xl font-bold mb-4">Rejoignez Fa-Fasion</h1>
-          <p className="text-lg text-green-100">
-            Créez votre compte et profitez d'une expérience shopping unique avec
-            des avantages exclusifs.
-          </p>
-        </div>
-      </div>
-
-      {/* Section droite - Formulaire */}
+      {/* Section gauche - Formulaire */}
       <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-md">
           {/* Logo mobile */}
@@ -157,7 +218,7 @@ export default function Register() {
           {/* Carte du formulaire */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             {/* Affichage des erreurs */}
-            {(localError || authError) && (
+            {localError && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3 animate-fade-in">
                 <div className="flex-shrink-0 w-5 h-5 text-red-400 mt-0.5">
                   <svg fill="currentColor" viewBox="0 0 20 20">
@@ -169,11 +230,10 @@ export default function Register() {
                   </svg>
                 </div>
                 <p className="text-sm text-red-700 flex-1">
-                  {localError || authError}
+                  {localError}
                 </p>
               </div>
             )}
-
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Champ Email */}
               <div>
@@ -323,7 +383,30 @@ export default function Register() {
                 </Link>
               </p>
             </form>
-
+            
+            {isSuccess && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start space-x-3 animate-fade-in">
+                <div className="flex-shrink-0 w-5 h-5 text-green-400 mt-0.5">
+                  <svg fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-green-700 font-medium">
+                    ✅ Inscription réussie !
+                  </p>
+                  <p className="text-sm text-green-600 mt-1">
+                    Un email de confirmation vous a été envoyé. Cliquez sur le
+                    lien dans l'email pour activer votre compte et être redirigé
+                    vers la page d'accueil.
+                  </p>
+                </div>
+              </div>
+            )}
             {/* Ligne séparatrice */}
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-xs text-center text-gray-500">
@@ -332,6 +415,20 @@ export default function Register() {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Section droite - Illustration */}
+      <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center bg-gradient-to-br from-green-600 to-emerald-700">
+        <div className="max-w-md text-center text-white px-8">
+          <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-8">
+            <UserPlus className="h-12 w-12 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold mb-4">Rejoignez Fa-Fashion</h1>
+          <p className="text-lg text-green-100">
+            Créez votre compte et profitez d'une expérience shopping unique avec
+            des avantages exclusifs.
+          </p>
         </div>
       </div>
     </div>

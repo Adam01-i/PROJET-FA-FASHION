@@ -1,15 +1,59 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
 import { LogIn, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, userRole, isAuthenticated, error } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // ✅ Récupérer l'utilisateur connecté
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user);
+      
+      // Récupérer le rôle depuis la table profiles
+      if (data?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+        
+        setUserRole(profile?.role || 'client');
+      }
+    };
+    fetchUser();
+
+    // Écouter les changements d'authentification
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user || null);
+      
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        setUserRole(profile?.role || 'client');
+      } else {
+        setUserRole(null);
+      }
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
 
   // Fonction de redirection basée sur le rôle
   const redirectBasedOnRole = useCallback(
@@ -37,13 +81,7 @@ export default function Login() {
 
   // Redirection automatique si déjà connecté
   useEffect(() => {
-    if (!isAuthenticated) return;
-
-    // Récupère la dernière session enregistrée (sécurité)
-    const storedSession = localStorage.getItem(
-      "sb-" + import.meta.env.VITE_SUPABASE_URL + "-auth-token"
-    );
-    console.log("📦 Session locale trouvée ?", !!storedSession);
+    if (!user) return;
 
     if (userRole) {
       console.log("✅ Redirection selon rôle:", userRole);
@@ -54,24 +92,41 @@ export default function Login() {
       );
       navigate("/");
     }
-  }, [isAuthenticated, userRole, navigate, redirectBasedOnRole]);
+  }, [user, userRole, navigate, redirectBasedOnRole]);
 
+  // ✅ Connexion Supabase
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
+    
     try {
       console.log("🔐 Tentative de connexion...");
-      await signIn(email, password);
-      // La redirection se fera automatiquement via le useEffect
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data.user) {
+        console.log("✅ Connexion réussie");
+        // La redirection se fera automatiquement via le useEffect
+      }
     } catch (err) {
       console.error("❌ Erreur de connexion:", err);
+      setError("Une erreur est survenue lors de la connexion");
     } finally {
       setIsLoading(false);
     }
   };
 
   // Si l'utilisateur est déjà connecté, afficher un message de chargement
-  if (isAuthenticated) {
+  if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

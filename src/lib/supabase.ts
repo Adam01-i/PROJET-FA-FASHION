@@ -8,7 +8,7 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false, // ⚠️ Empêche les rechargements infinis
+      detectSessionInUrl: true, // ⚠️ Empêche les rechargements infinis
       flowType: 'pkce',
       storage: window.localStorage,
     },

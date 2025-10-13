@@ -13,17 +13,97 @@ import {
   Shield,
   Users
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useCart } from '../../contexts/CartContext';
+import { supabase } from '../../lib/supabase';
 
 export default function Navbar() {
-  const { user, userRole, signOut } = useAuth();
-  const { itemCount } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [itemCount, setItemCount] = useState(0);
+
+  // ✅ Récupérer l'utilisateur connecté et son rôle
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user);
+      
+      // Récupérer le rôle depuis la table profiles
+      if (data?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+        
+        setUserRole(profile?.role || 'client');
+      }
+    };
+    fetchUser();
+
+    // Écouter les changements d'authentification
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user || null);
+      
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        setUserRole(profile?.role || 'client');
+      } else {
+        setUserRole(null);
+      }
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  // ✅ Récupérer le nombre d'articles dans le panier depuis localStorage
+  useEffect(() => {
+    const updateCartCount = () => {
+      const savedCart = localStorage.getItem('cart');
+      if (savedCart) {
+        try {
+          const cartItems = JSON.parse(savedCart);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const count = cartItems.reduce((total: number, item: any) => total + item.quantity, 0);
+          setItemCount(count);
+        } catch (error) {
+          console.error('Error parsing cart from localStorage:', error);
+          setItemCount(0);
+        }
+      } else {
+        setItemCount(0);
+      }
+    };
+
+    // Mettre à jour initialement
+    updateCartCount();
+
+    // Écouter les changements de localStorage
+    const handleStorageChange = () => {
+      updateCartCount();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier régulièrement pour les changements dans le même onglet
+    const interval = setInterval(updateCartCount, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,9 +113,10 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // ✅ Déconnexion Supabase
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await supabase.auth.signOut();
       navigate('/');
       setIsMenuOpen(false);
     } catch (error) {
