@@ -1,5 +1,6 @@
+// components/client/Navbar.tsx
 import { useState, useEffect, FormEvent } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, 
   User, 
@@ -8,58 +9,33 @@ import {
   Search, 
   Menu, 
   X,
-  Heart,
-  Package,
-  Shield,
-  Users
+  // Heart,
+  Package
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import ConfirmationModal from '../../ui/ConfirmationModal';
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [itemCount, setItemCount] = useState(0);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // ✅ Récupérer l'utilisateur connecté et son rôle
+  // ✅ Récupérer l'utilisateur connecté
   useEffect(() => {
     const fetchUser = async () => {
       const { data } = await supabase.auth.getUser();
       setUser(data?.user);
-      
-      // Récupérer le rôle depuis la table profiles
-      if (data?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-        
-        setUserRole(profile?.role || 'client');
-      }
     };
     fetchUser();
 
     // Écouter les changements d'authentification
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        setUserRole(profile?.role || 'client');
-      } else {
-        setUserRole(null);
-      }
     });
 
     return () => {
@@ -117,11 +93,16 @@ export default function Navbar() {
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
+      setShowLogoutModal(false);
       navigate('/');
       setIsMenuOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const handleSignOutClick = () => {
+    setShowLogoutModal(true);
   };
 
   const handleSearch = (e: FormEvent) => {
@@ -135,8 +116,6 @@ export default function Navbar() {
   const handleNavClick = () => {
     setIsMenuOpen(false);
   };
-
-  const isActiveRoute = (path: string) => location.pathname === path;
 
   return (
     <>
@@ -226,42 +205,8 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* Navigation selon le rôle - Desktop */}
-              <div className="hidden sm:flex items-center space-x-1">
-                {userRole === 'admin' && (
-                  <Link
-                    to="/admin"
-                    className={`p-2 rounded-lg transition-all duration-300 ${
-                      isActiveRoute('/admin') 
-                        ? isScrolled ? 'bg-indigo-100 text-indigo-600' : 'bg-white bg-opacity-30 text-white'
-                        : isScrolled 
-                          ? 'hover:bg-indigo-50 text-indigo-600' 
-                          : 'hover:bg-white hover:bg-opacity-20 text-white'
-                    }`}
-                    title="Administration"
-                  >
-                    <Shield className="h-5 w-5" />
-                  </Link>
-                )}
-                {userRole === 'assistant' && (
-                  <Link
-                    to="/assistant"
-                    className={`p-2 rounded-lg transition-all duration-300 ${
-                      isActiveRoute('/assistant') 
-                        ? isScrolled ? 'bg-indigo-100 text-indigo-600' : 'bg-white bg-opacity-30 text-white'
-                        : isScrolled 
-                          ? 'hover:bg-indigo-50 text-indigo-600' 
-                          : 'hover:bg-white hover:bg-opacity-20 text-white'
-                    }`}
-                    title="Assistant"
-                  >
-                    <Users className="h-5 w-5" />
-                  </Link>
-                )}
-              </div>
-
               {/* Favoris */}
-              <Link 
+              {/* <Link 
                 to="/wishlist" 
                 className={`p-2 rounded-lg transition-all duration-300 ${
                   isScrolled 
@@ -272,7 +217,7 @@ export default function Navbar() {
                 title="Favoris"
               >
                 <Heart className="h-5 w-5" />
-              </Link>
+              </Link> */}
 
               {/* Commandes */}
               <Link 
@@ -319,7 +264,7 @@ export default function Navbar() {
                     </span>
                   </div>
                   <button
-                    onClick={handleSignOut}
+                    onClick={handleSignOutClick}
                     className={`p-2 rounded-lg transition-all duration-300 ${
                       isScrolled 
                         ? 'hover:bg-indigo-50 text-indigo-600' 
@@ -414,7 +359,7 @@ export default function Navbar() {
                 <Package className="h-5 w-5" />
                 <span>Produits</span>
               </Link>
-              <Link
+              {/* <Link
                 to="/wishlist"
                 className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
                   isScrolled
@@ -425,8 +370,8 @@ export default function Navbar() {
               >
                 <Heart className="h-5 w-5" />
                 <span>Favoris</span>
-              </Link>
-              <Link
+              </Link> */}
+              {/* <Link
                 to="/orders"
                 className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
                   isScrolled
@@ -437,42 +382,12 @@ export default function Navbar() {
               >
                 <Package className="h-5 w-5" />
                 <span>Commandes</span>
-              </Link>
-              
-              {/* Liens selon le rôle */}
-              {userRole === 'admin' && (
-                <Link
-                  to="/admin"
-                  className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
-                    isScrolled
-                      ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                      : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  <Shield className="h-5 w-5" />
-                  <span>Administration</span>
-                </Link>
-              )}
-              {userRole === 'assistant' && (
-                <Link
-                  to="/assistant"
-                  className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
-                    isScrolled
-                      ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                      : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
-                  }`}
-                  onClick={handleNavClick}
-                >
-                  <Users className="h-5 w-5" />
-                  <span>Assistant</span>
-                </Link>
-              )}
+              </Link> */}
               
               {/* Lien de déconnexion */}
               {user && (
                 <button
-                  onClick={handleSignOut}
+                  onClick={handleSignOutClick}
                   className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
                     isScrolled
                       ? 'bg-red-50 text-red-600 hover:bg-red-100'
@@ -480,13 +395,25 @@ export default function Navbar() {
                   }`}
                 >
                   <LogOut className="h-5 w-5" />
-                  <span>Déconnexion</span>
+                  <span>Deconexion</span>
                 </button>
               )}
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Modal de confirmation de déconnexion */}
+      <ConfirmationModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleSignOut}
+        title="Déconnexion"
+        message="Êtes-vous sûr de vouloir vous déconnecter ?"
+        confirmText="Se déconnecter"
+        cancelText="Annuler"
+        variant="danger"
+      />
 
       {/* Espacement pour le contenu */}
       <div className="h-16"></div>

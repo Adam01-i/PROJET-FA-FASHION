@@ -9,7 +9,7 @@ export default function Footer() {
     return (
       <footer className="bg-gray-900 text-gray-300">
         <div className="max-w-7xl mx-auto px-4 py-12 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+          <div className=" rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
           <p className="mt-2">Chargement...</p>
         </div>
       </footer>

@@ -1,3 +1,4 @@
+// components/client/ProductCard.tsx
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Eye } from 'lucide-react';
 import { formatXOF } from '../../lib/currency';
@@ -9,7 +10,28 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
-  const categoryName = (product.category as any)?.name || 'Non catégorisé';
+  // Correction : gérer proprement la catégorie
+  const categoryName = product.category?.name || 
+                     product.category_name || 
+                     'Non catégorisé';
+
+  const handleAddToCart = () => {
+    // Créer l'objet CartItem à partir du Product
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image_url || '',
+      quantity: 1,
+      stock_quantity: product.stock_quantity
+    };
+    
+    // Appeler la fonction parent
+    onAddToCart(product);
+    
+    // Debug: vérifier que l'item est bien créé
+    console.log('Adding to cart:', cartItem);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
@@ -53,7 +75,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
             Stock: {product.stock_quantity}
           </span>
           <button
-            onClick={() => onAddToCart(product)}
+            onClick={handleAddToCart}
             disabled={product.stock_quantity === 0}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
               product.stock_quantity === 0

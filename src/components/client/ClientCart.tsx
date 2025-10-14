@@ -1,25 +1,26 @@
+// components/client/ClientCart.tsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, MessageCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatXOF } from '../../lib/currency';
 import { Order } from '../../models';
+import { useCart } from '../../contexts/CartContext'; // Import du contexte
 
-// Interface pour les items du panier
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-  stock_quantity: number;
-}
-
-export default function Cart() {
-  const [items, setItems] = useState<CartItem[]>([]);
+export default function ClientCart() {
   const [isProcessing, setIsProcessing] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null);
+  
+  // ✅ Utiliser le contexte du panier au lieu de l'état local
+  const { 
+    items, 
+    removeFromCart, 
+    updateQuantity, 
+    clearCart, 
+    total,
+    itemCount 
+  } = useCart();
 
   // ✅ Récupérer l'utilisateur connecté
   useEffect(() => {
@@ -29,7 +30,6 @@ export default function Cart() {
     };
     fetchUser();
 
-    // Écouter les changements d'authentification
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
@@ -38,46 +38,6 @@ export default function Cart() {
       listener?.subscription.unsubscribe();
     };
   }, []);
-
-  // ✅ Récupérer le panier depuis localStorage
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        setItems(JSON.parse(savedCart));
-      } catch (error) {
-        console.error('Error parsing cart from localStorage:', error);
-        setItems([]);
-      }
-    }
-  }, []);
-
-  // ✅ Sauvegarder le panier dans localStorage à chaque changement
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
-  }, [items]);
-
-  // ✅ Calculer le total
-  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  // ✅ Fonctions de gestion du panier
-  const removeFromCart = (productId: string) => {
-    setItems(prev => prev.filter(item => item.id !== productId));
-  };
-
-  const updateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    
-    setItems(prev => prev.map(item => 
-      item.id === productId 
-        ? { ...item, quantity: Math.min(newQuantity, item.stock_quantity) }
-        : item
-    ));
-  };
-
-  const clearCart = () => {
-    setItems([]);
-  };
 
   // ✅ Créer une commande dans Supabase
   const createOrder = async (): Promise<Order> => {
@@ -112,8 +72,8 @@ export default function Cart() {
     return order;
   };
 
-  const generateWhatsAppMessage = (order: Order, orderItems: CartItem[]) => {
-    const itemsText = orderItems.map(item => 
+  const generateWhatsAppMessage = (order: Order) => {
+    const itemsText = items.map(item => 
       `• ${item.quantity}x ${item.name} - ${formatXOF(item.price * item.quantity)}`
     ).join('\n');
 
@@ -139,8 +99,8 @@ export default function Cart() {
       const order = await createOrder();
       
       // Générer le message WhatsApp
-      const message = generateWhatsAppMessage(order, items);
-      const phoneNumber = "221761994984"; // Numéro de l'assistant
+      const message = generateWhatsAppMessage(order);
+      const phoneNumber = "221761994984";
       const encodedMessage = encodeURIComponent(message);
       
       // Ouvrir WhatsApp
@@ -169,11 +129,11 @@ export default function Cart() {
           </p>
           <div className="mt-6">
             <Link
-              to="/products"
+              to="/"
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Voir les produits
+              Retour à l'accueil
             </Link>
           </div>
         </div>
@@ -183,7 +143,7 @@ export default function Cart() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Votre Panier</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-8">Votre Panier ({itemCount} article{itemCount > 1 ? 's' : ''})</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8">

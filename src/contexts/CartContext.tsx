@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, ReactNode } from 'react';
+import { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 
 // Interfaces
 export interface CartItem {
@@ -95,8 +95,22 @@ const initialState: CartState = {
 };
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, initialState);
+const [state, dispatch] = useReducer(cartReducer, initialState, () => {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        return { items: JSON.parse(savedCart) };
+      } catch (error) {
+        console.error('Error parsing cart from localStorage:', error);
+      }
+    }
+    return initialState;
+  });
 
+  // Sauvegarder dans localStorage à chaque changement
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(state.items));
+  }, [state.items]);
   const addToCart = (item: CartItem) => {
     dispatch({ type: 'ADD_TO_CART', payload: item });
   };

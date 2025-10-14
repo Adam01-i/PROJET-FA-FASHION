@@ -1,11 +1,13 @@
+// components/ui/ConfirmationModal.tsx
 import { X } from 'lucide-react';
+import { ReactNode } from 'react';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: string;
+  message: string | ReactNode; // ✅ Accepter string ou JSX
   confirmText?: string;
   cancelText?: string;
   variant?: 'danger' | 'primary';
@@ -57,7 +59,12 @@ export default function ConfirmationModal({
 
           {/* Body */}
           <div className="p-6">
-            <p className="text-gray-600">{message}</p>
+            {/* ✅ Rendre conditionnellement selon le type */}
+            {typeof message === 'string' ? (
+              <p className="text-gray-600">{message}</p>
+            ) : (
+              <div className="text-gray-600">{message}</div>
+            )}
           </div>
 
           {/* Footer */}

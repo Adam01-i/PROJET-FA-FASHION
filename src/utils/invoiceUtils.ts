@@ -40,9 +40,9 @@ export function getStatusDisplayName(status: Order['status']): string {
   const statusMap: Record<Order['status'], string> = {
     pending: 'En attente',
     confirmed: 'Confirmée',
-    processing: 'En traitement',
-    shipped: 'Expédiée',
-    delivered: 'Livrée',
+    // processing: 'En traitement',
+    // shipped: 'Expédiée',
+    // delivered: 'Livrée',
     cancelled: 'Annulée'
   };
   return statusMap[status] || status;

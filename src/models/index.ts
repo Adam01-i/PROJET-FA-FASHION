@@ -14,7 +14,6 @@ export interface Product {
   id: string;
   name: string;
   description?: string;
-  short_description?: string;
   price: number;
   image_url: string | null;
   category_id: string | null;
@@ -22,6 +21,12 @@ export interface Product {
   is_public: boolean;
   created_at: string;
   updated_at?: string;
+  // Ajoute cette propriété pour gérer les jointures
+  category?: {
+    name: string;
+  };
+  // Ou cette propriété alternative
+  category_name?: string;
 }
 
 export interface OrderItem {
@@ -38,8 +43,8 @@ export interface Order {
   id: string;
   user_id: string;
   user?: User;
-  total_amount: number;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  total_amount: number; 
+  status: 'pending' | 'confirmed' | 'cancelled';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
   payment_method?: 'wave' | 'orange_money' | 'mobile_money' | 'credit_card' | 'cash';
   payment_proof?: string;
@@ -70,10 +75,10 @@ export interface Category {
 export interface StoreSettings {
   id: string;
   name: string;
-  description: string;
+  description?: string; // Peut être null
   email: string;
-  phone: string;
-  address: string;
+  phone?: string; // Peut être null
+  address?: string; // Peut être null
   currency: string;
   logo_url?: string;
   favicon_url?: string;
