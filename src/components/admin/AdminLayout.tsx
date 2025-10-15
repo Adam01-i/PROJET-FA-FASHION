@@ -4,7 +4,7 @@ import SideBar, { Tab } from "./SideBar/SideBar";
 import Dashboard from "./Dashboard/Dashboard";
 import InventorySection from "../Inventory/InventorySection";
 import ProductsSection from "./SideBar/ContentSections/ProductsSection";
-import OrdersSection from "./SideBar/ContentSections/OrdersSection";
+import OrdersSection from "../AuthOrdersSection/OrdersSection";
 import UsersSection from "./SideBar/ContentSections/UsersSection";
 import SettingsSection from "./SideBar/ContentSections/SettingsSection";
 

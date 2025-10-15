@@ -1,7 +1,7 @@
 // components/client/ClientLayout.tsx
 import { Outlet } from 'react-router-dom';
-import Navbar from './Navbar';
-import Footer from './Footer';
+import Navbar from './Views/Navbar';
+import Footer from './Views/Footer';
 
 export default function ClientLayout() {
   return (

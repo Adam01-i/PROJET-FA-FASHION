@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
-import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { useSiteSettings } from '../../../hooks/useSiteSettings';
 
 export default function Footer() {
   const { settings, loading } = useSiteSettings();

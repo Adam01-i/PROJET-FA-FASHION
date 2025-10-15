@@ -1,10 +1,10 @@
 // components/client/OrderDetailsModal.tsx
 import { XCircle, MessageCircle, Trash2, AlertTriangle } from "lucide-react";
-import { formatXOF } from "../../lib/currency";
-import { Order, OrderItem } from "../../models";
+import { formatXOF } from "../../../lib/currency";
+import { Order, OrderItem } from "../../../models";
 import { useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
-import ConfirmationModal from "../../ui/ConfirmationModal";
+import { supabase } from "../../../lib/supabaseClient";
+import ConfirmationModal from "../../../ui/ConfirmationModal";
 
 // Configuration des statuts
 const ORDER_STATUS_CONFIG = {
@@ -53,20 +53,39 @@ export default function OrderDetailsModal({
 
   // ✅ Vérifier si la commande peut être annulée
   const canCancelOrder = () => {
+    // Les commandes peuvent être annulées si:
+    // 1. Le statut est "pending" ou "confirmed"
+    // 2. Le paiement n'est pas "paid" OU si payé mais pas encore confirmé par l'admin
     const cancellableStatuses: Order["status"][] = ["pending", "confirmed"];
-    return cancellableStatuses.includes(order.status);
+
+    return (
+      cancellableStatuses.includes(order.status) &&
+      (order.payment_status !== "paid" || order.status === "pending")
+    );
   };
 
+  // ✅ Annuler la commande
   // ✅ Annuler la commande
   const cancelOrder = async () => {
     try {
       setIsCancelling(true);
+
+      // Vérifier une dernière fois si la commande peut être annulée
+      if (!canCancelOrder()) {
+        alert(
+          "Cette commande ne peut plus être annulée car elle a déjà été traitée."
+        );
+        return;
+      }
 
       const { error } = await supabase
         .from("orders")
         .update({
           status: "cancelled",
           updated_at: new Date().toISOString(),
+          // Si la commande était payée, remettre le statut de paiement à "refunded"
+          payment_status:
+            order.payment_status === "paid" ? "refunded" : order.payment_status,
         })
         .eq("id", order.id);
 
@@ -90,6 +109,9 @@ export default function OrderDetailsModal({
 
       setShowCancelConfirm(false);
       onClose();
+
+      // Message de confirmation
+      alert("Commande annulée avec succès !");
     } catch (error) {
       console.error("Error cancelling order:", error);
       alert("Erreur lors de l'annulation de la commande");
@@ -290,6 +312,7 @@ export default function OrderDetailsModal({
         onClose={() => setShowCancelConfirm(false)}
         onConfirm={cancelOrder}
         title="Annuler la commande"
+        // Dans le ConfirmationModal, mettre à jour le message
         message={
           <div className="text-center">
             <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
@@ -297,9 +320,15 @@ export default function OrderDetailsModal({
               Êtes-vous sûr de vouloir annuler la commande{" "}
               <strong>#{order.id.slice(-8).toUpperCase()}</strong> ?
             </p>
-            <p className="text-sm text-gray-600">
-              Cette action est irréversible. Le montant sera remboursé selon les
-              conditions de votre méthode de paiement.
+            <p className="text-sm text-gray-600 mb-2">
+              {order.payment_status === "paid"
+                ? "Le montant payé sera remboursé selon les conditions de votre méthode de paiement."
+                : "Cette commande n'a pas encore été payée."}
+            </p>
+            <p className="text-xs text-gray-500">
+              {order.status === "confirmed"
+                ? "⚠️ Cette commande a déjà été confirmée, l'annulation nécessitera une validation."
+                : "Vous pourrez annuler jusqu'à ce que la commande soit marquée comme expédiée."}
             </p>
           </div>
         }

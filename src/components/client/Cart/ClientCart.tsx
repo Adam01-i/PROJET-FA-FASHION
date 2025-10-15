@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, MessageCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { formatXOF } from '../../lib/currency';
-import { Order } from '../../models';
-import { useCart } from '../../contexts/CartContext'; // Import du contexte
+import { supabase } from '../../../lib/supabase';
+import { formatXOF } from '../../../lib/currency';
+import { Order } from '../../../models';
+import { useCart } from '../../../contexts/CartContext'; // Import du contexte
 
 export default function ClientCart() {
   const [isProcessing, setIsProcessing] = useState(false);

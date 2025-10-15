@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProductCard from "./ProductCard";
-import { useCart } from "../../contexts/CartContext";
-import { supabase } from "../../lib/supabase";
-import { Product } from "../../models";
+import { useCart } from "../../../contexts/CartContext";
+import { supabase } from "../../../lib/supabase";
+import { Product } from "../../../models";
 
 export default function ClientHome() {
   const [products, setProducts] = useState<Product[]>([]);

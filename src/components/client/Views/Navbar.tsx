@@ -12,8 +12,8 @@ import {
   // Heart,
   Package
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import ConfirmationModal from '../../ui/ConfirmationModal';
+import { supabase } from '../../../lib/supabase';
+import ConfirmationModal from '../../../ui/ConfirmationModal';
 
 export default function Navbar() {
   const navigate = useNavigate();

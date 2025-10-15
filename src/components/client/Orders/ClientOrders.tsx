@@ -14,11 +14,11 @@ import {
   Calendar,
   LogIn,
 } from "lucide-react";
-import { formatXOF } from "../../lib/currency";
-import { useMyOrders } from "../../hooks/useMyOrders";
-import { Order, OrderItem } from "../../models";
+import { formatXOF } from "../../../lib/currency";
+import { useMyOrders } from "../../../hooks/useMyOrders";
+import { Order, OrderItem } from "../../../models";
 import OrderDetailsModal from "./OrdersDetailsModal";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient";
 
 // Types pour les configurations de statut
 type OrderStatus = Order["status"];
@@ -45,6 +45,7 @@ const ORDER_STATUS_CONFIG: Record<
     icon: XCircle,
   },
 };
+
 
 const PAYMENT_STATUS_CONFIG: Record<
   PaymentStatus,
@@ -100,8 +101,6 @@ export default function ClientOrders() {
     refetch();
   };
 
-  // ✅ Charger le numéro de support au montage du composant
-  // components/client/ClientOrders.tsx - Extrait modifié
   // ✅ Charger le numéro de support au montage du composant
   useEffect(() => {
     const loadSupportPhone = async () => {

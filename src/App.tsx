@@ -22,9 +22,9 @@ import AdminLayout from "./components/admin/AdminLayout";
 import AssistantLayout from "./components/assistant/AssistantLayout";
 
 // Pages Client
-import ClientHome from "./components/client/ClientHome";
-import ClientCart from "./components/client/ClientCart";
-import ClientOrders from "./components/client/ClientOrders";
+import ClientHome from "./components/client/Views/ClientHome";
+import ClientCart from "./components/client/Cart/ClientCart";
+import ClientOrders from "./components/client/Orders/ClientOrders";
 
 // ========================
 // 🧱 Layouts de base

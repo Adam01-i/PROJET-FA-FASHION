@@ -1,8 +1,8 @@
 // components/client/ProductCard.tsx
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Eye } from 'lucide-react';
-import { formatXOF } from '../../lib/currency';
-import { Product } from '../../models';
+import { formatXOF } from '../../../lib/currency';
+import { Product } from '../../../models';
 
 interface ProductCardProps {
   product: Product;
