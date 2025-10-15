@@ -4,7 +4,6 @@ import {
   CheckCircle, 
   XCircle, 
   Clock, 
-  Truck, 
   Eye, 
   Package,
   DollarSign,
@@ -40,9 +39,6 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
 
   const getStatusColor = (status: Order['status']): string => {
     switch (status) {
-      case 'delivered': return 'bg-green-100 text-green-800 border-green-200';
-      case 'shipped': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'processing': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'confirmed': return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -60,9 +56,6 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
 
   const getStatusIcon = (status: Order['status']): JSX.Element => {
     switch (status) {
-      case 'delivered': return <CheckCircle className="h-4 w-4" />;
-      case 'shipped': return <Truck className="h-4 w-4" />;
-      case 'processing': return <Package className="h-4 w-4" />;
       case 'confirmed': return <CheckCircle className="h-4 w-4" />;
       case 'cancelled': return <XCircle className="h-4 w-4" />;
       default: return <Clock className="h-4 w-4" />;
@@ -73,9 +66,6 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
     const statusMap: Record<Order['status'], string> = {
       'pending': 'En attente',
       'confirmed': 'Confirmée',
-      'processing': 'En traitement',
-      'shipped': 'Expédiée',
-      'delivered': 'Livrée',
       'cancelled': 'Annulée'
     };
     return statusMap[status];
@@ -181,7 +171,7 @@ Merci de traiter cette commande.`;
         <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">En Attente</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Commandes en Attente</p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900">{pendingOrders}</p>
             </div>
             <div className="p-1 sm:p-2 bg-yellow-100 rounded-lg">
@@ -193,7 +183,7 @@ Merci de traiter cette commande.`;
         <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Payées</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Commandes Payées</p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900">{paidOrders}</p>
             </div>
             <div className="p-1 sm:p-2 bg-green-100 rounded-lg">

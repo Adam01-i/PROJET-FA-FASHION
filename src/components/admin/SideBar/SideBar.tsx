@@ -7,8 +7,8 @@ import SettingsItem from "./SideBarItems/SettingsItem";
 
 export type Tab =
   | "dashboard"
-  | "inventory"
   | "products"
+  | "inventory"
   | "orders"
   | "users"
   | "settings";
@@ -73,14 +73,15 @@ export default function SideBar({
               totalProducts: 89,
             }}
           />
-          <InventoryItem
-            active={activeTab === "inventory"}
-            onClick={() => onTabChange("inventory")}
-          />
           <ProductsItem
             active={activeTab === "products"}
             onClick={() => onTabChange("products")}
           />
+          <InventoryItem
+            active={activeTab === "inventory"}
+            onClick={() => onTabChange("inventory")}
+          />
+          
           <OrdersItem
             active={activeTab === "orders"}
             onClick={() => onTabChange("orders")}

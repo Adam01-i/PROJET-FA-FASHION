@@ -47,12 +47,6 @@ export default function OrderDetailsModal({
 
   const getStatusColor = (status: Order["status"]): string => {
     switch (status) {
-      case "delivered":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "shipped":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "processing":
-        return "bg-purple-100 text-purple-800 border-purple-200";
       case "confirmed":
         return "bg-orange-100 text-orange-800 border-orange-200";
       case "cancelled":
@@ -93,9 +87,6 @@ export default function OrderDetailsModal({
     const statusMap: Record<Order["status"], string> = {
       pending: "En attente",
       confirmed: "Confirmée",
-      processing: "En traitement",
-      shipped: "Expédiée",
-      delivered: "Livrée",
       cancelled: "Annulée",
     };
     return statusMap[status];
@@ -286,9 +277,6 @@ export default function OrderDetailsModal({
                 >
                   <option value="pending">En attente</option>
                   <option value="confirmed">Confirmée</option>
-                  <option value="processing">En traitement</option>
-                  <option value="shipped">Expédiée</option>
-                  <option value="delivered">Livrée</option>
                   <option value="cancelled">Annulée</option>
                 </select>
                 <div className="mt-2">
