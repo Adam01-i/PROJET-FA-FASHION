@@ -21,7 +21,7 @@ import { useProductSales } from "../../../hooks/useProductSales";
 
 // Import des composants détaillés
 import RevenueSection from "./sections/RevenueSection";
-import OrdersSection from "../SideBar/ContentSections/OrdersSection";
+import OrdersSection from "../../AuthOrdersSection/OrdersSection";
 import UsersSection from "../SideBar/ContentSections/UsersSection";
 import ProductsSection from "../SideBar/ContentSections/ProductsSection";
 import SalesPerformanceSection from "./sections/SalesPerformanceSection";

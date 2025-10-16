@@ -1,5 +1,5 @@
 // components/OrdersSection.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CheckCircle,
   XCircle,
@@ -14,7 +14,8 @@ import {
 import { Order } from "../../models";
 import { useOrders } from "../../hooks/useOrders";
 import { useToastContext } from "../../hooks/ToastProvider";
-import OrderDetailsModal from "../../Modals/OrderDetailsModal";
+import OrderDetailsModal from "../AuthOrdersModals/OrderDetailsModal";
+import { supabase } from "../../lib/supabaseClient";
 
 interface OrdersSectionProps {
   searchTerm: string;
@@ -25,10 +26,30 @@ function formatXOF(amount: number): string {
 }
 
 export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
-  const { orders, updateOrderStatus, updatePaymentStatus } = useOrders();
+  const { orders, updateOrderStatus, updatePaymentStatus, refetch } =
+    useOrders();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const { success, error: toastError } = useToastContext();
+  const [currentUserRole, setCurrentUserRole] = useState<string>();
+
+  // Récupérer le rôle au montage du composant
+  useEffect(() => {
+    const getUserRole = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        setCurrentUserRole(profile?.role);
+      }
+    };
+    getUserRole();
+  }, []);
 
   const filteredOrders = orders.filter(
     (order) =>
@@ -99,11 +120,30 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
     status: Order["status"]
   ): Promise<void> => {
     try {
-      await updateOrderStatus(orderId, status);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const currentUserId = user?.id;
+
+      // Récupérer le rôle de l'utilisateur
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user?.id)
+        .single();
+
+      const currentUserRole = profile?.role;
+
+      await updateOrderStatus(orderId, status, currentUserId, currentUserRole);
       success("Statut mis à jour", "Le statut de la commande a été mis à jour");
     } catch (error) {
       console.error("Error updating order status:", error);
-      toastError("Erreur", "Erreur lors de la mise à jour du statut");
+      toastError(
+        "Erreur",
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de la mise à jour du statut"
+      );
     }
   };
 
@@ -489,6 +529,8 @@ Merci de traiter cette commande.`;
           onPaymentProofUpload={handlePaymentProofUpload}
           onSendWhatsApp={handleSendWhatsApp}
           isUploadingProof={isUploadingProof}
+          currentUserRole={currentUserRole}
+          onOrderUpdate={refetch} // Utiliser directement refetch
         />
       )}
     </>

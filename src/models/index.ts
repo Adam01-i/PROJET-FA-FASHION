@@ -43,6 +43,7 @@ export interface Order {
   id: string;
   user_id: string;
   user?: User;
+  processed_by?: User;
   total_amount: number; 
   status: 'pending' | 'confirmed' | 'cancelled';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';

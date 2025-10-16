@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Navbar from './NavBar/Navbar';
-import OrdersSection from '../admin/SideBar/ContentSections/OrdersSection';
+import OrdersSection from '../AuthOrdersSection/OrdersSection';
 import InventorySection from '../Inventory/InventorySection'; 
 
 export default function AssistantLayout() {

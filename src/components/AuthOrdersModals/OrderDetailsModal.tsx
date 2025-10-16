@@ -11,10 +11,14 @@ import {
   X,
   Printer,
 } from "lucide-react";
-import { Order } from "../models";
+import { Order } from "../../models";
 // Corrigez les imports - utilisez les fonctions depuis le fichier correct
-import { generateInvoicePDF, downloadInvoicePDF, generateAdvancedInvoicePDF } from '../utils/invoiceGenerator'; 
-import { useParsedSettings } from '../hooks/useSiteSettings';
+import {
+  generateInvoicePDF,
+  downloadInvoicePDF,
+  generateAdvancedInvoicePDF,
+} from "../../utils/invoiceGenerator";
+import { useParsedSettings } from "../../hooks/useSiteSettings";
 
 interface OrderDetailsModalProps {
   order: Order;
@@ -27,6 +31,9 @@ interface OrderDetailsModalProps {
   onPaymentProofUpload: (orderId: string, file: File) => void;
   onSendWhatsApp: (order: Order) => void;
   isUploadingProof: boolean;
+  currentUserId?: string;
+  currentUserRole?: string;
+  onOrderUpdate?: () => void;
 }
 
 function formatXOF(amount: number): string {
@@ -41,9 +48,15 @@ export default function OrderDetailsModal({
   onPaymentProofUpload,
   onSendWhatsApp,
   isUploadingProof,
+  currentUserRole,
+  onOrderUpdate, // Ajouter cette ligne
 }: OrderDetailsModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { settings, loading: settingsLoading, error: settingsError } = useParsedSettings();
+  const {
+    settings,
+    loading: settingsLoading,
+    error: settingsError,
+  } = useParsedSettings();
 
   const getStatusColor = (status: Order["status"]): string => {
     switch (status) {
@@ -73,13 +86,6 @@ export default function OrderDetailsModal({
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-    }
-  };
-
-  const handleUploadProof = (): void => {
-    if (selectedFile) {
-      onPaymentProofUpload(order.id, selectedFile);
-      setSelectedFile(null);
     }
   };
 
@@ -152,6 +158,79 @@ export default function OrderDetailsModal({
   if (settingsError) {
     console.error("Erreur de chargement des paramètres:", settingsError);
   }
+
+  const canModifyOrder = (order: Order): boolean => {
+    return order.status !== "cancelled" && order.payment_status !== "refunded";
+  };
+
+  // Ajouter ces fonctions après les autres helpers
+  const canModifyOrderStatus = (order: Order, userRole?: string): boolean => {
+    if (order.status === "cancelled") return false;
+    if (userRole === "assistant") return false; // Assistants ne peuvent pas modifier le statut
+    if (userRole === "admin" && order.status === "confirmed") return false; // Admin ne peut pas dé-confirmer
+    return true;
+  };
+
+  const canConfirmOrder = (order: Order): boolean => {
+    return order.payment_status === "paid" && !!order.payment_proof;
+  };
+
+  const getAvailableStatusOptions = (userRole?: string): Order["status"][] => {
+    const options: Order["status"][] = ["pending"];
+
+    if (userRole === "admin") {
+      options.push("confirmed");
+    }
+
+    if (userRole === "client") {
+      options.push("cancelled");
+    }
+
+    return options;
+  };
+
+  // Créer des handlers optimisés
+  const handleStatusChange = async (
+    orderId: string,
+    status: Order["status"]
+  ) => {
+    try {
+      await onStatusChange(orderId, status);
+      // Déclencher le rafraîchissement après mise à jour
+      if (onOrderUpdate) {
+        setTimeout(() => onOrderUpdate(), 500); // Petit délai pour la synchronisation
+      }
+    } catch (error) {
+      console.error("Error updating order status:", error);
+    }
+  };
+
+  const handlePaymentStatusChange = async (
+    orderId: string,
+    paymentStatus: Order["payment_status"]
+  ) => {
+    try {
+      await onPaymentStatusChange(orderId, paymentStatus);
+      // Déclencher le rafraîchissement après mise à jour
+      if (onOrderUpdate) {
+        setTimeout(() => onOrderUpdate(), 500);
+      }
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+    }
+  };
+
+  const handlePaymentProofUpload = async (orderId: string, file: File) => {
+    try {
+      await onPaymentProofUpload(orderId, file);
+      // Déclencher le rafraîchissement après upload
+      if (onOrderUpdate) {
+        setTimeout(() => onOrderUpdate(), 1000); // Délai plus long pour l'upload
+      }
+    } catch (error) {
+      console.error("Error uploading payment proof:", error);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -262,7 +341,6 @@ export default function OrderDetailsModal({
               <h3 className="text-lg font-semibold text-gray-900">
                 Gestion de la Commande
               </h3>
-
               {/* Statut de la commande */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -271,14 +349,32 @@ export default function OrderDetailsModal({
                 <select
                   value={order.status}
                   onChange={(e) =>
-                    onStatusChange(order.id, e.target.value as Order["status"])
+                    handleStatusChange(
+                      order.id,
+                      e.target.value as Order["status"]
+                    )
                   }
-                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                  disabled={!canModifyOrderStatus(order, currentUserRole)}
+                  className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm ${
+                    !canModifyOrderStatus(order, currentUserRole)
+                      ? "bg-gray-100 cursor-not-allowed"
+                      : ""
+                  }`}
                 >
-                  <option value="pending">En attente</option>
-                  <option value="confirmed">Confirmée</option>
-                  <option value="cancelled">Annulée</option>
+                  {getAvailableStatusOptions(currentUserRole).map((status) => (
+                    <option key={status} value={status}>
+                      {getStatusDisplayName(status)}
+                    </option>
+                  ))}
                 </select>
+                {order.status === "pending" &&
+                  currentUserRole === "admin" &&
+                  !canConfirmOrder(order) && (
+                    <div className="mt-2 text-xs text-yellow-600">
+                      ⚠️ Pour confirmer cette commande, le paiement doit être
+                      marqué comme "Payé" et une preuve doit être uploadée
+                    </div>
+                  )}
                 <div className="mt-2">
                   <span
                     className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(
@@ -288,8 +384,13 @@ export default function OrderDetailsModal({
                     {getStatusDisplayName(order.status)}
                   </span>
                 </div>
+                {/* Ajouter le badge d'information ici */}
+                {!canModifyOrder(order) && (
+                  <div className="mt-2 text-xs text-red-600">
+                    ⚠️ Commande annulée - modifications désactivées
+                  </div>
+                )}
               </div>
-
               {/* Statut de paiement */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -298,12 +399,17 @@ export default function OrderDetailsModal({
                 <select
                   value={order.payment_status}
                   onChange={(e) =>
-                    onPaymentStatusChange(
+                    handlePaymentStatusChange(
                       order.id,
                       e.target.value as Order["payment_status"]
                     )
                   }
-                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                  disabled={!canModifyOrder(order)}
+                  className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm ${
+                    !canModifyOrder(order)
+                      ? "bg-gray-100 cursor-not-allowed"
+                      : ""
+                  }`}
                 >
                   <option value="pending">En attente</option>
                   <option value="paid">Payée</option>
@@ -325,7 +431,20 @@ export default function OrderDetailsModal({
                   </div>
                 )}
               </div>
-
+              {/* Ajouter cette section pour afficher qui a traité la commande */}
+              {order.processed_by && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    ✅ Traitée par: {order.processed_by?.full_name}
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    Le{" "}
+                    {order.updated_at
+                      ? new Date(order.updated_at).toLocaleDateString("fr-FR")
+                      : "Date non disponible"}
+                  </p>
+                </div>
+              )}
               {/* Upload de preuve de paiement */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -340,7 +459,9 @@ export default function OrderDetailsModal({
                   />
                   {selectedFile && (
                     <button
-                      onClick={handleUploadProof}
+                      onClick={() =>
+                        handlePaymentProofUpload(order.id, selectedFile!)
+                      }
                       disabled={isUploadingProof}
                       className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center text-sm"
                     >
@@ -454,7 +575,7 @@ export default function OrderDetailsModal({
               <Download className="h-4 w-4 mr-2" />
               {settingsLoading ? "Chargement..." : "Télécharger HTML"}
             </button>
-            
+
             <button
               onClick={() => onSendWhatsApp(order)}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center text-sm transition-colors"
@@ -462,7 +583,7 @@ export default function OrderDetailsModal({
               <MessageCircle className="h-4 w-4 mr-2" />
               Envoyer sur WhatsApp
             </button>
-            
+
             <button
               onClick={onClose}
               className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm transition-colors"
