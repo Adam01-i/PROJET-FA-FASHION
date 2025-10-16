@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// components/dashboard/sections/RevenueSection.tsx
+import { useState } from "react";
 import {
   DollarSign,
   TrendingUp,
@@ -6,56 +7,15 @@ import {
   Download,
   Calendar,
   BarChart3,
-  PieChart,
+  Users,
 } from "lucide-react";
-import { useOrders } from "../../../../hooks/useOrders";
 import { useProductSales } from "../../../../hooks/useProductSales";
-
-interface RevenueStats {
-  totalRevenue: number;
-  averageOrderValue: number;
-  revenueGrowth: number;
-  monthlyRevenue: number;
-  revenueByCategory: { category: string; revenue: number }[];
-}
+import { useRevenueStats } from "../../../../hooks/useRevenueStats";
 
 export default function RevenueSection() {
-  const { orders, loading: ordersLoading } = useOrders();
-  const { productSales } = useProductSales();
-  const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year">(
-    "month"
-  );
-  const [revenueStats, setRevenueStats] = useState<RevenueStats | null>(null);
-
-  useEffect(() => {
-    if (orders.length > 0) {
-      const totalRevenue = orders.reduce(
-        (sum, order) => sum + order.total_amount,
-        0
-      );
-      const averageOrderValue = totalRevenue / orders.length;
-
-      // Calculs simulés pour la croissance
-      const revenueGrowth = 12.5;
-      const monthlyRevenue = totalRevenue * 0.3; // 30% du total pour le mois
-
-      // Données simulées par catégorie
-      const revenueByCategory = [
-        { category: "Électronique", revenue: totalRevenue * 0.4 },
-        { category: "Mode", revenue: totalRevenue * 0.3 },
-        { category: "Maison", revenue: totalRevenue * 0.2 },
-        { category: "Autres", revenue: totalRevenue * 0.1 },
-      ];
-
-      setRevenueStats({
-        totalRevenue,
-        averageOrderValue,
-        revenueGrowth,
-        monthlyRevenue,
-        revenueByCategory,
-      });
-    }
-  }, [orders]);
+  const { productSales, loading: salesLoading } = useProductSales();
+  const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year">("month");
+  const { stats, loading: statsLoading, error } = useRevenueStats(timeRange);
 
   const formatXOF = (amount: number): string => {
     return amount.toLocaleString("fr-FR", {
@@ -64,13 +24,27 @@ export default function RevenueSection() {
     });
   };
 
-  if (ordersLoading || !revenueStats) {
+  if (statsLoading || salesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
+
+  if (error || !stats) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center text-red-600">
+          <p>Erreur de chargement des données de revenue</p>
+          <p className="text-sm text-gray-600 mt-2">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculer les hauteurs pour le graphique basé sur les données réelles
+  const maxRevenue = Math.max(...stats.dailyTrend.map(d => d.revenue), 1);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -121,24 +95,24 @@ export default function RevenueSection() {
             </div>
             <span
               className={`flex items-center text-xs sm:text-sm font-medium ${
-                revenueStats.revenueGrowth >= 0
+                stats.revenueGrowth >= 0
                   ? "text-green-600"
                   : "text-red-600"
               }`}
             >
-              {revenueStats.revenueGrowth >= 0 ? (
+              {stats.revenueGrowth >= 0 ? (
                 <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
               ) : (
                 <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
               )}
-              {Math.abs(revenueStats.revenueGrowth)}%
+              {Math.abs(stats.revenueGrowth)}%
             </span>
           </div>
           <h3 className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide mb-1 sm:mb-2">
             Revenue Total
           </h3>
           <p className="text-xl sm:text-2xl font-bold text-gray-900">
-            {formatXOF(revenueStats.totalRevenue)}
+            {formatXOF(stats.totalRevenue)}
           </p>
         </div>
 
@@ -150,7 +124,7 @@ export default function RevenueSection() {
             Panier Moyen
           </h3>
           <p className="text-xl sm:text-2xl font-bold text-gray-900">
-            {formatXOF(revenueStats.averageOrderValue)}
+            {formatXOF(stats.averageOrderValue)}
           </p>
         </div>
 
@@ -162,19 +136,19 @@ export default function RevenueSection() {
             Revenue Mensuel
           </h3>
           <p className="text-xl sm:text-2xl font-bold text-gray-900">
-            {formatXOF(revenueStats.monthlyRevenue)}
+            {formatXOF(stats.monthlyRevenue)}
           </p>
         </div>
 
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 shadow-md sm:shadow-lg w-fit mb-3 sm:mb-4">
-            <PieChart className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
           <h3 className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide mb-1 sm:mb-2">
-            Commandes
+            Clients
           </h3>
           <p className="text-xl sm:text-2xl font-bold text-gray-900">
-            {orders.length}
+            {stats.totalCustomers}
           </p>
         </div>
       </div>
@@ -187,22 +161,27 @@ export default function RevenueSection() {
             Répartition par Catégorie
           </h3>
           <div className="space-y-3 sm:space-y-4">
-            {revenueStats.revenueByCategory.map((category) => (
+            {stats.revenueByCategory.map((category) => (
               <div key={category.category} className="space-y-1 sm:space-y-2">
                 <div className="flex justify-between text-xs sm:text-sm">
                   <span className="font-medium text-gray-700 truncate mr-2">
                     {category.category}
                   </span>
-                  <span className="text-gray-900 whitespace-nowrap">
-                    {formatXOF(category.revenue)}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-900 whitespace-nowrap">
+                      {formatXOF(category.revenue)}
+                    </span>
+                    <span className="text-gray-500 text-xs">
+                      ({category.orderCount} cmd)
+                    </span>
+                  </div>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                   <div
                     className="h-1.5 sm:h-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-1000"
                     style={{
                       width: `${
-                        (category.revenue / revenueStats.totalRevenue) * 100
+                        (category.revenue / stats.totalRevenue) * 100
                       }%`,
                     }}
                   />
@@ -218,22 +197,28 @@ export default function RevenueSection() {
             Évolution du Revenue
           </h3>
           <div className="space-y-4">
-            {/* Graphique simplifié */}
             <div className="flex items-end justify-between h-32 sm:h-48 pt-3 sm:pt-4">
-              {[65, 45, 80, 60, 75, 90, 85].map((height, index) => (
+              {stats.dailyTrend.slice(-7).map((day, index) => (
                 <div
                   key={index}
                   className="flex flex-col items-center space-y-1 sm:space-y-2 flex-1 mx-0.5 sm:mx-1"
                 >
                   <div
                     className="w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t transition-all duration-500 hover:from-green-600 hover:to-emerald-500 cursor-pointer"
-                    style={{ height: `${height}%` }}
+                    style={{ 
+                      height: `${(day.revenue / maxRevenue) * 80}%`,
+                      minHeight: '4px'
+                    }}
+                    title={`${day.date}: ${formatXOF(day.revenue)}`}
                   />
                   <span className="text-xs text-gray-500 font-medium">
-                    {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"][index]}
+                    {day.date}
                   </span>
                 </div>
               ))}
+            </div>
+            <div className="text-center text-xs text-gray-500">
+              {stats.dailyTrend.length} jours de données
             </div>
           </div>
         </div>
@@ -250,6 +235,9 @@ export default function RevenueSection() {
               <tr className="border-b border-gray-200">
                 <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium text-gray-600">
                   Produit
+                </th>
+                <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium text-gray-600">
+                  Catégorie
                 </th>
                 <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium text-gray-600">
                   Quantité
@@ -281,6 +269,11 @@ export default function RevenueSection() {
                         {sale.product_name}
                       </span>
                     </div>
+                  </td>
+                  <td className="py-2 sm:py-3 px-2 sm:px-4">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {sale.category}
+                    </span>
                   </td>
                   <td className="py-2 sm:py-3 px-2 sm:px-4 text-gray-600 text-xs sm:text-sm">
                     {sale.quantity_sold}
