@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
-  // TrendingUp,
   Users,
   ShoppingCart,
   Package,
   DollarSign,
-  // Eye,
   ShoppingBag,
   ArrowUp,
   ArrowDown,
@@ -18,6 +16,7 @@ import { useProducts } from "../../../hooks/useProducts";
 import { useOrders } from "../../../hooks/useOrders";
 import { useUsers } from "../../../hooks/useUsers";
 import { useProductSales } from "../../../hooks/useProductSales";
+import { useDailySales } from "../../../hooks/useDailySales";
 
 // Import des composants détaillés
 import RevenueSection from "./sections/RevenueSection";
@@ -27,8 +26,6 @@ import ProductsSection from "../SideBar/ContentSections/ProductsSection";
 import SalesPerformanceSection from "./sections/SalesPerformanceSection";
 import RecentActivitySection from "./sections/RecentActivitySection";
 import PopularProductsSection from "./sections/PopularProductsSection";
-// import PerformanceMetricsSection from "./sections/PerformanceMetricsSection";
-// import MonthlyGoalsSection from "./sections/MonthlyGoalsSection";
 
 // Types pour les données du dashboard
 interface DashboardStats {
@@ -50,7 +47,7 @@ interface RecentActivity {
   amount?: number;
 }
 
-interface SalesData {
+interface DailySale {
   date: string;
   revenue: number;
   orders: number;
@@ -95,38 +92,86 @@ export default function Dashboard() {
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
     []
   );
-  const [salesData, setSalesData] = useState<SalesData[]>([]);
+
+  const { dailySales, loading: dailySalesLoading } = useDailySales(timeRange);
 
   // Calcul des statistiques
   useEffect(() => {
-    const totalRevenue = orders.reduce(
+    // Calcul des statistiques réelles
+    const confirmedOrders = orders.filter(
+      (order) => order.status === "confirmed"
+    );
+    const totalRevenue = confirmedOrders.reduce(
       (sum, order) => sum + order.total_amount,
       0
     );
-    const totalOrders = orders.length;
+    const totalOrders = confirmedOrders.length;
     const totalUsers = users.length;
     const totalProducts = products.length;
 
-    // Calcul des croissance (simulées pour l'exemple)
-    const revenueGrowth = 12.5;
-    const ordersGrowth = 8.2;
-    const usersGrowth = 15.7;
-    const conversionRate = 3.2;
+    // Calcul des croissances réelles (comparaison avec période précédente)
+    const currentDate = new Date();
+    const lastMonthDate = new Date();
+    lastMonthDate.setMonth(currentDate.getMonth() - 1);
+
+    // Commandes du mois dernier
+    const lastMonthOrders = orders.filter((order) => {
+      const orderDate = new Date(order.created_at);
+      return (
+        orderDate >= lastMonthDate &&
+        orderDate < currentDate &&
+        order.status === "confirmed"
+      );
+    });
+
+    const lastMonthRevenue = lastMonthOrders.reduce(
+      (sum, order) => sum + order.total_amount,
+      0
+    );
+    const lastMonthOrderCount = lastMonthOrders.length;
+
+    // Calcul des pourcentages de croissance
+    const revenueGrowth =
+      lastMonthRevenue > 0
+        ? ((totalRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
+        : totalRevenue > 0
+        ? 100
+        : 0;
+
+    const ordersGrowth =
+      lastMonthOrderCount > 0
+        ? ((totalOrders - lastMonthOrderCount) / lastMonthOrderCount) * 100
+        : totalOrders > 0
+        ? 100
+        : 0;
+
+    // Croissance utilisateurs (simplifiée)
+    const lastMonthUsers = users.filter((user) => {
+      const userDate = new Date(user.created_at);
+      return userDate >= lastMonthDate && userDate < currentDate;
+    }).length;
+
+    const usersGrowth =
+      lastMonthUsers > 0
+        ? ((totalUsers - lastMonthUsers) / lastMonthUsers) * 100
+        : totalUsers > 0
+        ? 100
+        : 0;
 
     setStats({
       totalRevenue,
       totalOrders,
       totalUsers,
       totalProducts,
-      revenueGrowth,
-      ordersGrowth,
-      usersGrowth,
-      conversionRate,
+      revenueGrowth: Number(revenueGrowth.toFixed(1)),
+      ordersGrowth: Number(ordersGrowth.toFixed(1)),
+      usersGrowth: Number(usersGrowth.toFixed(1)),
+      conversionRate: totalUsers > 0 ? (totalOrders / totalUsers) * 100 : 0,
     });
 
     // Génération des activités récentes
     const activities: RecentActivity[] = [
-      ...orders.slice(0, 3).map((order) => ({
+      ...confirmedOrders.slice(0, 3).map((order) => ({
         id: order.id,
         type: "order" as const,
         description: `Nouvelle commande #${order.id.slice(0, 8)}`,
@@ -136,28 +181,12 @@ export default function Dashboard() {
       ...users.slice(0, 2).map((user) => ({
         id: user.id,
         type: "user" as const,
-        description: `Nouvel utilisateur ${user.email}`,
+        description: `Nouvel utilisateur ${user.full_name || user.email}`,
         time: new Date(user.created_at).toLocaleDateString("fr-FR"),
       })),
     ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
     setRecentActivities(activities);
-
-    // Génération des données de vente (simulées)
-    const generatedSalesData: SalesData[] = Array.from(
-      { length: 7 },
-      (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (6 - i));
-        return {
-          date: date.toLocaleDateString("fr-FR", { weekday: "short" }),
-          revenue: Math.floor(Math.random() * 10000) + 5000,
-          orders: Math.floor(Math.random() * 20) + 5,
-        };
-      }
-    );
-
-    setSalesData(generatedSalesData);
   }, [products, orders, users]);
 
   const formatXOF = (amount: number): string => {
@@ -166,6 +195,28 @@ export default function Dashboard() {
       currency: "XOF",
     });
   };
+
+  // Fonction utilitaire pour les données par défaut
+  const getSafeDailySales = (sales: DailySale[]) => {
+    if (sales.length > 0) return sales;
+
+    // Données par défaut quand il n'y a pas de données
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      return {
+        date: date.toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "short",
+        }),
+        revenue: 0,
+        orders: 0,
+      };
+    });
+  };
+
+  // Utiliser dans le graphique
+  const safeDailySales = getSafeDailySales(dailySales);
 
   const StatCard = ({
     title,
@@ -267,15 +318,20 @@ export default function Dashboard() {
         return <RecentActivitySection />;
       case "popular-products":
         return <PopularProductsSection />;
-      // case "performance":
-      //   return <PerformanceMetricsSection />;
-      // case "goals":
-      //   return <MonthlyGoalsSection />;
       case "overview":
       default:
         return renderOverview();
     }
   };
+
+  // Gestion du loading
+  if (dailySalesLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   const renderOverview = () => (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
@@ -347,7 +403,7 @@ export default function Dashboard() {
           value={
             topProducts.length > 0 ? `${topProducts[0].product_name}` : "Aucun"
           }
-          growth={15.8}
+          growth={topProducts.length > 0 ? 15.8 : 0}
           icon={Package}
           color="orange"
           onClick={() => setActiveSection("popular-products")}
@@ -388,30 +444,48 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-4">
-            {/* Bar chart simplifié */}
+            {/* Bar chart simplifié avec données réelles */}
             <div className="flex items-end justify-between h-32 sm:h-48">
-              {salesData.map((day, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col items-center space-y-1 sm:space-y-2 flex-1 mx-0.5 sm:mx-1"
-                >
-                  <div className="flex items-end space-x-0.5 sm:space-x-1 h-20 sm:h-32 w-full">
+              {safeDailySales.length > 0 ? (
+                safeDailySales.slice(-7).map((day, index) => {
+                  // Calcul dynamique des hauteurs basé sur les données réelles
+                  const maxRevenue = Math.max(...safeDailySales.map(d => d.revenue), 1);
+                  const maxOrders = Math.max(...safeDailySales.map(d => d.orders), 1);
+                  
+                  return (
                     <div
-                      className="w-full bg-blue-500 rounded-t transition-all duration-500 hover:bg-blue-600 cursor-pointer"
-                      style={{ height: `${(day.revenue / 15000) * 100}%` }}
-                      title={`Revenu: ${formatXOF(day.revenue)}`}
-                    />
-                    <div
-                      className="w-full bg-green-500 rounded-t transition-all duration-500 hover:bg-green-600 cursor-pointer"
-                      style={{ height: `${(day.orders / 25) * 100}%` }}
-                      title={`Commandes: ${day.orders}`}
-                    />
-                  </div>
-                  <span className="text-xs text-gray-500 font-medium">
-                    {day.date}
-                  </span>
+                      key={index}
+                      className="flex flex-col items-center space-y-1 sm:space-y-2 flex-1 mx-0.5 sm:mx-1"
+                    >
+                      <div className="flex items-end space-x-0.5 sm:space-x-1 h-20 sm:h-32 w-full justify-center">
+                        <div
+                          className="w-3/4 bg-blue-500 rounded-t transition-all duration-500 hover:bg-blue-600 cursor-pointer"
+                          style={{ 
+                            height: `${(day.revenue / maxRevenue) * 80}%`,
+                            minHeight: '4px'
+                          }}
+                          title={`Revenu: ${formatXOF(day.revenue)}`}
+                        />
+                        <div
+                          className="w-3/4 bg-green-500 rounded-t transition-all duration-500 hover:bg-green-600 cursor-pointer"
+                          style={{ 
+                            height: `${(day.orders / maxOrders) * 80}%`,
+                            minHeight: '4px'
+                          }}
+                          title={`Commandes: ${day.orders}`}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium">
+                        {day.date}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+                  Aucune donnée de vente disponible
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -531,7 +605,7 @@ export default function Dashboard() {
                   <img
                     src={product.image_url}
                     alt={product.name}
-                    className="w-8 h-8 sm:w-10  rounded-lg object-cover"
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover"
                   />
                 )}
                 <div className="flex-1 min-w-0">

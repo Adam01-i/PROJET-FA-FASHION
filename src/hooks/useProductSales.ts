@@ -1,3 +1,4 @@
+// hooks/useProductSales.ts (avec vue SQL)
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { ProductSale } from '../models';
@@ -5,31 +6,29 @@ import { ProductSale } from '../models';
 export function useProductSales() {
   const [productSales, setProductSales] = useState<ProductSale[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchProductSales = async () => {
     try {
       const { data, error } = await supabase
-        .from('product_sales')
-        .select('*')
-        .order('total_revenue', { ascending: false });
+        .from("product_sales_summary")
+        .select("*")
+        .order("total_revenue", { ascending: false });
 
       if (error) throw error;
 
       const salesData: ProductSale[] = (data || []).map(item => ({
         product_id: item.product_id,
         product_name: item.product_name,
-        quantity_sold: item.quantity_sold,
-        total_revenue: item.total_revenue,
+        quantity_sold: item.quantity_sold || 0,
+        total_revenue: item.total_revenue || 0,
         stock_quantity: item.stock_quantity,
         image_url: item.image_url || undefined,
-        category: item.category_name || undefined
+        category: item.category_name || "Non catégorisé"
       }));
 
       setProductSales(salesData);
     } catch (err) {
-      console.error('Erreur lors du chargement des ventes:', err);
-      setError(err instanceof Error ? err.message : 'Erreur de chargement');
+      console.error("Error fetching product sales:", err);
     } finally {
       setLoading(false);
     }
@@ -37,50 +36,7 @@ export function useProductSales() {
 
   useEffect(() => {
     fetchProductSales();
-
-    // Abonnement en temps réel aux changements
-    const subscription = supabase
-      .channel('product_sales_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders'
-        },
-        () => {
-          // Recharger les données quand une commande change
-          fetchProductSales();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'order_items'
-        },
-        () => {
-          fetchProductSales();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'products'
-        },
-        () => {
-          fetchProductSales();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
-  return { productSales, loading, error, refetch: fetchProductSales };
+  return { productSales, loading, refetch: fetchProductSales };
 }
