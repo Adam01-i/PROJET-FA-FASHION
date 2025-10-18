@@ -1,18 +1,17 @@
-// components/client/ClientCart.tsx
-import { useState, useEffect } from 'react';
+// components/client/ClientCart.tsx (version simplifiée)
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, MessageCircle } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, MessageCircle, User } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { formatXOF } from '../../../lib/currency';
-import { Order } from '../../../models';
-import { useCart } from '../../../contexts/CartContext'; // Import du contexte
+import { useCart } from '../../../contexts/CartContext';
 
 export default function ClientCart() {
   const [isProcessing, setIsProcessing] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [user, setUser] = useState<any>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
   
-  // ✅ Utiliser le contexte du panier au lieu de l'état local
   const { 
     items, 
     removeFromCart, 
@@ -22,65 +21,55 @@ export default function ClientCart() {
     itemCount 
   } = useCart();
 
-  // ✅ Récupérer l'utilisateur connecté
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data?.user);
-    };
-    fetchUser();
+  // ✅ Fonction simple pour créer une commande guest
+  const createOrder = async (): Promise<{id: string}> => {
+    if (!phoneNumber.trim()) {
+      throw new Error('Le numéro de téléphone est obligatoire');
+    }
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
+    // Valider le format du numéro de téléphone
+    const phoneRegex = /^(77|76|70|75|78)[0-9]{7}$/;
+    const cleanPhone = phoneNumber.replace(/\s/g, '');
+    if (!phoneRegex.test(cleanPhone)) {
+      throw new Error('Veuillez entrer un numéro de téléphone sénégalais valide (ex: 77 123 45 67)');
+    }
 
-    return () => {
-      listener?.subscription.unsubscribe();
-    };
-  }, []);
-
-  // ✅ Créer une commande dans Supabase
-  const createOrder = async (): Promise<Order> => {
-    if (!user) throw new Error('Vous devez être connecté pour effectuer un achat');
-
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        user_id: user.id,
-        total_amount: total,
-        status: 'pending',
-        payment_status: 'pending'
-      })
-      .select()
-      .single();
-
-    if (orderError) throw orderError;
-
-    const orderItems = items.map(item => ({
-      order_id: order.id,
+    // Préparer les données des articles
+    const orderItemsData = items.map(item => ({
       product_id: item.id,
       quantity: item.quantity,
       price: item.price
     }));
 
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
+    // Utiliser RPC pour créer la commande guest
+    const { data, error } = await supabase.rpc('create_guest_order', {
+      customer_phone: cleanPhone,
+      customer_name: customerName.trim() || null,
+      total_amount: total,
+      order_items: orderItemsData
+    });
 
-    if (itemsError) throw itemsError;
+    if (error) {
+      console.error('RPC Error:', error);
+      throw new Error(`Erreur lors de la création de la commande: ${error.message}`);
+    }
 
-    return order;
+    return { id: data };
   };
 
-  const generateWhatsAppMessage = (order: Order) => {
+  const generateWhatsAppMessage = (orderId: string) => {
     const itemsText = items.map(item => 
       `• ${item.quantity}x ${item.name} - ${formatXOF(item.price * item.quantity)}`
     ).join('\n');
 
+    const customerInfo = customerName 
+      ? `Nom: ${customerName}\nTéléphone: ${phoneNumber}`
+      : `Téléphone: ${phoneNumber}`;
+
     return `Bonjour! Je souhaite passer une commande 🛍️\n\n` +
+           `*Informations client:*\n${customerInfo}\n\n` +
            `*Détails de la commande:*\n` +
-           `Numéro de commande: ${order.id}\n` +
-           `Client: ${user?.email}\n\n` +
+           `Numéro de commande: ${orderId}\n\n` +
            `*Produits commandés:*\n${itemsText}\n\n` +
            `*Total: ${formatXOF(total)}*\n\n` +
            `Je suis prêt(e) à procéder au paiement. Merci!`;
@@ -90,8 +79,8 @@ export default function ClientCart() {
     try {
       setIsProcessing(true);
       
-      if (!user) {
-        alert('Veuillez vous connecter pour passer une commande');
+      if (!showCustomerForm) {
+        setShowCustomerForm(true);
         return;
       }
 
@@ -99,23 +88,43 @@ export default function ClientCart() {
       const order = await createOrder();
       
       // Générer le message WhatsApp
-      const message = generateWhatsAppMessage(order);
-      const phoneNumber = "221761994984";
+      const message = generateWhatsAppMessage(order.id);
+      const whatsappNumber = "221761994984"; // Votre numéro WhatsApp business
       const encodedMessage = encodeURIComponent(message);
       
       // Ouvrir WhatsApp
-      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
       window.open(whatsappUrl, '_blank');
       
       // Vider le panier après envoi
       clearCart();
+      setShowCustomerForm(false);
+      setPhoneNumber('');
+      setCustomerName('');
       
     } catch (error) {
       console.error('Error creating order:', error);
-      alert('Une erreur est survenue lors de la création de la commande.');
+      alert(error instanceof Error ? error.message : 'Une erreur est survenue lors de la création de la commande.');
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const cleaned = value.replace(/\D/g, '');
+    let formatted = cleaned;
+    
+    if (cleaned.length > 2) {
+      formatted = cleaned.slice(0, 2) + ' ' + cleaned.slice(2);
+    }
+    if (cleaned.length > 5) {
+      formatted = formatted.slice(0, 6) + ' ' + formatted.slice(6);
+    }
+    if (cleaned.length > 7) {
+      formatted = formatted.slice(0, 9) + ' ' + formatted.slice(9);
+    }
+    
+    setPhoneNumber(formatted.slice(0, 12));
   };
 
   if (items.length === 0) {
@@ -233,30 +242,79 @@ export default function ClientCart() {
               </dl>
             </div>
 
+            {/* Formulaire informations client */}
+            {showCustomerForm && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg space-y-4">
+                <div className="flex items-center text-sm text-gray-700 mb-2">
+                  <User className="h-4 w-4 mr-2" />
+                  Informations de contact
+                </div>
+                
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Numéro de téléphone *
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    value={phoneNumber}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="77 123 45 67"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: 77, 76, 70, 75 ou 78
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Votre nom (optionnel)
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Votre nom"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 space-y-4">
               <button
                 onClick={handleWhatsAppOrder}
-                disabled={isProcessing || !user}
+                disabled={isProcessing || (showCustomerForm && !phoneNumber.trim())}
                 className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white ${
-                  isProcessing || !user
+                  isProcessing || (showCustomerForm && !phoneNumber.trim())
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-green-600 hover:bg-green-700'
                 }`}
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
-                {!user ? 'Connexion requise' : 
-                 isProcessing ? 'Création de la commande...' : 'Commander via WhatsApp'}
+                {showCustomerForm 
+                  ? (isProcessing ? 'Création de la commande...' : 'Confirmer et passer commande')
+                  : 'Passer la commande'
+                }
               </button>
 
-              {!user && (
-                <p className="text-xs text-red-600 text-center">
-                  Veuillez vous connecter pour passer commande
+              {!showCustomerForm && (
+                <p className="text-xs text-gray-500 text-center">
+                  Aucune connexion nécessaire. Juste votre numéro pour confirmer la commande.
                 </p>
               )}
 
-              <p className="text-xs text-gray-500 text-center">
-                Vous serez redirigé vers WhatsApp pour finaliser votre commande avec notre assistant.
-              </p>
+              {showCustomerForm && (
+                <button
+                  onClick={() => setShowCustomerForm(false)}
+                  className="w-full text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Retour
+                </button>
+              )}
             </div>
           </div>
         </div>

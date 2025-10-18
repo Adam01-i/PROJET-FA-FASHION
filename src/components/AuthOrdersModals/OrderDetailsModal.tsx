@@ -3,7 +3,6 @@ import {
   User,
   MapPin,
   Phone,
-  Mail,
   Package,
   DollarSign,
   MessageCircle,
@@ -273,26 +272,26 @@ export default function OrderDetailsModal({
                   <div>
                     <p className="text-sm text-gray-600">Nom</p>
                     <p className="text-sm font-medium text-gray-900">
-                      {order.user?.full_name || "Non spécifié"}
+                      {order.customer_name || "Non spécifié"}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 text-gray-400 mr-2" />
-                  <div>
+                {/* <div className="flex items-center"> */}
+                  {/* <Mail className="h-4 w-4 text-gray-400 mr-2" /> */}
+                  {/* <div>
                     <p className="text-sm text-gray-600">Email</p>
                     <p className="text-sm font-medium text-gray-900">
                       {order.user?.email || "Non spécifié"}
                     </p>
-                  </div>
-                </div>
-                {order.user?.phone && (
+                  </div> */}
+                {/* </div> */}
+                {order.customer_phone && (
                   <div className="flex items-center">
                     <Phone className="h-4 w-4 text-gray-400 mr-2" />
                     <div>
                       <p className="text-sm text-gray-600">Téléphone</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {order.user.phone}
+                        {order.customer_phone}
                       </p>
                     </div>
                   </div>

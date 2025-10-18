@@ -287,7 +287,7 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <div className="py-1">
-                                  <button
+                                  {/* <button
                                     onClick={() => handleToggleUserStatus(user.id, user.is_active ?? true)}
                                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                   >
@@ -302,7 +302,7 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
                                         Activer
                                       </>
                                     )}
-                                  </button>
+                                  </button> */}
 
                                   {canPromoteToAssistant(user) && (
                                     <button

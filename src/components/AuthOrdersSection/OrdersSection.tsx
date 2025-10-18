@@ -177,16 +177,16 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
         )
         .join("\n") || "Aucun produit";
 
-    const message = `Nouvelle commande #${order.id.slice(0, 8)}
+    const message = `Chere client votre Nouvelle commande #${order.id.slice(0, 8)}
     
 📦 Produits commandés:
 ${itemsText}
 
 💰 Total: ${formatXOF(order.total_amount)}
-👤 Client: ${order.user?.full_name || "Non spécifié"}
-📞 Téléphone: ${order.user?.phone || "Non spécifié"}
+👤 Client: ${order.customer_name || "Non spécifié"}
+📞 Téléphone: ${order.customer_phone || "Non spécifié"}
 
-Merci de traiter cette commande.`;
+a etait bien recu! Merci de proceder au paiment.`;
 
     const encodedMessage = encodeURIComponent(message);
     window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
@@ -357,15 +357,15 @@ Merci de traiter cette commande.`;
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
-                        {order.user?.full_name || "Non spécifié"}
+                        {order.customer_name || "Non spécifié"}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      {/* <div className="text-sm text-gray-500">
                         {order.user?.email}
-                      </div>
-                      {order.user?.phone && (
+                      </div> */}
+                      {order.customer_phone && (
                         <div className="text-xs text-gray-400 flex items-center">
                           <Phone className="h-3 w-3 mr-1" />
-                          {order.user.phone}
+                          {order.customer_phone}
                         </div>
                       )}
                     </td>

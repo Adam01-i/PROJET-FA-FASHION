@@ -5,10 +5,12 @@ export interface User {
   full_name?: string;
   avatar_url?: string;
   phone?: string;
+  is_guest_user?: boolean;
   created_at: string;
   updated_at?: string;
   is_active?: boolean;
 }
+
 
 export interface Product {
   id: string;
@@ -43,6 +45,9 @@ export interface Order {
   id: string;
   user_id: string;
   user?: User;
+  customer_phone: string; // Nouveau champ obligatoire
+  customer_name?: string; // Nouveau champ optionnel
+  customer_email?: string; // Nouveau champ optionnel
   processed_by?: User;
   total_amount: number; 
   status: 'pending' | 'confirmed' | 'cancelled';
