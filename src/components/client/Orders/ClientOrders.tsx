@@ -12,7 +12,6 @@ import {
   Eye,
   MessageCircle,
   Calendar,
-  LogIn,
 } from "lucide-react";
 import { formatXOF } from "../../../lib/currency";
 import { useMyOrders } from "../../../hooks/useMyOrders";
@@ -155,31 +154,12 @@ export default function ClientOrders() {
 
   // Dans la partie d'affichage des erreurs
 if (error) {
-  const isNetworkError = error.includes('connexion') || error.includes('réseau') || error.includes('internet');
   
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <XCircle className="mx-auto h-12 w-12 text-red-400" />
-        <h3 className="mt-4 text-lg font-medium text-red-800">
-          {isNetworkError ? 'Problème de connexion' : 'Erreur de chargement'}
-        </h3>
-        <p className="mt-2 text-red-600">{error}</p>
+        <p className="mt-2 text-red-600"></p>
         <div className="mt-4 flex gap-3 justify-center">
-          <button
-            onClick={refetch}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
-          >
-            Réessayer
-          </button>
-          {isNetworkError && (
-            <button
-              onClick={() => window.location.reload()}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Actualiser la page
-            </button>
-          )}
           <Link
             to="/"
             className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
@@ -194,26 +174,26 @@ if (error) {
 }
 
   // ✅ Afficher un écran de connexion si utilisateur non connecté
-  if (error?.includes("non connecté") || error?.includes("session expirée")) {
+  if (error?.includes("") || error?.includes("")) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
           <Package className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          {/* <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Connexion requise
-          </h2>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+          </h2> */}
+          {/* <p className="text-gray-600 mb-8 max-w-md mx-auto">
             Vous devez être connecté pour accéder à vos commandes.
             Connectez-vous pour voir votre historique de commandes.
-          </p>
+          </p> */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
+            {/* <Link
               to="/login"
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              <LogIn className="mr-2 h-5 w-5" />
+            > */}
+              {/* <LogIn className="mr-2 h-5 w-5" />
               Se connecter
-            </Link>
+            </Link> */}
             <Link
               to="/"
               className="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"

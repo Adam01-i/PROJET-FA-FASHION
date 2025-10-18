@@ -3,7 +3,6 @@ import { useState, useEffect, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, 
-  User, 
   Home, 
   LogOut, 
   Search, 
@@ -253,7 +252,7 @@ export default function Navbar() {
               </Link>
 
               {/* Utilisateur */}
-              {user ? (
+              {/* {user ? (
                 <div className="flex items-center space-x-2">
                   <div className="hidden sm:flex items-center space-x-2 bg-white bg-opacity-10 px-3 py-1 rounded-full">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
@@ -288,7 +287,7 @@ export default function Navbar() {
                 >
                   <User className="h-5 w-5" />
                 </Link>
-              )}
+              )} */}
             </div>
           </div>
         </div>
