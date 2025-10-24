@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 // Contextes et hooks globaux
 import { CartProvider } from "./contexts/CartContext";
 import { ToastProvider } from "./hooks/ToastProvider";
+import { FavoritesProvider } from "./hooks/FavoritesContext";
 
 // Auth
 import Login from "./components/auth/Login";
@@ -25,6 +26,7 @@ import AssistantLayout from "./components/assistant/AssistantLayout";
 import ClientHome from "./components/client/Views/ClientHome";
 import ClientCart from "./components/client/Cart/ClientCart";
 import ClientOrders from "./components/client/Orders/ClientOrders";
+import ClientWishlist from "./components/client/Views/ClientWishlist";
 
 // ========================
 // 🧱 Layouts de base
@@ -42,88 +44,97 @@ function AppContent() {
   const location = useLocation();
 
   return (
-    <ToastProvider>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={location.pathname}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-        >
-          <Routes location={location}>
-            {/* 🔐 Auth publique */}
-            <Route
-              path="/login"
-              element={
-                <AuthLayout>
-                  <Login />
-                </AuthLayout>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <AuthLayout>
-                  <Register />
-                </AuthLayout>
-              }
-            />
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+      >
+        <Routes location={location}>
+          {/* 🔐 Auth publique */}
+          <Route
+            path="/login"
+            element={
+              <AuthLayout>
+                <Login />
+              </AuthLayout>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <AuthLayout>
+                <Register />
+              </AuthLayout>
+            }
+          />
 
-            {/* 👤 Interface Client (publique + clients connectés) */}
-            <Route
-              path="/"
-              element={
-                <RoleGuard allowedRole="client">
-                  <ClientLayout />
-                </RoleGuard>
-              }
-            >
-              <Route index element={<ClientHome />} />
-              <Route path="cart" element={<ClientCart />} />
-            </Route>
+          {/* 👤 Interface Client (publique + clients connectés) */}
+          <Route
+            path="/"
+            element={
+              <RoleGuard allowedRole="client">
+                <ClientLayout />
+              </RoleGuard>
+            }
+          >
+            <Route index element={<ClientHome />} />
+            <Route path="cart" element={<ClientCart />} />
+          </Route>
 
-            <Route
-              path="/orders"
-              element={
-                <RoleGuard allowedRole="client">
-                  <ClientLayout />
-                </RoleGuard>
-              }
-            >
-              <Route index element={<ClientOrders />} />
-            </Route>
+          <Route
+            path="/orders"
+            element={
+              <RoleGuard allowedRole="client">
+                <ClientLayout />
+              </RoleGuard>
+            }
+          >
+            <Route index element={<ClientOrders />} />
+          </Route>
 
-            {/* 🛠️ Interface Assistant */}
-            <Route
-              path="/assistant/*"
-              element={
-                <RoleGuard allowedRole="assistant">
-                  <AssistantLayout />
-                </RoleGuard>
-              }
-            >
-              {/* Les routes assistant seront définies dans AssistantLayout */}
-            </Route>
+          <Route
+            path="/wishlist"
+            element={
+              <RoleGuard allowedRole="client">
+                <ClientLayout />
+              </RoleGuard>
+            }
+          >
+            <Route index element={<ClientWishlist />} />
+          </Route>
 
-            {/* ⚡ Interface Admin */}
-            <Route
-              path="/admin/*"
-              element={
-                <RoleGuard allowedRole="admin">
-                  <AdminLayout />
-                </RoleGuard>
-              }
-            >
-              {/* Les routes admin seront définies dans AdminLayout */}
-            </Route>
+          {/* 🛠️ Interface Assistant */}
+          <Route
+            path="/assistant/*"
+            element={
+              <RoleGuard allowedRole="assistant">
+                <AssistantLayout />
+              </RoleGuard>
+            }
+          >
+            {/* Les routes assistant seront définies dans AssistantLayout */}
+          </Route>
 
-            {/* Catch-all - Redirection vers la page d'accueil */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </motion.div>
-      </AnimatePresence>
-    </ToastProvider>
+          {/* ⚡ Interface Admin */}
+          <Route
+            path="/admin/*"
+            element={
+              <RoleGuard allowedRole="admin">
+                <AdminLayout />
+              </RoleGuard>
+            }
+          >
+            {/* Les routes admin seront définies dans AdminLayout */}
+          </Route>
+
+          {/* Catch-all - Redirection vers la page d'accueil */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
@@ -133,11 +144,15 @@ function AppContent() {
 
 function App() {
   return (
-    <CartProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </CartProvider>
+    <ToastProvider>
+      <FavoritesProvider>
+        <CartProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </CartProvider>
+      </FavoritesProvider>
+    </ToastProvider>
   );
 }
 

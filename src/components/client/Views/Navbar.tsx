@@ -4,12 +4,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, 
   Home, 
-  LogOut, 
+  // LogOut, 
   Search, 
   Menu, 
   X,
   // Heart,
-  Package
+  Package,
+  Heart,
+  // User
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import ConfirmationModal from '../../../ui/ConfirmationModal';
@@ -100,9 +102,9 @@ export default function Navbar() {
     }
   };
 
-  const handleSignOutClick = () => {
-    setShowLogoutModal(true);
-  };
+  // const handleSignOutClick = () => {
+  //   setShowLogoutModal(true);
+  // };
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -121,7 +123,7 @@ export default function Navbar() {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled 
           ? 'bg-white shadow-lg backdrop-blur-md bg-opacity-95' 
-          : 'bg-indigo-600'
+          : 'bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600'
       }`}>
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
@@ -132,7 +134,7 @@ export default function Navbar() {
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className={`p-2 rounded-lg transition-all duration-300 lg:hidden ${
                   isScrolled 
-                    ? 'hover:bg-indigo-50 text-indigo-600' 
+                    ? 'hover:bg-pink-50 text-pink-600' 
                     : 'hover:bg-white hover:bg-opacity-20 text-white'
                 }`}
               >
@@ -146,14 +148,14 @@ export default function Navbar() {
                 onClick={handleNavClick}
               >
                 <div className={`p-2 rounded-lg transition-colors ${
-                  isScrolled ? 'bg-indigo-100' : 'bg-white bg-opacity-20'
+                  isScrolled ? 'bg-pink-100' : 'bg-white bg-opacity-20'
                 }`}>
                   <Home className={`h-6 w-6 ${
-                    isScrolled ? 'text-indigo-600' : 'text-white'
+                    isScrolled ? 'text-pink-600' : 'text-white'
                   }`} />
                 </div>
                 <span className={`text-xl sm:text-2xl font-bold ${
-                  isScrolled ? 'text-indigo-600' : 'text-white'
+                  isScrolled ? 'text-pink-600' : 'text-white'
                 }`}>
                   Fa-Fashion
                 </span>
@@ -171,7 +173,7 @@ export default function Navbar() {
                     placeholder="Rechercher un produit..."
                     className={`w-full h-10 pl-10 pr-4 rounded-full border transition-all duration-300 focus:outline-none focus:ring-2 ${
                       isScrolled
-                        ? 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-indigo-200'
+                        ? 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500 focus:border-pink-500 focus:ring-pink-200'
                         : 'bg-white bg-opacity-20 border-white border-opacity-30 text-white placeholder-white placeholder-opacity-80 focus:border-white focus:ring-white focus:ring-opacity-20 backdrop-blur-sm'
                     }`}
                   />
@@ -181,7 +183,7 @@ export default function Navbar() {
                 </div>
                 <button
                   type="submit"
-                  className="h-10 px-6 rounded-full bg-indigo-500 text-white font-medium hover:bg-indigo-600 transition-all duration-300 transform hover:scale-105 focus:ring-2 focus:ring-indigo-300 shadow-md"
+                  className="h-10 px-6 rounded-full bg-pink-500 text-white font-medium hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 focus:ring-2 focus:ring-pink-300 shadow-md"
                 >
                   Rechercher
                 </button>
@@ -196,7 +198,7 @@ export default function Navbar() {
                   onClick={() => document.getElementById('mobile-search')?.focus()}
                   className={`p-2 rounded-lg transition-all duration-300 ${
                     isScrolled 
-                      ? 'hover:bg-indigo-50 text-indigo-600' 
+                      ? 'hover:bg-pink-50 text-pink-600' 
                       : 'hover:bg-white hover:bg-opacity-20 text-white'
                   }`}
                 >
@@ -205,25 +207,25 @@ export default function Navbar() {
               </div>
 
               {/* Favoris */}
-              {/* <Link 
+              <Link 
                 to="/wishlist" 
                 className={`p-2 rounded-lg transition-all duration-300 ${
                   isScrolled 
-                    ? 'hover:bg-indigo-50 text-indigo-600' 
+                    ? 'hover:bg-pink-50 text-pink-600' 
                     : 'hover:bg-white hover:bg-opacity-20 text-white'
                 }`}
                 onClick={handleNavClick}
                 title="Favoris"
               >
                 <Heart className="h-5 w-5" />
-              </Link> */}
+              </Link>
 
               {/* Commandes */}
               <Link 
                 to="/orders" 
                 className={`p-2 rounded-lg transition-all duration-300 ${
                   isScrolled 
-                    ? 'hover:bg-indigo-50 text-indigo-600' 
+                    ? 'hover:bg-pink-50 text-pink-600' 
                     : 'hover:bg-white hover:bg-opacity-20 text-white'
                 }`}
                 onClick={handleNavClick}
@@ -237,7 +239,7 @@ export default function Navbar() {
                 to="/cart" 
                 className={`relative p-2 rounded-lg transition-all duration-300 ${
                   isScrolled 
-                    ? 'hover:bg-indigo-50 text-indigo-600' 
+                    ? 'hover:bg-pink-50 text-pink-600' 
                     : 'hover:bg-white hover:bg-opacity-20 text-white'
                 }`}
                 onClick={handleNavClick}
@@ -254,10 +256,12 @@ export default function Navbar() {
               {/* Utilisateur */}
               {/* {user ? (
                 <div className="flex items-center space-x-2">
-                  <div className="hidden sm:flex items-center space-x-2 bg-white bg-opacity-10 px-3 py-1 rounded-full">
+                  <div className={`hidden sm:flex items-center space-x-2 px-3 py-1 rounded-full ${
+                    isScrolled ? 'bg-pink-100' : 'bg-white bg-opacity-20'
+                  }`}>
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                     <span className={`text-sm font-medium ${
-                      isScrolled ? 'text-gray-700' : 'text-white'
+                      isScrolled ? 'text-pink-700' : 'text-white'
                     }`}>
                       {user.email?.split('@')[0]}
                     </span>
@@ -266,7 +270,7 @@ export default function Navbar() {
                     onClick={handleSignOutClick}
                     className={`p-2 rounded-lg transition-all duration-300 ${
                       isScrolled 
-                        ? 'hover:bg-indigo-50 text-indigo-600' 
+                        ? 'hover:bg-pink-50 text-pink-600' 
                         : 'hover:bg-white hover:bg-opacity-20 text-white'
                     }`}
                     title="Déconnexion"
@@ -279,7 +283,7 @@ export default function Navbar() {
                   to="/login" 
                   className={`p-2 rounded-lg transition-all duration-300 ${
                     isScrolled 
-                      ? 'hover:bg-indigo-50 text-indigo-600' 
+                      ? 'hover:bg-pink-50 text-pink-600' 
                       : 'hover:bg-white hover:bg-opacity-20 text-white'
                   }`}
                   onClick={handleNavClick}
@@ -298,7 +302,7 @@ export default function Navbar() {
         } ${
           isScrolled 
             ? 'bg-white border-t border-gray-200' 
-            : 'bg-indigo-700 border-t border-indigo-600'
+            : 'bg-pink-600 border-t border-pink-500'
         }`}>
           <div className="px-4 py-4 space-y-4">
             {/* Barre de recherche mobile */}
@@ -312,7 +316,7 @@ export default function Navbar() {
                   placeholder="Rechercher un produit..."
                   className={`w-full h-12 pl-10 pr-4 rounded-xl border transition-all focus:outline-none focus:ring-2 ${
                     isScrolled
-                      ? 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-indigo-200'
+                      ? 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500 focus:border-pink-500 focus:ring-pink-200'
                       : 'bg-white bg-opacity-20 border-white border-opacity-30 text-white placeholder-white placeholder-opacity-80 focus:border-white focus:ring-white focus:ring-opacity-20'
                   }`}
                 />
@@ -322,7 +326,7 @@ export default function Navbar() {
               </div>
               <button
                 type="submit"
-                className="h-12 px-4 rounded-xl bg-indigo-500 text-white font-medium hover:bg-indigo-600 transition-colors shadow-md"
+                className="h-12 px-4 rounded-xl bg-pink-500 text-white font-medium hover:bg-pink-600 transition-colors shadow-md"
               >
                 Go
               </button>
@@ -331,12 +335,12 @@ export default function Navbar() {
             {/* Navigation utilisateur mobile */}
             {user && (
               <div className={`px-3 py-2 rounded-lg ${
-                isScrolled ? 'bg-gray-100' : 'bg-white bg-opacity-10'
+                isScrolled ? 'bg-pink-50' : 'bg-white bg-opacity-10'
               }`}>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                   <span className={`text-sm font-medium ${
-                    isScrolled ? 'text-gray-700' : 'text-white'
+                    isScrolled ? 'text-pink-700' : 'text-white'
                   }`}>
                     Connecté en tant que: {user.email}
                   </span>
@@ -350,7 +354,7 @@ export default function Navbar() {
                 to="/products"
                 className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
                   isScrolled
-                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                    ? 'bg-pink-50 text-pink-600 hover:bg-pink-100'
                     : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
                 }`}
                 onClick={handleNavClick}
@@ -358,33 +362,35 @@ export default function Navbar() {
                 <Package className="h-5 w-5" />
                 <span>Produits</span>
               </Link>
-              {/* <Link
+              
+              <Link
                 to="/wishlist"
                 className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
                   isScrolled
-                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                    ? 'bg-pink-50 text-pink-600 hover:bg-pink-100'
                     : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
                 }`}
                 onClick={handleNavClick}
               >
                 <Heart className="h-5 w-5" />
                 <span>Favoris</span>
-              </Link> */}
-              {/* <Link
+              </Link>
+              
+              <Link
                 to="/orders"
                 className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
                   isScrolled
-                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                    ? 'bg-pink-50 text-pink-600 hover:bg-pink-100'
                     : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
                 }`}
                 onClick={handleNavClick}
               >
                 <Package className="h-5 w-5" />
                 <span>Commandes</span>
-              </Link> */}
+              </Link>
               
-              {/* Lien de déconnexion */}
-              {user && (
+              {/* Lien de connexion/déconnexion */}
+              {/* {user ? (
                 <button
                   onClick={handleSignOutClick}
                   className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
@@ -394,9 +400,22 @@ export default function Navbar() {
                   }`}
                 >
                   <LogOut className="h-5 w-5" />
-                  <span>Deconexion</span>
+                  <span>Déconnexion</span>
                 </button>
-              )}
+              ) : (
+                <Link
+                  to="/login"
+                  className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
+                    isScrolled
+                      ? 'bg-pink-50 text-pink-600 hover:bg-pink-100'
+                      : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  <User className="h-5 w-5" />
+                  <span>Connexion</span>
+                </Link>
+              )} */}
             </div>
           </div>
         </div>
