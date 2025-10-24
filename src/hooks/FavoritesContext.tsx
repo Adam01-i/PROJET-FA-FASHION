@@ -13,6 +13,7 @@ interface FavoritesContextType {
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useFavorites = () => {
   const context = useContext(FavoritesContext);
   if (context === undefined) {
