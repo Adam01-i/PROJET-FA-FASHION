@@ -190,35 +190,47 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
     }
   };
 
-  const handleSendWhatsApp = (order: Order): void => {
-    const itemsText =
-      order.order_items
-        ?.map(
-          (item) =>
-            `${item.quantity}x ${item.product?.name} - ${formatXOF(
-              item.price * item.quantity
-            )}`
-        )
-        .join("\n") || "Aucun produit";
+const handleSendWhatsApp = (order: Order): void => {
+  // Vérifier si le client a un numéro de téléphone
+  if (!order.customer_phone) {
+    toastError("Erreur", "Aucun numéro de téléphone client disponible");
+    return;
+  }
 
-    const message = `Chere client votre Nouvelle commande #${order.id.slice(
-      0,
-      8
-    )}
+  const itemsText =
+    order.order_items
+      ?.map(
+        (item) =>
+          `${item.quantity}x ${item.product?.name} - ${formatXOF(
+            item.price * item.quantity
+          )}`
+      )
+      .join("\n") || "Aucun produit";
+
+  const message = `Bonjour ${order.customer_name || "Client"} !
+
+📦 Votre commande #${order.id.slice(0, 8)}
     
-📦 Produits commandés:
+📋 Détails de votre commande:
 ${itemsText}
 
 💰 Total: ${formatXOF(order.total_amount)}
-👤 Client: ${order.customer_name || "Non spécifié"}
-📞 Téléphone: ${order.customer_phone || "Non spécifié"}
+📅 Date: ${new Date(order.created_at).toLocaleDateString("fr-FR")}
 
-a etait bien recu! Merci de proceder au paiment.`;
+🔄 Statut: ${getStatusDisplayName(order.status)}
+💳 Paiement: ${getPaymentStatusDisplayName(order.payment_status)}
 
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
-  };
+Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de votre commande.`;
 
+  // Nettoyer le numéro de téléphone (supprimer les espaces)
+  const cleanPhone = order.customer_phone.replace(/\s/g, '');
+  
+  // Encoder le message pour l'URL
+  const encodedMessage = encodeURIComponent(message);
+  
+  // Ouvrir WhatsApp avec le numéro du client
+  window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, "_blank");
+};
   const handlePaymentProofUpload = async (
     orderId: string,
     file: File
