@@ -1,13 +1,13 @@
-import { Order,  } from '../models';
+import { Order, InvoiceSettings } from '../models';
 import { generateInvoiceHTML } from '../templates/invoiceTemplate';
 import { Html2PdfOptions } from './invoiceUtils';
 
-export function generateInvoicePDF(order: Order, settings: SiteSettingsData): void {
+export function generateInvoicePDF(order: Order, invoiceSettings: InvoiceSettings): void {
   const iframe = document.createElement('iframe');
   iframe.style.display = 'none';
   document.body.appendChild(iframe);
 
-  const content = generateInvoiceHTML(order, settings);
+  const content = generateInvoiceHTML(order, invoiceSettings);
 
   const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
   if (iframeDoc) {
@@ -24,9 +24,9 @@ export function generateInvoicePDF(order: Order, settings: SiteSettingsData): vo
   }
 }
 
-export async function downloadInvoicePDF(order: Order, settings: SiteSettingsData): Promise<void> {
+export async function downloadInvoicePDF(order: Order, invoiceSettings: InvoiceSettings): Promise<void> {
   try {
-    const content = generateInvoiceHTML(order, settings);
+    const content = generateInvoiceHTML(order, invoiceSettings);
     
     const blob = new Blob([content], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -43,9 +43,9 @@ export async function downloadInvoicePDF(order: Order, settings: SiteSettingsDat
   }
 }
 
-export async function generateAdvancedInvoicePDF(order: Order, settings: SiteSettingsData): Promise<void> {
+export async function generateAdvancedInvoicePDF(order: Order, invoiceSettings: InvoiceSettings): Promise<void> {
   const element = document.createElement('div');
-  element.innerHTML = generateInvoiceHTML(order, settings);
+  element.innerHTML = generateInvoiceHTML(order, invoiceSettings);
   
   const opt: Html2PdfOptions = {
     margin: 10,

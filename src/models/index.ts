@@ -42,6 +42,8 @@ export interface OrderItem {
 }
 
 export interface Order {
+  assistant_id: string;
+  assistant_name: string;
   id: string;
   user_id: string;
   user?: User;

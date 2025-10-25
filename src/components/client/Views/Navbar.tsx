@@ -107,12 +107,15 @@ export default function Navbar() {
   // };
 
   const handleSearch = (e: FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-      setIsMenuOpen(false);
-    }
-  };
+  e.preventDefault();
+  if (searchQuery.trim()) {
+    const params = new URLSearchParams({
+      search: encodeURIComponent(searchQuery.trim())
+    });
+    navigate(`/products?${params.toString()}`);
+    setIsMenuOpen(false);
+  }
+};
 
   const handleNavClick = () => {
     setIsMenuOpen(false);

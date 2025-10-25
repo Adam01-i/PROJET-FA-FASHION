@@ -10,12 +10,14 @@ import {
   MessageCircle,
   User,
   Phone,
+  Plus,
 } from "lucide-react";
 import { Order } from "../../models";
 import { useOrders } from "../../hooks/useOrders";
 import { useToastContext } from "../../hooks/ToastProvider";
 import OrderDetailsModal from "../AuthOrdersModals/OrderDetailsModal";
 import { supabase } from "../../lib/supabaseClient";
+import CreateOrderModal from "../AuthOrdersModals/CreateOrderModal"; // Nouveau modal
 
 interface OrdersSectionProps {
   searchTerm: string;
@@ -32,6 +34,9 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const { success, error: toastError } = useToastContext();
   const [currentUserRole, setCurrentUserRole] = useState<string>();
+  const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>();
+  const [currentUserName, setCurrentUserName] = useState<string>();
 
   // Récupérer le rôle au montage du composant
   useEffect(() => {
@@ -49,6 +54,25 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
       }
     };
     getUserRole();
+  }, []);
+
+  useEffect(() => {
+    const getUserInfo = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role, full_name")
+          .eq("id", user.id)
+          .single();
+        setCurrentUserRole(profile?.role);
+        setCurrentUserName(profile?.full_name);
+      }
+    };
+    getUserInfo();
   }, []);
 
   const filteredOrders = orders.filter(
@@ -177,7 +201,10 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
         )
         .join("\n") || "Aucun produit";
 
-    const message = `Chere client votre Nouvelle commande #${order.id.slice(0, 8)}
+    const message = `Chere client votre Nouvelle commande #${order.id.slice(
+      0,
+      8
+    )}
     
 📦 Produits commandés:
 ${itemsText}
@@ -231,6 +258,26 @@ a etait bien recu! Merci de proceder au paiment.`;
 
   return (
     <>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Commandes</h1>
+          <p className="text-gray-600 mt-1">
+            Gérez toutes les commandes de votre boutique
+          </p>
+        </div>
+
+        {/* Bouton pour créer une commande - visible seulement pour les assistants/admin */}
+        {(currentUserRole === "assistant" || currentUserRole === "admin") && (
+          <button
+            onClick={() => setShowCreateOrderModal(true)}
+            className="inline-flex items-center px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-lg transition-colors shadow-sm"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Créer une commande
+          </button>
+        )}
+      </div>
+
       {/* Statistiques - Responsive */}
       <div className="mb-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200">
@@ -531,6 +578,20 @@ a etait bien recu! Merci de proceder au paiment.`;
           isUploadingProof={isUploadingProof}
           currentUserRole={currentUserRole}
           onOrderUpdate={refetch} // Utiliser directement refetch
+        />
+      )}
+
+      {/* Modal de création de commande */}
+      {showCreateOrderModal && (
+        <CreateOrderModal
+          onClose={() => setShowCreateOrderModal(false)}
+          onOrderCreated={() => {
+            setShowCreateOrderModal(false);
+            refetch(); // Recharger les commandes
+            success("Succès", "Commande créée avec succès");
+          }}
+          assistantId={currentUserId}
+          assistantName={currentUserName}
         />
       )}
     </>

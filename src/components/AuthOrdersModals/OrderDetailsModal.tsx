@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   User,
   MapPin,
@@ -11,13 +11,11 @@ import {
   Printer,
 } from "lucide-react";
 import { Order } from "../../models";
-// Corrigez les imports - utilisez les fonctions depuis le fichier correct
 import {
   generateInvoicePDF,
-  downloadInvoicePDF,
   generateAdvancedInvoicePDF,
 } from "../../utils/invoiceGenerator";
-import { useParsedSettings } from "../../hooks/useSiteSettings";
+import { useInvoiceSettings } from "../../hooks/useInvoiceSettings";
 
 interface OrderDetailsModalProps {
   order: Order;
@@ -45,17 +43,67 @@ export default function OrderDetailsModal({
   onStatusChange,
   onPaymentStatusChange,
   onPaymentProofUpload,
-  onSendWhatsApp,
+  // onSendWhatsApp,
   isUploadingProof,
   currentUserRole,
-  onOrderUpdate, // Ajouter cette ligne
+  onOrderUpdate,
 }: OrderDetailsModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
   const {
-    settings,
-    loading: settingsLoading,
-    error: settingsError,
-  } = useParsedSettings();
+  invoiceSettings,
+  loading: invoiceSettingsLoading,
+  error: invoiceSettingsError,
+} = useInvoiceSettings();
+
+  const [currentOrder, setCurrentOrder] = useState<Order>(order);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    setCurrentOrder(order);
+  }, [order]);
+
+  // Fonction pour rafraîchir les données de la commande
+  const refreshOrderData = async () => {
+    if (!onOrderUpdate) return;
+    
+    setIsRefreshing(true);
+    try {
+      await onOrderUpdate();
+      setTimeout(() => setIsRefreshing(false), 500);
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement:", error);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Modifiez les handlers pour inclure le rafraîchissement
+  const handleStatusChange = async (orderId: string, status: Order["status"]) => {
+    try {
+      await onStatusChange(orderId, status);
+      await refreshOrderData();
+    } catch (error) {
+      console.error("Error updating order status:", error);
+    }
+  };
+
+  const handlePaymentStatusChange = async (orderId: string, paymentStatus: Order["payment_status"]) => {
+    try {
+      await onPaymentStatusChange(orderId, paymentStatus);
+      await refreshOrderData();
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+    }
+  };
+
+  const handlePaymentProofUpload = async (orderId: string, file: File) => {
+    try {
+      await onPaymentProofUpload(orderId, file);
+      setTimeout(() => refreshOrderData(), 1000);
+    } catch (error) {
+      console.error("Error uploading payment proof:", error);
+    }
+  };
 
   const getStatusColor = (status: Order["status"]): string => {
     switch (status) {
@@ -121,52 +169,76 @@ export default function OrderDetailsModal({
   };
 
   const handlePrintInvoice = (): void => {
-    if (settingsLoading) {
-      console.warn("Paramètres pas encore chargés");
-      return;
-    }
-    generateInvoicePDF(order, settings);
-  };
+  if (invoiceSettingsLoading) {
+    console.warn("Paramètres de facturation pas encore chargés");
+    return;
+  }
+  generateInvoicePDF(order, invoiceSettings);
+};
+
 
   const handleDownloadPDF = async (): Promise<void> => {
-    if (settingsLoading) {
-      console.warn("Paramètres pas encore chargés");
+  if (invoiceSettingsLoading) {
+    console.warn("Paramètres de facturation pas encore chargés");
+    return;
+  }
+  try {
+    await generateAdvancedInvoicePDF(order, invoiceSettings);
+  } catch (error) {
+    console.error("Erreur lors du téléchargement PDF:", error);
+    alert("Erreur lors de la génération du PDF");
+  }
+};
+
+  // Fonction pour envoyer sur WhatsApp vers le client
+  const handleSendWhatsAppToClient = (order: Order): void => {
+    if (!order.customer_phone) {
+      alert("Aucun numéro de téléphone client disponible");
       return;
     }
-    try {
-      await generateAdvancedInvoicePDF(order, settings);
-    } catch (error) {
-      console.error("Erreur lors du téléchargement PDF:", error);
-      alert("Erreur lors de la génération du PDF");
-    }
+
+    const itemsText = order.order_items
+      ?.map(
+        (item) =>
+          `${item.quantity}x ${item.product?.name} - ${formatXOF(
+            item.price * item.quantity
+          )}`
+      )
+      .join("\n") || "Aucun produit";
+
+    const message = `Bonjour ${order.customer_name || "Client"}!
+
+📦 Votre commande #${order.id.slice(0, 8)}
+    
+📋 Détails de votre commande:
+${itemsText}
+
+💰 Total: ${formatXOF(order.total_amount)}
+📞 Votre téléphone: ${order.customer_phone}
+📅 Date: ${new Date(order.created_at).toLocaleDateString("fr-FR")}
+
+🔄 Statut: ${getStatusDisplayName(order.status)}
+💳 Paiement: ${getPaymentStatusDisplayName(order.payment_status)}
+
+Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de votre commande.`;
+
+    const cleanPhone = order.customer_phone.replace(/\s/g, '');
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, "_blank");
   };
 
-  const handleDownloadHTML = async (): Promise<void> => {
-    if (settingsLoading) {
-      console.warn("Paramètres pas encore chargés");
-      return;
-    }
-    try {
-      await downloadInvoicePDF(order, settings);
-    } catch (error) {
-      console.error("Erreur lors du téléchargement HTML:", error);
-      alert("Erreur lors de la génération du HTML");
-    }
-  };
-
-  if (settingsError) {
-    console.error("Erreur de chargement des paramètres:", settingsError);
+  if (invoiceSettingsError) {
+    console.error("Erreur de chargement des paramètres:", invoiceSettingsError);
   }
 
   const canModifyOrder = (order: Order): boolean => {
     return order.status !== "cancelled" && order.payment_status !== "refunded";
   };
 
-  // Ajouter ces fonctions après les autres helpers
   const canModifyOrderStatus = (order: Order, userRole?: string): boolean => {
     if (order.status === "cancelled") return false;
-    if (userRole === "assistant") return false; // Assistants ne peuvent pas modifier le statut
-    if (userRole === "admin" && order.status === "confirmed") return false; // Admin ne peut pas dé-confirmer
+    if (userRole === "assistant") return false;
+    if (userRole === "admin" && order.status === "confirmed") return false;
     return true;
   };
 
@@ -188,75 +260,56 @@ export default function OrderDetailsModal({
     return options;
   };
 
-  // Créer des handlers optimisés
-  const handleStatusChange = async (
-    orderId: string,
-    status: Order["status"]
-  ) => {
-    try {
-      await onStatusChange(orderId, status);
-      // Déclencher le rafraîchissement après mise à jour
-      if (onOrderUpdate) {
-        setTimeout(() => onOrderUpdate(), 500); // Petit délai pour la synchronisation
-      }
-    } catch (error) {
-      console.error("Error updating order status:", error);
-    }
-  };
-
-  const handlePaymentStatusChange = async (
-    orderId: string,
-    paymentStatus: Order["payment_status"]
-  ) => {
-    try {
-      await onPaymentStatusChange(orderId, paymentStatus);
-      // Déclencher le rafraîchissement après mise à jour
-      if (onOrderUpdate) {
-        setTimeout(() => onOrderUpdate(), 500);
-      }
-    } catch (error) {
-      console.error("Error updating payment status:", error);
-    }
-  };
-
-  const handlePaymentProofUpload = async (orderId: string, file: File) => {
-    try {
-      await onPaymentProofUpload(orderId, file);
-      // Déclencher le rafraîchissement après upload
-      if (onOrderUpdate) {
-        setTimeout(() => onOrderUpdate(), 1000); // Délai plus long pour l'upload
-      }
-    } catch (error) {
-      console.error("Error uploading payment proof:", error);
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           {/* Header */}
           <div className="flex justify-between items-start mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Commande #{order.id.slice(0, 8)}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {new Date(order.created_at).toLocaleDateString("fr-FR", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
+            <div className="flex items-center space-x-3">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Commande #{currentOrder.id.slice(0, 8)}
+                  {isRefreshing && (
+                    <span className="ml-2 text-sm text-blue-500 animate-pulse">
+                      (Actualisation...)
+                    </span>
+                  )}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {new Date(currentOrder.created_at).toLocaleDateString("fr-FR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="h-6 w-6" />
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={refreshOrderData}
+                disabled={isRefreshing}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                title="Rafraîchir les données"
+              >
+                <svg 
+                  className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -272,26 +325,17 @@ export default function OrderDetailsModal({
                   <div>
                     <p className="text-sm text-gray-600">Nom</p>
                     <p className="text-sm font-medium text-gray-900">
-                      {order.customer_name || "Non spécifié"}
+                      {currentOrder.customer_name || "Non spécifié"}
                     </p>
                   </div>
                 </div>
-                {/* <div className="flex items-center"> */}
-                  {/* <Mail className="h-4 w-4 text-gray-400 mr-2" /> */}
-                  {/* <div>
-                    <p className="text-sm text-gray-600">Email</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {order.user?.email || "Non spécifié"}
-                    </p>
-                  </div> */}
-                {/* </div> */}
-                {order.customer_phone && (
+                {currentOrder.customer_phone && (
                   <div className="flex items-center">
                     <Phone className="h-4 w-4 text-gray-400 mr-2" />
                     <div>
                       <p className="text-sm text-gray-600">Téléphone</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {order.customer_phone}
+                        {currentOrder.customer_phone}
                       </p>
                     </div>
                   </div>
@@ -299,7 +343,7 @@ export default function OrderDetailsModal({
               </div>
 
               {/* Adresse de livraison */}
-              {order.shipping_address && (
+              {currentOrder.shipping_address && (
                 <>
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                     <MapPin className="h-5 w-5 mr-2" />
@@ -308,30 +352,68 @@ export default function OrderDetailsModal({
                   <div className="bg-gray-50 p-4 rounded-lg space-y-3">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {order.shipping_address.full_name}
+                        {currentOrder.shipping_address.full_name}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {order.shipping_address.phone}
+                        {currentOrder.shipping_address.phone}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-900">
-                        {order.shipping_address.address}
+                        {currentOrder.shipping_address.address}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {order.shipping_address.city}
+                        {currentOrder.shipping_address.city}
                       </p>
                     </div>
-                    {order.shipping_address.notes && (
+                    {currentOrder.shipping_address.notes && (
                       <div>
                         <p className="text-sm text-gray-600">Notes:</p>
                         <p className="text-sm text-gray-900">
-                          {order.shipping_address.notes}
+                          {currentOrder.shipping_address.notes}
                         </p>
                       </div>
                     )}
                   </div>
                 </>
+              )}
+
+              {/* Informations Assistant */}
+              {(currentOrder.assistant_id || currentOrder.assistant_name) && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Informations Assistant
+                  </h3>
+                  <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+                    {currentOrder.assistant_name && (
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 text-blue-400 mr-2" />
+                        <div>
+                          <p className="text-sm text-blue-600">
+                            Nom de l'assistant
+                          </p>
+                          <p className="text-sm font-medium text-blue-900">
+                            {currentOrder.assistant_name}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {currentOrder.assistant_id && (
+                      <div className="flex items-center">
+                        <div className="h-4 w-4 text-blue-400 mr-2 flex items-center justify-center">
+                          <span className="text-xs">ID</span>
+                        </div>
+                        <div>
+                          <p className="text-sm text-blue-600">ID Assistant</p>
+                          <p className="text-sm font-medium text-blue-900">
+                            {currentOrder.assistant_id.slice(0, 8)}...
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
@@ -346,16 +428,16 @@ export default function OrderDetailsModal({
                   Statut de la commande
                 </label>
                 <select
-                  value={order.status}
+                  value={currentOrder.status}
                   onChange={(e) =>
                     handleStatusChange(
-                      order.id,
+                      currentOrder.id,
                       e.target.value as Order["status"]
                     )
                   }
-                  disabled={!canModifyOrderStatus(order, currentUserRole)}
+                  disabled={!canModifyOrderStatus(currentOrder, currentUserRole)}
                   className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm ${
-                    !canModifyOrderStatus(order, currentUserRole)
+                    !canModifyOrderStatus(currentOrder, currentUserRole)
                       ? "bg-gray-100 cursor-not-allowed"
                       : ""
                   }`}
@@ -366,9 +448,9 @@ export default function OrderDetailsModal({
                     </option>
                   ))}
                 </select>
-                {order.status === "pending" &&
+                {currentOrder.status === "pending" &&
                   currentUserRole === "admin" &&
-                  !canConfirmOrder(order) && (
+                  !canConfirmOrder(currentOrder) && (
                     <div className="mt-2 text-xs text-yellow-600">
                       ⚠️ Pour confirmer cette commande, le paiement doit être
                       marqué comme "Payé" et une preuve doit être uploadée
@@ -377,14 +459,13 @@ export default function OrderDetailsModal({
                 <div className="mt-2">
                   <span
                     className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(
-                      order.status
+                      currentOrder.status
                     )}`}
                   >
-                    {getStatusDisplayName(order.status)}
+                    {getStatusDisplayName(currentOrder.status)}
                   </span>
                 </div>
-                {/* Ajouter le badge d'information ici */}
-                {!canModifyOrder(order) && (
+                {!canModifyOrder(currentOrder) && (
                   <div className="mt-2 text-xs text-red-600">
                     ⚠️ Commande annulée - modifications désactivées
                   </div>
@@ -396,16 +477,16 @@ export default function OrderDetailsModal({
                   Statut de paiement
                 </label>
                 <select
-                  value={order.payment_status}
+                  value={currentOrder.payment_status}
                   onChange={(e) =>
                     handlePaymentStatusChange(
-                      order.id,
+                      currentOrder.id,
                       e.target.value as Order["payment_status"]
                     )
                   }
-                  disabled={!canModifyOrder(order)}
+                  disabled={!canModifyOrder(currentOrder)}
                   className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm ${
-                    !canModifyOrder(order)
+                    !canModifyOrder(currentOrder)
                       ? "bg-gray-100 cursor-not-allowed"
                       : ""
                   }`}
@@ -418,28 +499,52 @@ export default function OrderDetailsModal({
                 <div className="mt-2">
                   <span
                     className={`px-2 py-1 text-xs rounded-full ${getPaymentStatusColor(
-                      order.payment_status
+                      currentOrder.payment_status
                     )}`}
                   >
-                    {getPaymentStatusDisplayName(order.payment_status)}
+                    {getPaymentStatusDisplayName(currentOrder.payment_status)}
                   </span>
                 </div>
-                {order.payment_method && (
+                {currentOrder.payment_method && (
                   <div className="mt-2 text-sm text-gray-600">
-                    Méthode: {getPaymentMethodDisplayName(order.payment_method)}
+                    Méthode: {getPaymentMethodDisplayName(currentOrder.payment_method)}
+                  </div>
+                )}
+
+                {currentOrder.payment_status === "paid" && currentOrder.processed_by && (
+                  <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-xs text-green-700">
+                      ✅ Paiement confirmé par:{" "}
+                      {currentOrder.processed_by?.full_name || "Assistant"}
+                    </p>
+                    <p className="text-xs text-green-600">
+                      Le{" "}
+                      {currentOrder.updated_at
+                        ? new Date(currentOrder.updated_at).toLocaleDateString(
+                            "fr-FR",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )
+                        : "Date non disponible"}
+                    </p>
                   </div>
                 )}
               </div>
-              {/* Ajouter cette section pour afficher qui a traité la commande */}
-              {order.processed_by && (
+
+              {currentOrder.processed_by && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-700">
-                    ✅ Traitée par: {order.processed_by?.full_name}
+                    ✅ Traitée par: {currentOrder.processed_by?.full_name}
                   </p>
                   <p className="text-xs text-blue-600">
                     Le{" "}
-                    {order.updated_at
-                      ? new Date(order.updated_at).toLocaleDateString("fr-FR")
+                    {currentOrder.updated_at
+                      ? new Date(currentOrder.updated_at).toLocaleDateString("fr-FR")
                       : "Date non disponible"}
                   </p>
                 </div>
@@ -459,7 +564,7 @@ export default function OrderDetailsModal({
                   {selectedFile && (
                     <button
                       onClick={() =>
-                        handlePaymentProofUpload(order.id, selectedFile!)
+                        handlePaymentProofUpload(currentOrder.id, selectedFile!)
                       }
                       disabled={isUploadingProof}
                       className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center text-sm"
@@ -477,9 +582,9 @@ export default function OrderDetailsModal({
                       )}
                     </button>
                   )}
-                  {order.payment_proof && (
+                  {currentOrder.payment_proof && (
                     <a
-                      href={order.payment_proof}
+                      href={currentOrder.payment_proof}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 text-center text-sm flex items-center justify-center"
@@ -500,7 +605,7 @@ export default function OrderDetailsModal({
               Produits Commandés
             </h3>
             <div className="space-y-3">
-              {order.order_items?.map((item) => (
+              {currentOrder.order_items?.map((item) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -540,7 +645,7 @@ export default function OrderDetailsModal({
                   Total
                 </span>
                 <span className="text-2xl font-bold text-indigo-900">
-                  {formatXOF(order.total_amount)}
+                  {formatXOF(currentOrder.total_amount)}
                 </span>
               </div>
             </div>
@@ -550,37 +655,34 @@ export default function OrderDetailsModal({
           <div className="mt-6 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
             <button
               onClick={handlePrintInvoice}
-              disabled={settingsLoading}
+              disabled={invoiceSettingsLoading}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center text-sm transition-colors"
             >
               <Printer className="h-4 w-4 mr-2" />
-              {settingsLoading ? "Chargement..." : "Imprimer Facture"}
+              {invoiceSettingsLoading ? "Chargement..." : "Imprimer Facture"}
             </button>
 
             <button
               onClick={handleDownloadPDF}
-              disabled={settingsLoading}
+              disabled={invoiceSettingsLoading}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center text-sm transition-colors"
             >
               <Download className="h-4 w-4 mr-2" />
-              {settingsLoading ? "Chargement..." : "Télécharger PDF"}
+              {invoiceSettingsLoading ? "Chargement..." : "Télécharger PDF"}
             </button>
 
             <button
-              onClick={handleDownloadHTML}
-              disabled={settingsLoading}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 flex items-center justify-center text-sm transition-colors"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {settingsLoading ? "Chargement..." : "Télécharger HTML"}
-            </button>
-
-            <button
-              onClick={() => onSendWhatsApp(order)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center text-sm transition-colors"
+              onClick={() => handleSendWhatsAppToClient(currentOrder)}
+              disabled={!currentOrder.customer_phone}
+              className={`px-4 py-2 text-white rounded-lg flex items-center justify-center text-sm transition-colors ${
+                !currentOrder.customer_phone
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+              title={!currentOrder.customer_phone ? "Aucun numéro de téléphone client" : "Envoyer au client sur WhatsApp"}
             >
               <MessageCircle className="h-4 w-4 mr-2" />
-              Envoyer sur WhatsApp
+              {!currentOrder.customer_phone ? "Numéro manquant" : "WhatsApp Client"}
             </button>
 
             <button
