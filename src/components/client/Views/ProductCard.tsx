@@ -1,6 +1,6 @@
 // components/client/ProductCard.tsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
+// import { Link } from "react-router-dom";
 import { ShoppingCart, Eye, X, Plus, Minus, Heart, Share2 } from "lucide-react";
 import { formatXOF } from "../../../lib/currency";
 import { Product } from "../../../models";
@@ -239,7 +239,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
               </button>
 
               {/* Image du produit */}
-              <div className="relative h-64 sm:h-80 lg:h-96">
+              <div className="relative h-86 sm:h-86 lg:h-96">
                 <img
                   src={product.image_url || "/api/placeholder/800/600"}
                   alt={product.name}
@@ -296,7 +296,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
                 </div>
 
                 {/* Informations détaillées */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div className="bg-gray-50 rounded-xl p-4">
                     <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                       📦 Informations Stock
@@ -344,7 +344,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Sélection quantité et ajout au panier */}
                 {product.stock_quantity > 0 && (
@@ -398,7 +398,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
                 )}
 
                 {/* Actions supplémentaires */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mt-6 pt-6 border-t border-gray-200">
+                {/* <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mt-6 pt-6 border-t border-gray-200">
                   <Link
                     to={`/product/${product.id}`}
                     className="text-pink-600 hover:text-pink-700 font-semibold underline flex items-center gap-2"
@@ -416,7 +416,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
                       Partager
                     </button>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

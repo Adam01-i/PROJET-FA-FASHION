@@ -6,8 +6,8 @@ import {
   Home, 
   // LogOut, 
   Search, 
-  Menu, 
-  X,
+  // Menu, 
+  // X,
   // Heart,
   Package,
   Heart,
@@ -138,7 +138,7 @@ export default function Navbar() {
                     : 'hover:bg-white hover:bg-opacity-20 text-white'
                 }`}
               >
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {/* {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />} */}
               </button>
 
               {/* Logo */}
@@ -183,7 +183,7 @@ export default function Navbar() {
                 </div>
                 <button
                   type="submit"
-                  className="h-10 px-6 rounded-full bg-pink-500 text-white font-medium hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 focus:ring-2 focus:ring-pink-300 shadow-md"
+                  className="h-10 px-6 rounded-full bg-white text-pink-600 font-medium hover:bg-pink-600 hover:text-pink-50 transition-all duration-300 transform hover:scale-105 focus:ring-2 focus:ring-pink-300 shadow-md"
                 >
                   Rechercher
                 </button>
@@ -221,7 +221,7 @@ export default function Navbar() {
               </Link>
 
               {/* Commandes */}
-              <Link 
+              {/* <Link 
                 to="/orders" 
                 className={`p-2 rounded-lg transition-all duration-300 ${
                   isScrolled 
@@ -232,7 +232,7 @@ export default function Navbar() {
                 title="Mes commandes"
               >
                 <Package className="h-5 w-5" />
-              </Link>
+              </Link> */}
 
               {/* Panier */}
               <Link 
@@ -376,7 +376,7 @@ export default function Navbar() {
                 <span>Favoris</span>
               </Link>
               
-              <Link
+              {/* <Link
                 to="/orders"
                 className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
                   isScrolled
@@ -387,7 +387,7 @@ export default function Navbar() {
               >
                 <Package className="h-5 w-5" />
                 <span>Commandes</span>
-              </Link>
+              </Link> */}
               
               {/* Lien de connexion/déconnexion */}
               {/* {user ? (

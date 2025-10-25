@@ -1,10 +1,10 @@
 // components/client/Wishlist.tsx
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
+import { Heart, ShoppingBag, Trash2, ShoppingCart } from 'lucide-react';
 import { Product } from '../../../models';
 import { useToastContext } from '../../../hooks/ToastProvider';
-import ProductCard from './ProductCard';
+import ProductCard from '../Views/ProductCard';
 import { useCart } from '../../../contexts/CartContext';
 import { useFavorites } from '../../../hooks/FavoritesContext';
 import ConfirmationModal from '../../../ui/ConfirmationModal';
@@ -70,13 +70,13 @@ export default function Wishlist() {
         {/* En-tête */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
-            <Link
+            {/* <Link
               to="/"
               className="flex items-center gap-2 text-pink-600 hover:text-pink-700 transition-colors bg-white px-4 py-2 rounded-xl shadow-lg hover:shadow-xl"
             >
               <ArrowLeft className="w-5 h-5" />
               Retour à l'accueil
-            </Link>
+            </Link> */}
             <div>
               <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">💖 Mes Favoris</h1>
               <p className="text-gray-600 mt-2">

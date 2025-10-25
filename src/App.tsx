@@ -26,7 +26,7 @@ import AssistantLayout from "./components/assistant/AssistantLayout";
 import ClientHome from "./components/client/Views/ClientHome";
 import ClientCart from "./components/client/Cart/ClientCart";
 import ClientOrders from "./components/client/Orders/ClientOrders";
-import ClientWishlist from "./components/client/Views/ClientWishlist";
+import ClientWishlist from "./components/client/Wishlist/ClientWishlist";
 
 // ========================
 // 🧱 Layouts de base
