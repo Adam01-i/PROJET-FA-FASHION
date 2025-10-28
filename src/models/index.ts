@@ -13,6 +13,7 @@ export interface User {
 
 
 export interface Product {
+  stock: ReactNode;
   id: string;
   name: string;
   description?: string;

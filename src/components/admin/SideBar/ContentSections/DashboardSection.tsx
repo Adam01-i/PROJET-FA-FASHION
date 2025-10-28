@@ -358,7 +358,7 @@ export default function DashboardSection() {
             {products.slice(0, 3).map((product) => (
               <div key={product.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
                 <img 
-                  src={product.image_url} 
+                  src={product.image_url ?? undefined} 
                   alt={product.name}
                   className="w-10 h-10 rounded-lg object-cover"
                 />
