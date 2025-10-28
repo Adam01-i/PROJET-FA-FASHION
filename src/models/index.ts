@@ -13,7 +13,6 @@ export interface User {
 
 
 export interface Product {
-  stock: ReactNode;
   id: string;
   name: string;
   description?: string;
@@ -52,6 +51,13 @@ export interface Order {
   customer_name?: string; // Nouveau champ optionnel
   customer_email?: string; // Nouveau champ optionnel
   processed_by?: User;
+  
+  // AJOUTER ces nouveaux champs pour la livraison
+  subtotal_amount: number;
+  delivery_fee: number;
+  delivery_location_id?: string;
+  delivery_location_name?: string;
+  
   total_amount: number; 
   status: 'pending' | 'confirmed' | 'cancelled';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
@@ -68,6 +74,9 @@ export interface Order {
   created_at: string;
   updated_at?: string;
   order_items?: OrderItem[];
+  
+  // Optionnel: ajouter une relation pour faciliter les jointures
+  delivery_location?: DeliveryLocation;
 }
 
 export interface Category {

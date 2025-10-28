@@ -1,129 +1,222 @@
 // components/client/ClientCart.tsx (version simplifiée)
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, MessageCircle, User } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
-import { formatXOF } from '../../../lib/currency';
-import { useCart } from '../../../contexts/CartContext';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  Trash2,
+  Plus,
+  Minus,
+  ArrowLeft,
+  ShoppingBag,
+  MessageCircle,
+  User,
+} from "lucide-react";
+import { supabase } from "../../../lib/supabase";
+import { formatXOF } from "../../../lib/currency";
+import { useCart } from "../../../contexts/CartContext";
+import { DeliveryLocation } from "../../../models";
 
 export default function ClientCart() {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [customerName, setCustomerName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
-  
-  const { 
-    items, 
-    removeFromCart, 
-    updateQuantity, 
-    clearCart, 
-    total,
-    itemCount 
-  } = useCart();
+  const [selectedLocation, setSelectedLocation] =
+    useState<DeliveryLocation | null>(null);
+  const [deliveryLocations, setDeliveryLocations] = useState<
+    DeliveryLocation[]
+  >([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+
+  const { items, removeFromCart, updateQuantity, clearCart, total, itemCount } =
+    useCart();
 
   // ✅ Fonction simple pour créer une commande guest
-  const createOrder = async (): Promise<{id: string}> => {
+  const createOrder = async (): Promise<{ id: string }> => {
     if (!phoneNumber.trim()) {
-      throw new Error('Le numéro de téléphone est obligatoire');
+      throw new Error("Le numéro de téléphone est obligatoire");
+    }
+
+    if (!selectedLocation) {
+      throw new Error("Veuillez sélectionner un lieu de livraison");
     }
 
     // Valider le format du numéro de téléphone
     const phoneRegex = /^(77|76|70|75|78)[0-9]{7}$/;
-    const cleanPhone = phoneNumber.replace(/\s/g, '');
+    const cleanPhone = phoneNumber.replace(/\s/g, "");
     if (!phoneRegex.test(cleanPhone)) {
-      throw new Error('Veuillez entrer un numéro de téléphone sénégalais valide (ex: 77 123 45 67)');
+      throw new Error(
+        "Veuillez entrer un numéro de téléphone sénégalais valide (ex: 77 123 45 67)"
+      );
     }
 
     // Préparer les données des articles
-    const orderItemsData = items.map(item => ({
+    const orderItemsData = items.map((item) => ({
       product_id: item.id,
       quantity: item.quantity,
-      price: item.price
+      price: item.price,
     }));
 
+    // Calculer les montants
+    const subtotal = total;
+    const deliveryFee = selectedLocation.delivery_fee;
+    const totalWithDelivery = subtotal + deliveryFee;
+
     // Utiliser RPC pour créer la commande guest
-    const { data, error } = await supabase.rpc('create_guest_order', {
+    const { data, error } = await supabase.rpc("create_guest_order", {
       customer_phone: cleanPhone,
       customer_name: customerName.trim() || null,
-      total_amount: total,
-      order_items: orderItemsData
+      subtotal_amount: subtotal,
+      delivery_fee: deliveryFee,
+      total_amount: totalWithDelivery,
+      delivery_location_id: selectedLocation.id,
+      delivery_location_name: selectedLocation.name,
+      order_items: orderItemsData,
     });
 
     if (error) {
-      console.error('RPC Error:', error);
-      throw new Error(`Erreur lors de la création de la commande: ${error.message}`);
+      console.error("RPC Error details:", error);
+      throw new Error(
+        `Erreur lors de la création de la commande: ${error.message}`
+      );
+    }
+
+    if (!data) {
+      throw new Error("Aucun ID de commande retourné");
     }
 
     return { id: data };
   };
 
-  const generateWhatsAppMessage = (orderId: string) => {
-    const itemsText = items.map(item => 
-      `• ${item.quantity}x ${item.name} - ${formatXOF(item.price * item.quantity)}`
-    ).join('\n');
+  // AJOUTER après les états
+  useEffect(() => {
+    const fetchDeliveryLocations = async () => {
+      try {
+        setIsLoadingLocations(true);
+        const { data, error } = await supabase
+          .from("delivery_locations")
+          .select("*")
+          .eq("is_active", true)
+          .order("name");
 
-    const customerInfo = customerName 
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
+
+        setDeliveryLocations(data || []);
+
+        // Sélectionner le premier lieu par défaut si disponible
+        if (data && data.length > 0) {
+          setSelectedLocation(data[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching delivery locations:", error);
+        // Optionnel: afficher un message à l'utilisateur
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    };
+
+    fetchDeliveryLocations();
+  }, []);
+  const generateWhatsAppMessage = (orderId: string) => {
+    const itemsText = items
+      .map(
+        (item) =>
+          `• ${item.quantity}x ${item.name} - ${formatXOF(
+            item.price * item.quantity
+          )}`
+      )
+      .join("\n");
+
+    const customerInfo = customerName
       ? `Nom: ${customerName}\nTéléphone: ${phoneNumber}`
       : `Téléphone: ${phoneNumber}`;
 
-    return `Bonjour! Je souhaite passer une commande 🛍️\n\n` +
-           `*Informations client:*\n${customerInfo}\n\n` +
-           `*Détails de la commande:*\n` +
-           `Numéro de commande: ${orderId}\n\n` +
-           `*Produits commandés:*\n${itemsText}\n\n` +
-           `*Total: ${formatXOF(total)}*\n\n` +
-           `Je suis prêt(e) à procéder au paiement. Merci!`;
+    const deliveryInfo = selectedLocation
+      ? `Lieu de livraison: ${
+          selectedLocation.name
+        }\nFrais de livraison: ${formatXOF(selectedLocation.delivery_fee)}`
+      : "Livraison: Non spécifiée";
+
+    const subtotal = total;
+    const deliveryFee = selectedLocation?.delivery_fee || 0;
+    const totalWithDelivery = subtotal + deliveryFee;
+
+    return (
+      `Bonjour! Je souhaite passer une commande 🛍️\n\n` +
+      `*Informations client:*\n${customerInfo}\n\n` +
+      `*Informations de livraison:*\n${deliveryInfo}\n\n` +
+      `*Détails de la commande:*\n` +
+      `Numéro de commande: ${orderId}\n\n` +
+      `*Produits commandés:*\n${itemsText}\n\n` +
+      `Sous-total: ${formatXOF(subtotal)}\n` +
+      `Frais de livraison: ${formatXOF(deliveryFee)}\n` +
+      `*Total: ${formatXOF(totalWithDelivery)}*\n\n` +
+      `Je suis prêt(e) à procéder au paiement. Merci!`
+    );
   };
 
   const handleWhatsAppOrder = async () => {
     try {
       setIsProcessing(true);
-      
+
       if (!showCustomerForm) {
         setShowCustomerForm(true);
         return;
       }
 
+      // Validation
+      if (!phoneNumber.trim()) {
+        throw new Error("Le numéro de téléphone est obligatoire");
+      }
+
+      if (!selectedLocation) {
+        throw new Error("Veuillez sélectionner un lieu de livraison");
+      }
+
       // Créer la commande dans la base de données
       const order = await createOrder();
-      
+
       // Générer le message WhatsApp
       const message = generateWhatsAppMessage(order.id);
       const whatsappNumber = "221761994984"; // Votre numéro WhatsApp business
       const encodedMessage = encodeURIComponent(message);
-      
+
       // Ouvrir WhatsApp
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-      window.open(whatsappUrl, '_blank');
-      
+      window.open(whatsappUrl, "_blank");
+
       // Vider le panier après envoi
       clearCart();
       setShowCustomerForm(false);
-      setPhoneNumber('');
-      setCustomerName('');
-      
+      setPhoneNumber("");
+      setCustomerName("");
     } catch (error) {
-      console.error('Error creating order:', error);
-      alert(error instanceof Error ? error.message : 'Une erreur est survenue lors de la création de la commande.');
+      console.error("Error creating order:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue lors de la création de la commande."
+      );
     } finally {
       setIsProcessing(false);
     }
   };
-
   const handlePhoneChange = (value: string) => {
-    const cleaned = value.replace(/\D/g, '');
+    const cleaned = value.replace(/\D/g, "");
     let formatted = cleaned;
-    
+
     if (cleaned.length > 2) {
-      formatted = cleaned.slice(0, 2) + ' ' + cleaned.slice(2);
+      formatted = cleaned.slice(0, 2) + " " + cleaned.slice(2);
     }
     if (cleaned.length > 5) {
-      formatted = formatted.slice(0, 6) + ' ' + formatted.slice(6);
+      formatted = formatted.slice(0, 6) + " " + formatted.slice(6);
     }
     if (cleaned.length > 7) {
-      formatted = formatted.slice(0, 9) + ' ' + formatted.slice(9);
+      formatted = formatted.slice(0, 9) + " " + formatted.slice(9);
     }
-    
+
     setPhoneNumber(formatted.slice(0, 12));
   };
 
@@ -132,7 +225,9 @@ export default function ClientCart() {
       <div className="max-w-7xl mx-auto px-4 py-16">
         <div className="text-center">
           <ShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
-          <h2 className="mt-2 text-lg font-medium text-gray-900">Votre panier est vide</h2>
+          <h2 className="mt-2 text-lg font-medium text-gray-900">
+            Votre panier est vide
+          </h2>
           <p className="mt-1 text-sm text-gray-500">
             Commencez votre shopping en visitant notre catalogue de produits.
           </p>
@@ -152,7 +247,9 @@ export default function ClientCart() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Votre Panier ({itemCount} article{itemCount > 1 ? 's' : ''})</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-8">
+        Votre Panier ({itemCount} article{itemCount > 1 ? "s" : ""})
+      </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8">
@@ -183,15 +280,21 @@ export default function ClientCart() {
                   <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center border rounded-md">
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() =>
+                          updateQuantity(item.id, item.quantity - 1)
+                        }
                         className="p-2 hover:bg-gray-100"
                         disabled={item.quantity <= 1}
                       >
                         <Minus className="h-4 w-4 text-gray-600" />
                       </button>
-                      <span className="px-4 py-2 text-gray-900">{item.quantity}</span>
+                      <span className="px-4 py-2 text-gray-900">
+                        {item.quantity}
+                      </span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() =>
+                          updateQuantity(item.id, item.quantity + 1)
+                        }
                         className="p-2 hover:bg-gray-100"
                         disabled={item.quantity >= item.stock_quantity}
                       >
@@ -220,24 +323,75 @@ export default function ClientCart() {
             </button>
           </div>
         </div>
-
         <div className="lg:col-span-4">
           <div className="bg-white shadow-sm rounded-lg p-6 sticky top-8">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Résumé de la commande</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">
+              Résumé de la commande
+            </h2>
+
+            {/* Sélection du lieu de livraison */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Lieu de livraison *
+              </label>
+              {isLoadingLocations ? (
+                <div className="text-sm text-gray-500">
+                  Chargement des lieux de livraison...
+                </div>
+              ) : deliveryLocations.length > 0 ? (
+                <select
+                  value={selectedLocation?.id || ""}
+                  onChange={(e) => {
+                    const location = deliveryLocations.find(
+                      (loc) => loc.id === e.target.value
+                    );
+                    setSelectedLocation(location || null);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  required
+                >
+                  <option value="">Sélectionnez un lieu</option>
+                  {deliveryLocations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} - {formatXOF(location.delivery_fee)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="text-sm text-red-600">
+                  Aucun lieu de livraison disponible
+                </div>
+              )}
+              {selectedLocation && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Livraison à {selectedLocation.name}
+                </p>
+              )}
+            </div>
 
             <div className="flow-root">
               <dl className="-my-4 text-sm divide-y divide-gray-200">
                 <div className="py-4 flex items-center justify-between">
                   <dt className="text-gray-600">Sous-total</dt>
-                  <dd className="font-medium text-gray-900">{formatXOF(total)}</dd>
+                  <dd className="font-medium text-gray-900">
+                    {formatXOF(total)}
+                  </dd>
                 </div>
                 <div className="py-4 flex items-center justify-between">
-                  <dt className="text-gray-600">Livraison</dt>
-                  <dd className="font-medium text-gray-900">Gratuite</dd>
+                  <dt className="text-gray-600">Frais de livraison</dt>
+                  <dd className="font-medium text-gray-900">
+                    {selectedLocation
+                      ? formatXOF(selectedLocation.delivery_fee)
+                      : "---"}
+                  </dd>
                 </div>
                 <div className="py-4 flex items-center justify-between">
                   <dt className="text-base font-medium text-gray-900">Total</dt>
-                  <dd className="text-base font-medium text-gray-900">{formatXOF(total)}</dd>
+                  <dd className="text-base font-medium text-gray-900">
+                    {selectedLocation
+                      ? formatXOF(total + selectedLocation.delivery_fee)
+                      : formatXOF(total)}
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -249,9 +403,12 @@ export default function ClientCart() {
                   <User className="h-4 w-4 mr-2" />
                   Informations de contact
                 </div>
-                
+
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Numéro de téléphone *
                   </label>
                   <input
@@ -269,7 +426,10 @@ export default function ClientCart() {
                 </div>
 
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Votre nom (optionnel)
                   </label>
                   <input
@@ -287,23 +447,31 @@ export default function ClientCart() {
             <div className="mt-6 space-y-4">
               <button
                 onClick={handleWhatsAppOrder}
-                disabled={isProcessing || (showCustomerForm && !phoneNumber.trim())}
+                disabled={
+                  isProcessing ||
+                  (showCustomerForm &&
+                    (!phoneNumber.trim() || !selectedLocation))
+                }
                 className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white ${
-                  isProcessing || (showCustomerForm && !phoneNumber.trim())
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700'
+                  isProcessing ||
+                  (showCustomerForm &&
+                    (!phoneNumber.trim() || !selectedLocation))
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700"
                 }`}
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
-                {showCustomerForm 
-                  ? (isProcessing ? 'Création de la commande...' : 'Confirmer et passer commande')
-                  : 'Passer la commande'
-                }
+                {showCustomerForm
+                  ? isProcessing
+                    ? "Création de la commande..."
+                    : "Confirmer et passer commande"
+                  : "Passer la commande"}
               </button>
 
               {!showCustomerForm && (
                 <p className="text-xs text-gray-500 text-center">
-                  Aucune connexion nécessaire. Juste votre numéro pour confirmer la commande.
+                  Aucune connexion nécessaire. Juste votre numéro pour confirmer
+                  la commande.
                 </p>
               )}
 

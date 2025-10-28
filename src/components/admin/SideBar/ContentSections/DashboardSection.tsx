@@ -372,7 +372,7 @@ export default function DashboardSection() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-gray-900">
-                    {product.stock}
+                    {product.stock_quantity}
                   </p>
                   <p className="text-xs text-gray-500">en stock</p>
                 </div>
