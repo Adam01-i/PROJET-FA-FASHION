@@ -75,6 +75,14 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
     getUserInfo();
   }, []);
 
+  // Fermer le menu quand on clique ailleurs
+  // useEffect(() => {
+  //   const handleClickOutside = () => setIsActionsMenuOpen(null);
+  //   document.addEventListener('click', handleClickOutside);
+  //   return () => document.removeEventListener('click', handleClickOutside);
+  // }, []);
+
+
   const filteredOrders = orders.filter(
     (order) =>
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -123,6 +131,8 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
       pending: "En attente",
       confirmed: "Confirmée",
       cancelled: "Annulée",
+      delivered: "",
+      shipped: ""
     };
     return statusMap[status];
   };
