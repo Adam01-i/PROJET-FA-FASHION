@@ -11,6 +11,7 @@ import {
   User,
   Phone,
   Plus,
+  Truck,
 } from "lucide-react";
 import { Order } from "../../models";
 import { useOrders } from "../../hooks/useOrders";
@@ -82,7 +83,6 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
   //   return () => document.removeEventListener('click', handleClickOutside);
   // }, []);
 
-
   const filteredOrders = orders.filter(
     (order) =>
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,6 +97,10 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
         return "bg-orange-100 text-orange-800 border-orange-200";
       case "cancelled":
         return "bg-red-100 text-red-800 border-red-200";
+      case "delivered":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "shipped":
+        return "bg-blue-100 text-blue-800 border-blue-200"; // ← AJOUTER
       default:
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
     }
@@ -121,6 +125,10 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
         return <CheckCircle className="h-4 w-4" />;
       case "cancelled":
         return <XCircle className="h-4 w-4" />;
+      case "shipped":
+        return <Truck className="h-4 w-4" />; // ← AJOUTER
+      case "delivered":
+        return <CheckCircle className="h-4 w-4" />;
       default:
         return <Clock className="h-4 w-4" />;
     }
@@ -130,9 +138,9 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
     const statusMap: Record<Order["status"], string> = {
       pending: "En attente",
       confirmed: "Confirmée",
+      delivered: "Livrée",
       cancelled: "Annulée",
-      delivered: "",
-      shipped: ""
+      shipped: "",
     };
     return statusMap[status];
   };
@@ -159,16 +167,22 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
       } = await supabase.auth.getUser();
       const currentUserId = user?.id;
 
-      // Récupérer le rôle de l'utilisateur
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, full_name")
         .eq("id", user?.id)
         .single();
 
       const currentUserRole = profile?.role;
+      const userName = profile?.full_name;
 
-      await updateOrderStatus(orderId, status, currentUserId, currentUserRole);
+      await updateOrderStatus(
+        orderId,
+        status,
+        currentUserId,
+        currentUserRole,
+        userName
+      );
       success("Statut mis à jour", "Le statut de la commande a été mis à jour");
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -200,24 +214,24 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
     }
   };
 
-const handleSendWhatsApp = (order: Order): void => {
-  // Vérifier si le client a un numéro de téléphone
-  if (!order.customer_phone) {
-    toastError("Erreur", "Aucun numéro de téléphone client disponible");
-    return;
-  }
+  const handleSendWhatsApp = (order: Order): void => {
+    // Vérifier si le client a un numéro de téléphone
+    if (!order.customer_phone) {
+      toastError("Erreur", "Aucun numéro de téléphone client disponible");
+      return;
+    }
 
-  const itemsText =
-    order.order_items
-      ?.map(
-        (item) =>
-          `${item.quantity}x ${item.product?.name} - ${formatXOF(
-            item.price * item.quantity
-          )}`
-      )
-      .join("\n") || "Aucun produit";
+    const itemsText =
+      order.order_items
+        ?.map(
+          (item) =>
+            `${item.quantity}x ${item.product?.name} - ${formatXOF(
+              item.price * item.quantity
+            )}`
+        )
+        .join("\n") || "Aucun produit";
 
-  const message = `Bonjour ${order.customer_name || "Client"} !
+    const message = `Bonjour ${order.customer_name || "Client"} !
 
 📦 Votre commande #${order.id.slice(0, 8)}
     
@@ -232,15 +246,15 @@ ${itemsText}
 
 Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de votre commande.`;
 
-  // Nettoyer le numéro de téléphone (supprimer les espaces)
-  const cleanPhone = order.customer_phone.replace(/\s/g, '');
-  
-  // Encoder le message pour l'URL
-  const encodedMessage = encodeURIComponent(message);
-  
-  // Ouvrir WhatsApp avec le numéro du client
-  window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, "_blank");
-};
+    // Nettoyer le numéro de téléphone (supprimer les espaces)
+    const cleanPhone = order.customer_phone.replace(/\s/g, "");
+
+    // Encoder le message pour l'URL
+    const encodedMessage = encodeURIComponent(message);
+
+    // Ouvrir WhatsApp avec le numéro du client
+    window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, "_blank");
+  };
   const handlePaymentProofUpload = async (
     orderId: string,
     file: File
@@ -274,6 +288,7 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
   const totalOrders = orders.length;
   const pendingOrders = orders.filter((o) => o.status === "pending").length;
   const paidOrders = orders.filter((o) => o.payment_status === "paid").length;
+  const delivereds = orders.filter((o) => o.status === "delivered").length;
   const totalRevenue = orders
     .filter((o) => o.payment_status === "paid")
     .reduce((sum, order) => sum + order.total_amount, 0);
@@ -301,7 +316,7 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
       </div>
 
       {/* Statistiques - Responsive */}
-      <div className="mb-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="mb-6 grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -354,6 +369,22 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-gray-600">
+                Livrées
+              </p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                {delivereds}
+              </p>
+            </div>
+            <div className="p-1 sm:p-2 bg-green-100 rounded-lg">
+              <CheckCircle className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">
                 Revenu Total
               </p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900">
@@ -382,11 +413,12 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Montant
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Statut
-                </th>
+                
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Paiement
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Statut
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -441,6 +473,16 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
                       {formatXOF(order.total_amount)}
                     </td>
+                    
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(
+                          order.payment_status
+                        )}`}
+                      >
+                        {getPaymentStatusDisplayName(order.payment_status)}
+                      </span>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         {getStatusIcon(order.status)}
@@ -452,15 +494,6 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                           {getStatusDisplayName(order.status)}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(
-                          order.payment_status
-                        )}`}
-                      >
-                        {getPaymentStatusDisplayName(order.payment_status)}
-                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex space-x-2">

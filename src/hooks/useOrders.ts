@@ -35,121 +35,152 @@ export function useOrders() {
     }
   };
 
-  const updateOrderStatus = async (
-    orderId: string,
-    status: Order["status"],
-    processedBy?: string,
-    currentUserRole?: string,
-    userName?: string
-  ): Promise<boolean> => {
-    try {
-      // Vérifications de sécurité selon le rôle
-      if (currentUserRole === "assistant") {
-        throw new Error(
-          "Les assistants ne peuvent pas modifier le statut des commandes"
-        );
-      }
-
-      if (currentUserRole === "admin" && status === "cancelled") {
-        throw new Error(
-          "Les administrateurs ne peuvent pas annuler les commandes"
-        );
-      }
-
-      // Vérifications spécifiques pour les livreurs
-      if (currentUserRole === "livreur") {
-        // Les livreurs ne peuvent que marquer comme "delivered"
-        if (status !== "delivered") {
-          throw new Error(
-            "Les livreurs ne peuvent que marquer les commandes comme livrées"
-          );
-        }
-
-        // Vérifier que la commande est dans un état qui peut être livré
-        const { data: currentOrder } = await supabase
-          .from("orders")
-          .select("status, payment_status")
-          .eq("id", orderId)
-          .single();
-
-        if (!currentOrder) {
-          throw new Error("Commande non trouvée");
-        }
-
-        if (
-          currentOrder.status !== "confirmed" &&
-          currentOrder.status !== "shipped"
-        ) {
-          throw new Error(
-            `Impossible de livrer une commande avec le statut "${currentOrder.status}"`
-          );
-        }
-
-        if (currentOrder.payment_status !== "paid") {
-          throw new Error("Impossible de livrer une commande non payée");
-        }
-      }
-
-      // Vérifier si on essaie de confirmer une commande
-      if (status === "confirmed") {
-        // Récupérer les infos de paiement de la commande
-        const { data: order } = await supabase
-          .from("orders")
-          .select("payment_status, payment_proof")
-          .eq("id", orderId)
-          .single();
-
-        if (order?.payment_status !== "paid") {
-          throw new Error(
-            "Impossible de confirmer une commande sans preuve de paiement et statut payé"
-          );
-        }
-      }
-
-      const updates: {
-        status: Order["status"];
-        updated_at: string;
-        payment_status?: Order["payment_status"];
-        processed_by?: string;
-        delivered_by?: string;
-        delivered_by_name?: string;
-        delivered_at?: string;
-      } = {
-        status,
-        updated_at: new Date().toISOString(),
-      };
-
-      // Gestion spécifique pour l'annulation
-      if (status === "cancelled") {
-        updates.payment_status = "refunded";
-      }
-
-      // Gestion spécifique pour la livraison
-      if (status === "delivered" && processedBy && userName) {
-        updates.delivered_by = processedBy;
-        updates.delivered_by_name = userName;
-        updates.delivered_at = new Date().toISOString();
-
-        // Une fois livrée, on peut aussi marquer le paiement comme complété
-        updates.payment_status = "paid";
-      }
-
-      if (processedBy && status !== "delivered") {
-        updates.processed_by = processedBy;
-      }
-      
-      const { error } = await supabase
-        .from("orders")
-        .update(updates)
-        .eq("id", orderId);
-
-      if (error) throw error;
-      return true;
-    } catch (err) {
-      console.error("Error updating order:", err);
-      throw err;
+const updateOrderStatus = async (
+  orderId: string,
+  status: Order["status"],
+  processedBy?: string,
+  currentUserRole?: string,
+  userName?: string
+): Promise<boolean> => {
+  try {
+    // Vérifications de sécurité selon le rôle
+    if (currentUserRole === "assistant") {
+      throw new Error(
+        "Les assistants ne peuvent pas modifier le statut des commandes"
+      );
     }
-  };
+
+    // Récupérer la commande complète avec ses items
+    const { data: order } = await supabase
+      .from("orders")
+      .select(`
+        *,
+        order_items (
+          *,
+          product:products (*)
+        )
+      `)
+      .eq("id", orderId)
+      .single();
+
+    if (!order) {
+      throw new Error("Commande non trouvée");
+    }
+
+    // Vérifier les stocks avant confirmation
+    if (status === "confirmed") {
+      for (const item of order.order_items) {
+        if (item.product.stock_quantity < item.quantity) {
+          throw new Error(
+            `Stock insuffisant pour ${item.product.name}. Stock disponible: ${item.product.stock_quantity}, Quantité demandée: ${item.quantity}`
+          );
+        }
+      }
+    }
+
+    // Mettre à jour les stocks si la commande est confirmée
+    if (status === "confirmed") {
+      for (const item of order.order_items) {
+        const newStock = item.product.stock_quantity - item.quantity;
+        
+        const { error: stockError } = await supabase
+          .from("products")
+          .update({ stock_quantity: newStock })
+          .eq("id", item.product_id);
+
+        if (stockError) {
+          console.error("Error updating product stock:", stockError);
+          throw new Error(`Erreur de mise à jour du stock pour ${item.product.name}`);
+        }
+      }
+    }
+
+    // Restaurer les stocks si la commande est annulée
+    if (status === "cancelled" && order.status === "confirmed") {
+      for (const item of order.order_items) {
+        const newStock = item.product.stock_quantity + item.quantity;
+        
+        const { error: stockError } = await supabase
+          .from("products")
+          .update({ stock_quantity: newStock })
+          .eq("id", item.product_id);
+
+        if (stockError) {
+          console.error("Error restoring product stock:", stockError);
+          throw new Error(`Erreur de restauration du stock pour ${item.product.name}`);
+        }
+      }
+    }
+
+    // Vérifications supplémentaires pour les livreurs
+    if (currentUserRole === "livreur") {
+      if (status !== "delivered") {
+        throw new Error(
+          "Les livreurs ne peuvent que marquer les commandes comme livrées"
+        );
+      }
+
+      if (order.status !== "confirmed" && order.status !== "shipped") {
+        throw new Error(
+          `Impossible de livrer une commande avec le statut "${order.status}"`
+        );
+      }
+
+      if (order.payment_status !== "paid") {
+        throw new Error("Impossible de livrer une commande non payée");
+      }
+    }
+
+    // Vérifier la confirmation de commande
+    if (status === "confirmed" && order.payment_status !== "paid") {
+      throw new Error(
+        "Impossible de confirmer une commande sans preuve de paiement et statut payé"
+      );
+    }
+
+    const updates: {
+      status: Order['status'];
+      updated_at: string;
+      payment_status?: Order['payment_status'];
+      delivered_by?: string;
+      delivered_by_name?: string;
+      delivered_at?: string;
+      processed_by?: string;
+    } = {
+      status,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Gestion spécifique pour l'annulation
+    if (status === "cancelled") {
+      updates.payment_status = "refunded";
+    }
+
+    // Gestion spécifique pour la livraison
+    if (status === "delivered" && processedBy && userName) {
+      updates.delivered_by = processedBy;
+      updates.delivered_by_name = userName;
+      updates.delivered_at = new Date().toISOString();
+      updates.payment_status = "paid";
+    }
+
+    if (processedBy && status !== "delivered") {
+      updates.processed_by = processedBy;
+    }
+
+    const { error } = await supabase
+      .from("orders")
+      .update(updates)
+      .eq("id", orderId);
+
+    if (error) throw error;
+
+    return true;
+  } catch (err) {
+    console.error("Error updating order:", err);
+    throw err;
+  }
+};
 
   // Fonction dédiée pour les livreurs
 const markOrderAsDelivered = async (

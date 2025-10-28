@@ -11,6 +11,7 @@ export interface User {
   is_active?: boolean;
 }
 
+
 export interface Product {
   id: string;
   name: string;

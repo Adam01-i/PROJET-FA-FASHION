@@ -49,12 +49,12 @@ export default function OrderDetailsModal({
   onOrderUpdate,
 }: OrderDetailsModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
+
   const {
-  invoiceSettings,
-  loading: invoiceSettingsLoading,
-  error: invoiceSettingsError,
-} = useInvoiceSettings();
+    invoiceSettings,
+    loading: invoiceSettingsLoading,
+    error: invoiceSettingsError,
+  } = useInvoiceSettings();
 
   const [currentOrder, setCurrentOrder] = useState<Order>(order);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -66,7 +66,7 @@ export default function OrderDetailsModal({
   // Fonction pour rafraîchir les données de la commande
   const refreshOrderData = async () => {
     if (!onOrderUpdate) return;
-    
+
     setIsRefreshing(true);
     try {
       await onOrderUpdate();
@@ -78,7 +78,10 @@ export default function OrderDetailsModal({
   };
 
   // Modifiez les handlers pour inclure le rafraîchissement
-  const handleStatusChange = async (orderId: string, status: Order["status"]) => {
+  const handleStatusChange = async (
+    orderId: string,
+    status: Order["status"]
+  ) => {
     try {
       await onStatusChange(orderId, status);
       await refreshOrderData();
@@ -87,7 +90,10 @@ export default function OrderDetailsModal({
     }
   };
 
-  const handlePaymentStatusChange = async (orderId: string, paymentStatus: Order["payment_status"]) => {
+  const handlePaymentStatusChange = async (
+    orderId: string,
+    paymentStatus: Order["payment_status"]
+  ) => {
     try {
       await onPaymentStatusChange(orderId, paymentStatus);
       await refreshOrderData();
@@ -111,6 +117,8 @@ export default function OrderDetailsModal({
         return "bg-orange-100 text-orange-800 border-orange-200";
       case "cancelled":
         return "bg-red-100 text-red-800 border-red-200";
+      case "delivered":
+        return "bg-green-100 text-green-800 border-green-200";
       default:
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
     }
@@ -141,6 +149,8 @@ export default function OrderDetailsModal({
       pending: "En attente",
       confirmed: "Confirmée",
       cancelled: "Annulée",
+      delivered: "Livrée",
+      shipped: "",
     };
     return statusMap[status];
   };
@@ -169,26 +179,25 @@ export default function OrderDetailsModal({
   };
 
   const handlePrintInvoice = (): void => {
-  if (invoiceSettingsLoading) {
-    console.warn("Paramètres de facturation pas encore chargés");
-    return;
-  }
-  generateInvoicePDF(order, invoiceSettings);
-};
-
+    if (invoiceSettingsLoading) {
+      console.warn("Paramètres de facturation pas encore chargés");
+      return;
+    }
+    generateInvoicePDF(order, invoiceSettings);
+  };
 
   const handleDownloadPDF = async (): Promise<void> => {
-  if (invoiceSettingsLoading) {
-    console.warn("Paramètres de facturation pas encore chargés");
-    return;
-  }
-  try {
-    await generateAdvancedInvoicePDF(order, invoiceSettings);
-  } catch (error) {
-    console.error("Erreur lors du téléchargement PDF:", error);
-    alert("Erreur lors de la génération du PDF");
-  }
-};
+    if (invoiceSettingsLoading) {
+      console.warn("Paramètres de facturation pas encore chargés");
+      return;
+    }
+    try {
+      await generateAdvancedInvoicePDF(order, invoiceSettings);
+    } catch (error) {
+      console.error("Erreur lors du téléchargement PDF:", error);
+      alert("Erreur lors de la génération du PDF");
+    }
+  };
 
   // Fonction pour envoyer sur WhatsApp vers le client
   const handleSendWhatsAppToClient = (order: Order): void => {
@@ -197,14 +206,15 @@ export default function OrderDetailsModal({
       return;
     }
 
-    const itemsText = order.order_items
-      ?.map(
-        (item) =>
-          `${item.quantity}x ${item.product?.name} - ${formatXOF(
-            item.price * item.quantity
-          )}`
-      )
-      .join("\n") || "Aucun produit";
+    const itemsText =
+      order.order_items
+        ?.map(
+          (item) =>
+            `${item.quantity}x ${item.product?.name} - ${formatXOF(
+              item.price * item.quantity
+            )}`
+        )
+        .join("\n") || "Aucun produit";
 
     const message = `Bonjour ${order.customer_name || "Client"}!
 
@@ -222,7 +232,7 @@ ${itemsText}
 
 Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de votre commande.`;
 
-    const cleanPhone = order.customer_phone.replace(/\s/g, '');
+    const cleanPhone = order.customer_phone.replace(/\s/g, "");
     const encodedMessage = encodeURIComponent(message);
     window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, "_blank");
   };
@@ -235,10 +245,13 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
     return order.status !== "cancelled" && order.payment_status !== "refunded";
   };
 
+  // Vérifie si l'utilisateur peut modifier le statut de la commande
   const canModifyOrderStatus = (order: Order, userRole?: string): boolean => {
     if (order.status === "cancelled") return false;
     if (userRole === "assistant") return false;
     if (userRole === "admin" && order.status === "confirmed") return false;
+    if (userRole === "admin" && order.status === "delivered") return false;
+
     return true;
   };
 
@@ -255,6 +268,9 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
 
     if (userRole === "client") {
       options.push("cancelled");
+    }
+    if (userRole === "livreur") {
+      options.push("delivered");
     }
 
     return options;
@@ -277,13 +293,16 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                   )}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  {new Date(currentOrder.created_at).toLocaleDateString("fr-FR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {new Date(currentOrder.created_at).toLocaleDateString(
+                    "fr-FR",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )}
                 </p>
               </div>
             </div>
@@ -294,13 +313,18 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                 className="p-2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
                 title="Rafraîchir les données"
               >
-                <svg 
-                  className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
+                <svg
+                  className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
               </button>
               <button
@@ -435,7 +459,9 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                       e.target.value as Order["status"]
                     )
                   }
-                  disabled={!canModifyOrderStatus(currentOrder, currentUserRole)}
+                  disabled={
+                    !canModifyOrderStatus(currentOrder, currentUserRole)
+                  }
                   className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm ${
                     !canModifyOrderStatus(currentOrder, currentUserRole)
                       ? "bg-gray-100 cursor-not-allowed"
@@ -507,33 +533,34 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                 </div>
                 {currentOrder.payment_method && (
                   <div className="mt-2 text-sm text-gray-600">
-                    Méthode: {getPaymentMethodDisplayName(currentOrder.payment_method)}
+                    Méthode:{" "}
+                    {getPaymentMethodDisplayName(currentOrder.payment_method)}
                   </div>
                 )}
 
-                {currentOrder.payment_status === "paid" && currentOrder.processed_by && (
-                  <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-xs text-green-700">
-                      ✅ Paiement confirmé par:{" "}
-                      {currentOrder.processed_by?.full_name || "Assistant"}
-                    </p>
-                    <p className="text-xs text-green-600">
-                      Le{" "}
-                      {currentOrder.updated_at
-                        ? new Date(currentOrder.updated_at).toLocaleDateString(
-                            "fr-FR",
-                            {
+                {currentOrder.payment_status === "paid" &&
+                  currentOrder.processed_by && (
+                    <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                      <p className="text-xs text-green-700">
+                        ✅ Paiement confirmé par:{" "}
+                        {currentOrder.processed_by?.full_name || "Assistant"}
+                      </p>
+                      <p className="text-xs text-green-600">
+                        Le{" "}
+                        {currentOrder.updated_at
+                          ? new Date(
+                              currentOrder.updated_at
+                            ).toLocaleDateString("fr-FR", {
                               year: "numeric",
                               month: "long",
                               day: "numeric",
                               hour: "2-digit",
                               minute: "2-digit",
-                            }
-                          )
-                        : "Date non disponible"}
-                    </p>
-                  </div>
-                )}
+                            })
+                          : "Date non disponible"}
+                      </p>
+                    </div>
+                  )}
               </div>
 
               {currentOrder.processed_by && (
@@ -544,7 +571,9 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                   <p className="text-xs text-blue-600">
                     Le{" "}
                     {currentOrder.updated_at
-                      ? new Date(currentOrder.updated_at).toLocaleDateString("fr-FR")
+                      ? new Date(currentOrder.updated_at).toLocaleDateString(
+                          "fr-FR"
+                        )
                       : "Date non disponible"}
                   </p>
                 </div>
@@ -616,11 +645,6 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                         src={item.product.image_url}
                         alt={item.product.name}
                         className="h-12 w-12 rounded-lg object-cover border border-gray-200"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src =
-                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' /%3E%3C/svg%3E";
-                        }}
                       />
                     )}
                     <div className="flex-1 min-w-0">
@@ -630,6 +654,19 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                       <p className="text-sm text-gray-500">
                         {item.quantity} x {formatXOF(item.price)}
                       </p>
+                      {item.product && (
+                        <p
+                          className={`text-xs ${
+                            item.product.stock_quantity < item.quantity
+                              ? "text-red-600"
+                              : "text-green-600"
+                          }`}
+                        >
+                          Stock: {item.product.stock_quantity}
+                          {item.product.stock_quantity < item.quantity &&
+                            " - Stock insuffisant"}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <p className="text-sm font-medium text-gray-900">
@@ -679,10 +716,16 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-green-600 hover:bg-green-700"
               }`}
-              title={!currentOrder.customer_phone ? "Aucun numéro de téléphone client" : "Envoyer au client sur WhatsApp"}
+              title={
+                !currentOrder.customer_phone
+                  ? "Aucun numéro de téléphone client"
+                  : "Envoyer au client sur WhatsApp"
+              }
             >
               <MessageCircle className="h-4 w-4 mr-2" />
-              {!currentOrder.customer_phone ? "Numéro manquant" : "WhatsApp Client"}
+              {!currentOrder.customer_phone
+                ? "Numéro manquant"
+                : "WhatsApp Client"}
             </button>
 
             <button
