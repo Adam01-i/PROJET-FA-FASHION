@@ -314,32 +314,22 @@ export function generateInvoiceHTML(order: Order, invoiceSettings: InvoiceSettin
                 </div>
                 
                 <div class="detail-section">
-                    <h3>Détails de la commande</h3>
-                    <div class="detail-item">
-                        <span class="detail-label">N° Commande:</span>
-                        <span class="detail-value">${order.id}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Date commande:</span>
-                        <span class="detail-value">${formatDate(order.created_at)}</span>
-                    </div>
-                    ${order.payment_method ? `
-                    <div class="detail-item">
-                        <span class="detail-label">Méthode paiement:</span>
-                        <span class="detail-value">${order.payment_method === 'wave' ? 'Wave' : order.payment_method === 'orange_money' ? 'Orange Money' : order.payment_method === 'mobile_money' ? 'Mobile Money' : order.payment_method === 'credit_card' ? 'Carte de crédit' : 'Espèces'}</span>
-                    </div>
-                    ` : ''}
+                    <h3>Informations de l'assistant</h3>
+                    
+
+                    ${order.assistant_name ? `
+        <div class="detail-item">
+            <strong>Nom:</strong> ${order.assistant_name}
+            <strong>ID:</strong> ${order.assistant_id ? ` (ID: ${order.assistant_id.slice(0, 8)}...)` : ''}
+        </div>
+        ` : ''}
+
                 </div>
             </div>
         </div>
         
         <!-- Informations assistant si disponible -->
-        ${order.assistant_name ? `
-        <div class="assistant-info">
-            <strong>Commande traitée par:</strong> ${order.assistant_name}
-            ${order.assistant_id ? ` (ID: ${order.assistant_id.slice(0, 8)}...)` : ''}
-        </div>
-        ` : ''}
+        
         
         <!-- Adresse de livraison -->
         ${order.shipping_address ? `

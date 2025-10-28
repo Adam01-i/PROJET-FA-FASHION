@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 
 type RoleGuardProps = {
   children: React.ReactNode;
-  allowedRole: 'admin' | 'assistant' | 'client';
+  allowedRole: 'admin' | 'assistant' | 'client' | 'livreur';
 };
 
 export default function RoleGuard({ children, allowedRole }: RoleGuardProps) {
@@ -60,6 +60,9 @@ export default function RoleGuard({ children, allowedRole }: RoleGuardProps) {
             break;
           case 'client':
             navigate('/');
+            break;
+          case 'livreur':
+            navigate('/livreur');
             break;
           default:
             navigate('/');

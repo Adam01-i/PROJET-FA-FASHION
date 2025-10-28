@@ -21,6 +21,8 @@ import RoleGuard from "./components/auth/RoleGuard";
 import ClientLayout from "./components/client/ClientLayout";
 import AdminLayout from "./components/admin/AdminLayout";
 import AssistantLayout from "./components/assistant/AssistantLayout";
+// import LivreurLayout from "./components/livreur/LivreurLayout";
+
 
 // Pages Client
 import ClientHome from "./components/client/Views/ClientHome";
@@ -117,6 +119,18 @@ function AppContent() {
           >
             {/* Les routes assistant seront définies dans AssistantLayout */}
           </Route>
+
+          {/* 🚚 Interface Livreur */}
+          {/* <Route
+            path="/livreur/*"
+            element={
+              <RoleGuard allowedRole="livreur">
+                <LivreurLayout />
+              </RoleGuard>
+            }
+          > */}
+            {/* Les routes livreur seront définies dans LivreurLayout */}
+          {/* </Route> */}
 
           {/* ⚡ Interface Admin */}
           <Route

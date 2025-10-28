@@ -1,14 +1,65 @@
-import { useState, useEffect } from 'react';
-import { Save, Settings, Mail, Phone, MapPin, Loader2, Globe, Truck, CreditCard, FileText } from 'lucide-react';
-import { SiteSettingsData } from '../../../../models';
-import { useSiteSettings } from '../../../../hooks/useSiteSettings';
-import { useToastContext } from '../../../../hooks/ToastProvider';
+import {
+  useState,
+  useEffect,
+  // JSXElementConstructor,
+  // Key,
+  // ReactElement,
+  // ReactNode,
+  // ReactPortal,
+} from "react";
+import {
+  Save,
+  Settings,
+  Mail,
+  Phone,
+  MapPin,
+  Loader2,
+  Globe,
+  Truck,
+  CreditCard,
+  FileText,
+} from "lucide-react";
+// Par :
+import {
+  StoreSettings,
+  SocialLinks,
+  PaymentMethods,
+  ShippingSettings,
+  InvoiceSettings,
+  DeliveryLocation,
+} from "../../../../models";
+import { useSiteSettings } from "../../../../hooks/useSiteSettings";
+import { useToastContext } from "../../../../hooks/ToastProvider";
+
+// Interface pour combiner tous les paramètres (à définir localement)
+interface SiteSettingsData {
+  deliveryLocations: DeliveryLocation[];
+  store: StoreSettings;
+  socialLinks: SocialLinks;
+  paymentMethods: PaymentMethods;
+  shipping: ShippingSettings;
+  invoiceSettings: InvoiceSettings;
+}
 
 export default function SettingsSection() {
-  const { settings: settingsData, loading, error, saveSettings, initializeDefaultSettings } = useSiteSettings();
+  const {
+    settings: settingsData,
+    loading,
+    error,
+    saveSettings,
+    initializeDefaultSettings,
+  } = useSiteSettings();
   const { success, error: toastError } = useToastContext();
   const [isSaving, setIsSaving] = useState(false);
-  const [localSettings, setLocalSettings] = useState<SiteSettingsData>(settingsData);
+  const [localSettings, setLocalSettings] =
+    useState<SiteSettingsData>(settingsData);
+  const activeDeliveryLocations = localSettings.deliveryLocations?.filter(
+    (location) => location.is_active
+  );
+  const [activeTab, setActiveTab] = useState<"active" | "inactive">("active");
+  const inactiveDeliveryLocations = localSettings.deliveryLocations?.filter(
+  (location) => !location.is_active
+);
 
   // Synchroniser les settings locaux quand les données changent
   useEffect(() => {
@@ -22,16 +73,16 @@ export default function SettingsSection() {
 
       if (result) {
         success(
-          'Paramètres sauvegardés',
-          'Vos paramètres ont été sauvegardés avec succès.'
+          "Paramètres sauvegardés",
+          "Vos paramètres ont été sauvegardés avec succès."
         );
       } else {
-        throw new Error('Erreur lors de la sauvegarde');
+        throw new Error("Erreur lors de la sauvegarde");
       }
     } catch {
       toastError(
-        'Erreur de sauvegarde',
-        'Une erreur est survenue lors de la sauvegarde des paramètres.'
+        "Erreur de sauvegarde",
+        "Une erreur est survenue lors de la sauvegarde des paramètres."
       );
     } finally {
       setIsSaving(false);
@@ -39,57 +90,105 @@ export default function SettingsSection() {
   };
 
   // Handler pour les paramètres de la boutique
-  const handleStoreChange = (field: keyof SiteSettingsData['store'], value: string): void => {
-    setLocalSettings(prev => ({
+  const handleStoreChange = (
+    field: keyof SiteSettingsData["store"],
+    value: string
+  ): void => {
+    setLocalSettings((prev: SiteSettingsData) => ({
       ...prev,
       store: {
         ...prev.store,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   // Handler pour les réseaux sociaux
-  const handleSocialLinksChange = (field: keyof SiteSettingsData['socialLinks'], value: string): void => {
-    setLocalSettings(prev => ({
+  const handleSocialLinksChange = (
+    field: keyof SiteSettingsData["socialLinks"],
+    value: string
+  ): void => {
+    setLocalSettings((prev: SiteSettingsData) => ({
       ...prev,
       socialLinks: {
         ...prev.socialLinks,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   // Handler pour les méthodes de paiement
-  const handlePaymentMethodsChange = (field: keyof SiteSettingsData['paymentMethods'], value: boolean): void => {
-    setLocalSettings(prev => ({
+  const handlePaymentMethodsChange = (
+    field: keyof SiteSettingsData["paymentMethods"],
+    value: boolean
+  ): void => {
+    setLocalSettings((prev: SiteSettingsData) => ({
       ...prev,
       paymentMethods: {
         ...prev.paymentMethods,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   // Handler pour la livraison
-  const handleShippingChange = (field: keyof SiteSettingsData['shipping'], value: boolean | number | string): void => {
-    setLocalSettings(prev => ({
-      ...prev,
-      shipping: {
-        ...prev.shipping,
-        [field]: value
-      }
-    }));
-  };
+  // const handleShippingChange = (
+  //   field: keyof SiteSettingsData["shipping"],
+  //   value: boolean | number | string
+  // ): void => {
+  //   setLocalSettings((prev: SiteSettingsData) => ({
+  //     ...prev,
+  //     shipping: {
+  //       ...prev.shipping,
+  //       [field]: value,
+  //     },
+  //   }));
+  // };
 
   // Handler pour les paramètres de facturation
-  const handleInvoiceSettingsChange = (field: keyof SiteSettingsData['invoiceSettings'], value: string | number): void => {
-    setLocalSettings(prev => ({
+  const handleInvoiceSettingsChange = (
+    field: keyof SiteSettingsData["invoiceSettings"],
+    value: string | number
+  ): void => {
+    setLocalSettings((prev: SiteSettingsData) => ({
       ...prev,
       invoiceSettings: {
         ...prev.invoiceSettings,
-        [field]: value
-      }
+        [field]: value,
+      },
+    }));
+  };
+
+  // AJOUTER après handleInvoiceSettingsChange :
+
+  // Handler pour ajouter un lieu de livraison
+  const handleAddDeliveryLocation = (): void => {
+    const newLocation: DeliveryLocation = {
+      id: `temp-${Date.now()}`,
+      name: "",
+      delivery_fee: 0,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    setLocalSettings((prev: SiteSettingsData) => ({
+      ...prev,
+      deliveryLocations: [...prev.deliveryLocations, newLocation],
+    }));
+  };
+
+  // Handler pour modifier un lieu de livraison
+  const handleDeliveryLocationChange = (
+    id: string,
+    field: keyof DeliveryLocation,
+    value: string | number | boolean
+  ): void => {
+    setLocalSettings((prev: SiteSettingsData) => ({
+      ...prev,
+      deliveryLocations: prev.deliveryLocations.map((location) =>
+        location.id === id ? { ...location, [field]: value } : location
+      ),
     }));
   };
 
@@ -131,7 +230,9 @@ export default function SettingsSection() {
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-4">
           <div className="flex items-center space-x-3">
             <Settings className="h-6 w-6 text-white" />
-            <h3 className="text-lg font-semibold text-white">Paramètres de la boutique</h3>
+            <h3 className="text-lg font-semibold text-white">
+              Paramètres de la boutique
+            </h3>
           </div>
         </div>
         <div className="p-6 space-y-6">
@@ -143,7 +244,7 @@ export default function SettingsSection() {
               <input
                 type="text"
                 value={localSettings.store.name}
-                onChange={(e) => handleStoreChange('name', e.target.value)}
+                onChange={(e) => handleStoreChange("name", e.target.value)}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors"
                 placeholder="Nom de votre boutique"
               />
@@ -155,7 +256,7 @@ export default function SettingsSection() {
               <input
                 type="text"
                 value={localSettings.store.currency}
-                onChange={(e) => handleStoreChange('currency', e.target.value)}
+                onChange={(e) => handleStoreChange("currency", e.target.value)}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors"
                 placeholder="XOF"
               />
@@ -166,7 +267,9 @@ export default function SettingsSection() {
               </label>
               <textarea
                 value={localSettings.store.description}
-                onChange={(e) => handleStoreChange('description', e.target.value)}
+                onChange={(e) =>
+                  handleStoreChange("description", e.target.value)
+                }
                 rows={3}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors"
                 placeholder="Description de votre boutique"
@@ -180,7 +283,7 @@ export default function SettingsSection() {
               <input
                 type="email"
                 value={localSettings.store.email}
-                onChange={(e) => handleStoreChange('email', e.target.value)}
+                onChange={(e) => handleStoreChange("email", e.target.value)}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors"
                 placeholder="contact@exemple.com"
               />
@@ -193,7 +296,7 @@ export default function SettingsSection() {
               <input
                 type="tel"
                 value={localSettings.store.phone}
-                onChange={(e) => handleStoreChange('phone', e.target.value)}
+                onChange={(e) => handleStoreChange("phone", e.target.value)}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors"
                 placeholder="+221 XX XXX XX XX"
               />
@@ -206,7 +309,7 @@ export default function SettingsSection() {
               <input
                 type="text"
                 value={localSettings.store.address}
-                onChange={(e) => handleStoreChange('address', e.target.value)}
+                onChange={(e) => handleStoreChange("address", e.target.value)}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors"
                 placeholder="Adresse complète de votre boutique"
               />
@@ -220,7 +323,9 @@ export default function SettingsSection() {
         <div className="bg-gradient-to-r from-green-500 to-teal-600 px-6 py-4">
           <div className="flex items-center space-x-3">
             <Globe className="h-6 w-6 text-white" />
-            <h3 className="text-lg font-semibold text-white">Réseaux sociaux</h3>
+            <h3 className="text-lg font-semibold text-white">
+              Réseaux sociaux
+            </h3>
           </div>
         </div>
         <div className="p-6">
@@ -232,7 +337,9 @@ export default function SettingsSection() {
               <input
                 type="url"
                 value={localSettings.socialLinks.facebook_url}
-                onChange={(e) => handleSocialLinksChange('facebook_url', e.target.value)}
+                onChange={(e) =>
+                  handleSocialLinksChange("facebook_url", e.target.value)
+                }
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-green-500 focus:ring-green-500 transition-colors"
                 placeholder="https://facebook.com/votre-page"
               />
@@ -244,7 +351,9 @@ export default function SettingsSection() {
               <input
                 type="url"
                 value={localSettings.socialLinks.instagram_url}
-                onChange={(e) => handleSocialLinksChange('instagram_url', e.target.value)}
+                onChange={(e) =>
+                  handleSocialLinksChange("instagram_url", e.target.value)
+                }
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-green-500 focus:ring-green-500 transition-colors"
                 placeholder="https://instagram.com/votre-compte"
               />
@@ -256,7 +365,9 @@ export default function SettingsSection() {
               <input
                 type="url"
                 value={localSettings.socialLinks.twitter_url}
-                onChange={(e) => handleSocialLinksChange('twitter_url', e.target.value)}
+                onChange={(e) =>
+                  handleSocialLinksChange("twitter_url", e.target.value)
+                }
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-green-500 focus:ring-green-500 transition-colors"
                 placeholder="https://twitter.com/votre-compte"
               />
@@ -268,7 +379,9 @@ export default function SettingsSection() {
               <input
                 type="url"
                 value={localSettings.socialLinks.linkedin_url}
-                onChange={(e) => handleSocialLinksChange('linkedin_url', e.target.value)}
+                onChange={(e) =>
+                  handleSocialLinksChange("linkedin_url", e.target.value)
+                }
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-green-500 focus:ring-green-500 transition-colors"
                 placeholder="https://linkedin.com/company/votre-entreprise"
               />
@@ -282,7 +395,9 @@ export default function SettingsSection() {
         <div className="bg-gradient-to-r from-orange-500 to-red-600 px-6 py-4">
           <div className="flex items-center space-x-3">
             <CreditCard className="h-6 w-6 text-white" />
-            <h3 className="text-lg font-semibold text-white">Méthodes de paiement</h3>
+            <h3 className="text-lg font-semibold text-white">
+              Méthodes de paiement
+            </h3>
           </div>
         </div>
         <div className="p-6">
@@ -290,13 +405,17 @@ export default function SettingsSection() {
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <h4 className="font-semibold text-gray-900">Wave</h4>
-                <p className="text-sm text-gray-600">Paiement via l'application Wave</p>
+                <p className="text-sm text-gray-600">
+                  Paiement via l'application Wave
+                </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={localSettings.paymentMethods.wave_enabled}
-                  onChange={(e) => handlePaymentMethodsChange('wave_enabled', e.target.checked)}
+                  onChange={(e) =>
+                    handlePaymentMethodsChange("wave_enabled", e.target.checked)
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
@@ -305,13 +424,20 @@ export default function SettingsSection() {
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <h4 className="font-semibold text-gray-900">Orange Money</h4>
-                <p className="text-sm text-gray-600">Paiement via Orange Money</p>
+                <p className="text-sm text-gray-600">
+                  Paiement via Orange Money
+                </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={localSettings.paymentMethods.orange_money_enabled}
-                  onChange={(e) => handlePaymentMethodsChange('orange_money_enabled', e.target.checked)}
+                  onChange={(e) =>
+                    handlePaymentMethodsChange(
+                      "orange_money_enabled",
+                      e.target.checked
+                    )
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
@@ -320,13 +446,20 @@ export default function SettingsSection() {
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <h4 className="font-semibold text-gray-900">Carte de crédit</h4>
-                <p className="text-sm text-gray-600">Paiement par carte bancaire</p>
+                <p className="text-sm text-gray-600">
+                  Paiement par carte bancaire
+                </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={localSettings.paymentMethods.credit_card_enabled}
-                  onChange={(e) => handlePaymentMethodsChange('credit_card_enabled', e.target.checked)}
+                  onChange={(e) =>
+                    handlePaymentMethodsChange(
+                      "credit_card_enabled",
+                      e.target.checked
+                    )
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
@@ -335,13 +468,20 @@ export default function SettingsSection() {
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <h4 className="font-semibold text-gray-900">Mobile Money</h4>
-                <p className="text-sm text-gray-600">Autres solutions de paiement mobile</p>
+                <p className="text-sm text-gray-600">
+                  Autres solutions de paiement mobile
+                </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={localSettings.paymentMethods.mobile_money_enabled}
-                  onChange={(e) => handlePaymentMethodsChange('mobile_money_enabled', e.target.checked)}
+                  onChange={(e) =>
+                    handlePaymentMethodsChange(
+                      "mobile_money_enabled",
+                      e.target.checked
+                    )
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
@@ -349,14 +489,25 @@ export default function SettingsSection() {
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <h4 className="font-semibold text-gray-900">Paiement à la livraison</h4>
-                <p className="text-sm text-gray-600">Le client paie à la réception</p>
+                <h4 className="font-semibold text-gray-900">
+                  Paiement à la livraison
+                </h4>
+                <p className="text-sm text-gray-600">
+                  Le client paie à la réception
+                </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={localSettings.paymentMethods.cash_on_delivery_enabled}
-                  onChange={(e) => handlePaymentMethodsChange('cash_on_delivery_enabled', e.target.checked)}
+                  checked={
+                    localSettings.paymentMethods.cash_on_delivery_enabled
+                  }
+                  onChange={(e) =>
+                    handlePaymentMethodsChange(
+                      "cash_on_delivery_enabled",
+                      e.target.checked
+                    )
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
@@ -366,73 +517,190 @@ export default function SettingsSection() {
         </div>
       </div>
 
-      {/* Paramètres de livraison */}
+      {/* Gestion des lieux de livraison */}
+      {/* Gestion des lieux de livraison */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">
-          <div className="flex items-center space-x-3">
-            <Truck className="h-6 w-6 text-white" />
-            <h3 className="text-lg font-semibold text-white">Livraison</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Truck className="h-6 w-6 text-white" />
+              <h3 className="text-lg font-semibold text-white">
+                Lieux de livraison
+              </h3>
+            </div>
+            <button
+              onClick={handleAddDeliveryLocation}
+              className="px-4 py-2 bg-white text-purple-600 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
+            >
+              + Ajouter un lieu
+            </button>
           </div>
         </div>
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h4 className="font-semibold text-gray-900">Livraison activée</h4>
-              <p className="text-sm text-gray-600">Proposer la livraison à domicile</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={localSettings.shipping.enabled}
-                onChange={(e) => handleShippingChange('enabled', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
-            </label>
+
+        {/* Onglets */}
+        <div className="border-b border-gray-200">
+          <div className="px-6 flex space-x-4">
+            <button
+              onClick={() => setActiveTab("active")}
+              className={`py-3 px-4 border-b-2 font-medium text-sm ${
+                activeTab === "active"
+                  ? "border-purple-500 text-purple-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Lieux actifs ({activeDeliveryLocations?.length || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab("inactive")}
+              className={`py-3 px-4 border-b-2 font-medium text-sm ${
+                activeTab === "inactive"
+                  ? "border-purple-500 text-purple-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Lieux désactivés ({inactiveDeliveryLocations?.length || 0})
+            </button>
           </div>
-          
-          {localSettings.shipping.enabled && (
+        </div>
+
+        <div className="p-6 space-y-4">
+          {activeTab === "active" ? (
             <>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Frais de livraison (XOF)
-                  </label>
-                  <input
-                    type="number"
-                    value={localSettings.shipping.cost}
-                    onChange={(e) => handleShippingChange('cost', Number(e.target.value))}
-                    className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-colors"
-                    placeholder="2000"
-                    min="0"
-                  />
+              {activeDeliveryLocations?.map((location: DeliveryLocation) => (
+                <div
+                  key={location.id}
+                  className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg border border-gray-200"
+                >
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Nom du lieu
+                      </label>
+                      <input
+                        type="text"
+                        value={location.name}
+                        onChange={(e) =>
+                          handleDeliveryLocationChange(
+                            location.id,
+                            "name",
+                            e.target.value
+                          )
+                        }
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-colors"
+                        placeholder="Ex: Dakar, Plateau"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Frais de livraison (XOF)
+                      </label>
+                      <input
+                        type="number"
+                        value={location.delivery_fee}
+                        onChange={(e) =>
+                          handleDeliveryLocationChange(
+                            location.id,
+                            "delivery_fee",
+                            Number(e.target.value)
+                          )
+                        }
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-colors"
+                        placeholder="2000"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <button
+                      onClick={() =>
+                        handleDeliveryLocationChange(
+                          location.id,
+                          "is_active",
+                          false
+                        )
+                      }
+                      className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors whitespace-nowrap"
+                    >
+                      Désactiver
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Seuil livraison gratuite (XOF)
-                  </label>
-                  <input
-                    type="number"
-                    value={localSettings.shipping.free_shipping_threshold}
-                    onChange={(e) => handleShippingChange('free_shipping_threshold', Number(e.target.value))}
-                    className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-colors"
-                    placeholder="50000"
-                    min="0"
-                  />
+              ))}
+              {activeDeliveryLocations?.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Aucun lieu de livraison actif
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Délai de livraison
-                </label>
-                <input
-                  type="text"
-                  value={localSettings.shipping.delivery_time}
-                  onChange={(e) => handleShippingChange('delivery_time', e.target.value)}
-                  className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-colors"
-                  placeholder="2-5 jours ouvrables"
-                />
-              </div>
+              )}
+            </>
+          ) : (
+            <>
+              {inactiveDeliveryLocations?.map((location: DeliveryLocation) => (
+                <div
+                  key={location.id}
+                  className="flex items-center space-x-4 p-4 bg-gray-100 rounded-lg border border-gray-300 opacity-70"
+                >
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Nom du lieu
+                      </label>
+                      <input
+                        type="text"
+                        value={location.name}
+                        onChange={(e) =>
+                          handleDeliveryLocationChange(
+                            location.id,
+                            "name",
+                            e.target.value
+                          )
+                        }
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-colors"
+                        placeholder="Ex: Dakar, Plateau"
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Frais de livraison (XOF)
+                      </label>
+                      <input
+                        type="number"
+                        value={location.delivery_fee}
+                        onChange={(e) =>
+                          handleDeliveryLocationChange(
+                            location.id,
+                            "delivery_fee",
+                            Number(e.target.value)
+                          )
+                        }
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-colors"
+                        placeholder="2000"
+                        min="0"
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <button
+                      onClick={() =>
+                        handleDeliveryLocationChange(
+                          location.id,
+                          "is_active",
+                          true
+                        )
+                      }
+                      className="px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors whitespace-nowrap"
+                    >
+                      Activer
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {inactiveDeliveryLocations?.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Aucun lieu de livraison désactivé
+                </div>
+              )}
             </>
           )}
         </div>
@@ -447,7 +715,9 @@ export default function SettingsSection() {
           </div>
         </div>
         <div className="p-6 space-y-6">
-          <h4 className="text-md font-semibold text-gray-900">Informations de l'entreprise</h4>
+          <h4 className="text-md font-semibold text-gray-900">
+            Informations de l'entreprise
+          </h4>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
@@ -456,7 +726,9 @@ export default function SettingsSection() {
               <input
                 type="text"
                 value={localSettings.invoiceSettings.company_name}
-                onChange={(e) => handleInvoiceSettingsChange('company_name', e.target.value)}
+                onChange={(e) =>
+                  handleInvoiceSettingsChange("company_name", e.target.value)
+                }
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
                 placeholder="Nom de votre entreprise"
               />
@@ -468,7 +740,9 @@ export default function SettingsSection() {
               <input
                 type="text"
                 value={localSettings.invoiceSettings.company_address}
-                onChange={(e) => handleInvoiceSettingsChange('company_address', e.target.value)}
+                onChange={(e) =>
+                  handleInvoiceSettingsChange("company_address", e.target.value)
+                }
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
                 placeholder="Adresse de l'entreprise"
               />
@@ -480,7 +754,9 @@ export default function SettingsSection() {
               <input
                 type="text"
                 value={localSettings.invoiceSettings.company_city}
-                onChange={(e) => handleInvoiceSettingsChange('company_city', e.target.value)}
+                onChange={(e) =>
+                  handleInvoiceSettingsChange("company_city", e.target.value)
+                }
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
                 placeholder="Ville"
               />
@@ -492,7 +768,9 @@ export default function SettingsSection() {
               <input
                 type="text"
                 value={localSettings.invoiceSettings.company_country}
-                onChange={(e) => handleInvoiceSettingsChange('company_country', e.target.value)}
+                onChange={(e) =>
+                  handleInvoiceSettingsChange("company_country", e.target.value)
+                }
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
                 placeholder="Pays"
               />
@@ -504,7 +782,9 @@ export default function SettingsSection() {
               <input
                 type="tel"
                 value={localSettings.invoiceSettings.company_phone}
-                onChange={(e) => handleInvoiceSettingsChange('company_phone', e.target.value)}
+                onChange={(e) =>
+                  handleInvoiceSettingsChange("company_phone", e.target.value)
+                }
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
                 placeholder="+221 XX XXX XX XX"
               />
@@ -516,7 +796,9 @@ export default function SettingsSection() {
               <input
                 type="email"
                 value={localSettings.invoiceSettings.company_email}
-                onChange={(e) => handleInvoiceSettingsChange('company_email', e.target.value)}
+                onChange={(e) =>
+                  handleInvoiceSettingsChange("company_email", e.target.value)
+                }
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
                 placeholder="contact@entreprise.com"
               />
@@ -524,7 +806,7 @@ export default function SettingsSection() {
           </div>
         </div>
       </div>
-      
+
       {/* Bouton de sauvegarde */}
       <div className="flex justify-end">
         <button

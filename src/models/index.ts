@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'client' | 'assistant' | string;
+  role: 'admin' | 'client' | 'assistant' | 'livreur' | string;
   full_name?: string;
   avatar_url?: string;
   phone?: string;
@@ -130,6 +130,15 @@ export interface ShippingSettings {
   home_delivery_enabled: boolean;
   pickup_in_store_enabled: boolean;
   delivery_fee: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeliveryLocation {
+  id: string;
+  name: string;
+  delivery_fee: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
