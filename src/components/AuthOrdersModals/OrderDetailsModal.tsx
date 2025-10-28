@@ -627,7 +627,7 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                
               </div>
 
-              {currentOrder.processed_by && (
+              {/* {currentOrder.processed_by && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-700">
                     ✅ Traitée par: {currentOrder.processed_by?.full_name}
@@ -641,7 +641,7 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                       : "Date non disponible"}
                   </p>
                 </div>
-              )}
+              )} */}
               {/* Upload de preuve de paiement */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

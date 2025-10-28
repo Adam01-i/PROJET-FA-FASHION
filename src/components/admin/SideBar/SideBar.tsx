@@ -4,12 +4,14 @@ import ProductsItem from "./SideBarItems/ProductsItem";
 import OrdersItem from "./SideBarItems/OrdersItem";
 import UsersItem from "./SideBarItems/UsersItem";
 import SettingsItem from "./SideBarItems/SettingsItem";
+import DeliveryItem from "./SideBarItems/DeliveryItem";
 
 export type Tab =
   | "dashboard"
   | "products"
   | "inventory"
   | "orders"
+  | "deliveries"
   | "users"
   | "settings";
 
@@ -18,6 +20,8 @@ interface SideBarProps {
   onTabChange: (tab: Tab) => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
+  deliveryTab?: 'orders' | 'delivered';
+  onDeliveryTabChange?: (tab: 'orders' | 'delivered') => void;
 }
 
 export default function SideBar({
@@ -25,7 +29,10 @@ export default function SideBar({
   onTabChange,
   isMobileOpen = false,
   onCloseMobile,
+  deliveryTab,
+  onDeliveryTabChange
 }: SideBarProps) {
+  
   return (
     <>
       {/* Mobile overlay */}
@@ -81,11 +88,20 @@ export default function SideBar({
             active={activeTab === "inventory"}
             onClick={() => onTabChange("inventory")}
           />
-          
+
           <OrdersItem
             active={activeTab === "orders"}
             onClick={() => onTabChange("orders")}
           />
+
+          <DeliveryItem
+            active={activeTab === "deliveries"}
+            onClick={() => onTabChange("deliveries")}
+            deliveryTab={deliveryTab}
+             onDeliveryTabChange={onDeliveryTabChange} // ← Passez directement la prop
+          />
+
+
           <UsersItem
             active={activeTab === "users"}
             onClick={() => onTabChange("users")}

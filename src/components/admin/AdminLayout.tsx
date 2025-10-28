@@ -7,12 +7,16 @@ import ProductsSection from "./SideBar/ContentSections/ProductsSection";
 import OrdersSection from "../AuthOrdersSection/OrdersSection";
 import UsersSection from "./SideBar/ContentSections/UsersSection";
 import SettingsSection from "./SideBar/ContentSections/SettingsSection";
+import DeliveryOrdersSection from "../livreur/DeliveryOrdersSection";
 
 export default function AdminLayout() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [searchTerm, setSearchTerm] = useState("");
   const [, setIsAddModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [deliveryTab, setDeliveryTab] = useState<"orders" | "delivered">(
+    "orders"
+  );
 
   const getTabTitle = () => {
     switch (activeTab) {
@@ -24,6 +28,8 @@ export default function AdminLayout() {
         return "Gestion des inventaire";
       case "orders":
         return "Gestion des commandes";
+      case "deliveries":
+        return "";
       case "users":
         return "Gestion des utilisateurs";
       case "settings":
@@ -47,6 +53,8 @@ export default function AdminLayout() {
           onTabChange={setActiveTab}
           isMobileOpen={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          deliveryTab={deliveryTab}
+          onDeliveryTabChange={setDeliveryTab}
         />
 
         {/* Main content */}
@@ -75,6 +83,13 @@ export default function AdminLayout() {
 
             {activeTab === "orders" && (
               <OrdersSection searchTerm={searchTerm} />
+            )}
+
+            {activeTab === "deliveries" && (
+              <DeliveryOrdersSection
+                searchTerm={searchTerm}
+                showDeliveredOnly={deliveryTab === "delivered"}
+              />
             )}
 
             {activeTab === "users" && <UsersSection searchTerm={searchTerm} />}
