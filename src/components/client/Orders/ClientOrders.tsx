@@ -43,6 +43,16 @@ const ORDER_STATUS_CONFIG: Record<
     color: "bg-red-100 text-red-800",
     icon: XCircle,
   },
+  delivered: {
+    label: "",
+    color: "",
+    icon: undefined
+  },
+  shipped: {
+    label: "",
+    color: "",
+    icon: undefined
+  }
 };
 
 

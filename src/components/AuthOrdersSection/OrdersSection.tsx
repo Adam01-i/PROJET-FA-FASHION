@@ -29,8 +29,14 @@ function formatXOF(amount: number): string {
 }
 
 export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
-  const { orders, updateOrderStatus, updatePaymentStatus, refetch } =
-    useOrders();
+  const {
+    orders,
+    updateOrderStatus,
+    updatePaymentStatus,
+    refetch,
+    createAssistantOrder, // Ajoutez cette fonction
+  } = useOrders();
+
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const { success, error: toastError } = useToastContext();
@@ -140,7 +146,7 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
       confirmed: "Confirmée",
       delivered: "Livrée",
       cancelled: "Annulée",
-      shipped: "",
+      shipped: "Expédiée",
     };
     return statusMap[status];
   };
@@ -413,7 +419,7 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Montant
                 </th>
-                
+
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Paiement
                 </th>
@@ -473,7 +479,7 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
                       {formatXOF(order.total_amount)}
                     </td>
-                    
+
                     <td className="px-6 py-4">
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(
@@ -647,6 +653,7 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
           }}
           assistantId={currentUserId}
           assistantName={currentUserName}
+          createOrderFunction={createAssistantOrder} // Passez la fonction
         />
       )}
     </>

@@ -310,6 +310,53 @@ const markOrderAsDelivered = async (
     }
   };
 
+  // Ajoutez cette fonction dans votre useOrders.ts
+const createAssistantOrder = async (orderData: {
+  customer_phone: string;
+  customer_name?: string;
+  subtotal_amount: number;
+  delivery_fee: number;
+  total_amount: number;
+  delivery_location_id: string;
+  delivery_location_name: string;
+  order_items: Array<{
+    product_id: string;
+    quantity: number;
+    price: number;
+  }>;
+  assistant_id?: string;
+  assistant_name?: string;
+}): Promise<{id: string}> => {
+  try {
+    const { data, error } = await supabase.rpc('create_assistant_order_with_delivery', {
+      customer_phone: orderData.customer_phone,
+      customer_name: orderData.customer_name || null,
+      subtotal_amount: orderData.subtotal_amount,
+      delivery_fee: orderData.delivery_fee,
+      total_amount: orderData.total_amount,
+      delivery_location_id: orderData.delivery_location_id,
+      delivery_location_name: orderData.delivery_location_name,
+      order_items: orderData.order_items,
+      assistant_id: orderData.assistant_id || null,
+      assistant_name: orderData.assistant_name || null
+    });
+
+    if (error) {
+      console.error('RPC Error details:', error);
+      throw new Error(`Erreur lors de la création de la commande: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('Aucun ID de commande retourné');
+    }
+
+    return { id: data };
+  } catch (err) {
+    console.error('Error in createAssistantOrder:', err);
+    throw err;
+  }
+};
+
   // Remplacer l'abonnement existant dans useEffect par :
   useEffect(() => {
     fetchOrders();
@@ -386,6 +433,7 @@ const markOrderAsDelivered = async (
     updateOrderStatus,
     updatePaymentStatus,
     createOrder,
+    createAssistantOrder,
     refetch: fetchOrders,
     markOrderAsDelivered,
   };
