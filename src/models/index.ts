@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'client' | 'assistant' | 'livreur' | string;
+  role: "admin" | "client" | "assistant" | "livreur" | string;
   full_name?: string;
   avatar_url?: string;
   phone?: string;
@@ -10,7 +10,6 @@ export interface User {
   updated_at?: string;
   is_active?: boolean;
 }
-
 
 export interface Product {
   id: string;
@@ -51,17 +50,22 @@ export interface Order {
   customer_name?: string; // Nouveau champ optionnel
   customer_email?: string; // Nouveau champ optionnel
   processed_by?: User;
-  
+
   // AJOUTER ces nouveaux champs pour la livraison
   subtotal_amount: number;
   delivery_fee: number;
   delivery_location_id?: string;
   delivery_location_name?: string;
-  
-  total_amount: number; 
-  status: 'pending' | 'confirmed' | 'cancelled';
-  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
-  payment_method?: 'wave' | 'orange_money' | 'mobile_money' | 'credit_card' | 'cash';
+
+  total_amount: number;
+  status: "pending" | "confirmed" | "cancelled" | "delivered" | "shipped";
+  payment_status: "pending" | "paid" | "failed" | "refunded";
+  payment_method?:
+    | "wave"
+    | "orange_money"
+    | "mobile_money"
+    | "credit_card"
+    | "cash";
   payment_proof?: string;
   shipping_address?: {
     full_name: string;
@@ -74,9 +78,14 @@ export interface Order {
   created_at: string;
   updated_at?: string;
   order_items?: OrderItem[];
-  
+
+  delivered_by?: string;
+  delivered_by_name?: string;
+  delivered_at?: string;
+
   // Optionnel: ajouter une relation pour faciliter les jointures
   delivery_location?: DeliveryLocation;
+  delivered_by_user?: User;
 }
 
 export interface Category {
@@ -196,14 +205,14 @@ export interface LowStockAlert {
   current_stock: number;
   threshold: number;
   last_restock_date?: string;
-  urgency: 'low' | 'medium' | 'high';
+  urgency: "low" | "medium" | "high";
 }
 
 export interface InventoryFilters {
   category: string;
-  stockStatus: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock';
-  sortBy: 'name' | 'stock' | 'sales' | 'revenue';
-  sortOrder: 'asc' | 'desc';
+  stockStatus: "all" | "in_stock" | "low_stock" | "out_of_stock";
+  sortBy: "name" | "stock" | "sales" | "revenue";
+  sortOrder: "asc" | "desc";
 }
 
 // À ajouter à vos interfaces
@@ -212,7 +221,7 @@ export interface StockAlert {
   product_id: string;
   product?: Product;
   threshold: number;
-  urgency: 'low' | 'medium' | 'high';
+  urgency: "low" | "medium" | "high";
   is_active: boolean;
   notified_at?: string;
   created_at: string;
@@ -223,7 +232,7 @@ export interface StockMovement {
   id: string;
   product_id: string;
   product?: Product;
-  movement_type: 'in' | 'out' | 'adjustment';
+  movement_type: "in" | "out" | "adjustment";
   quantity: number;
   previous_stock: number;
   new_stock: number;

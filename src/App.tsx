@@ -29,6 +29,7 @@ import ClientHome from "./components/client/Views/ClientHome";
 import ClientCart from "./components/client/Cart/ClientCart";
 import ClientOrders from "./components/client/Orders/ClientOrders";
 import ClientWishlist from "./components/client/Wishlist/ClientWishlist";
+import DeliveryLayout from "./components/livreur/DeliveryLayout";
 
 // ========================
 // 🧱 Layouts de base
@@ -121,16 +122,16 @@ function AppContent() {
           </Route>
 
           {/* 🚚 Interface Livreur */}
-          {/* <Route
-            path="/livreur/*"
+          <Route
+            path="/delivery/*"
             element={
               <RoleGuard allowedRole="livreur">
-                <LivreurLayout />
+                <DeliveryLayout />
               </RoleGuard>
             }
-          > */}
+          >
             {/* Les routes livreur seront définies dans LivreurLayout */}
-          {/* </Route> */}
+          </Route>
 
           {/* ⚡ Interface Admin */}
           <Route

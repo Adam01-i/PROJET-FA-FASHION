@@ -62,7 +62,7 @@ export default function RoleGuard({ children, allowedRole }: RoleGuardProps) {
             navigate('/');
             break;
           case 'livreur':
-            navigate('/livreur');
+            navigate('/delivery');
             break;
           default:
             navigate('/');

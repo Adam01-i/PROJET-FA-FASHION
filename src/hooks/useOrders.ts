@@ -39,7 +39,8 @@ export function useOrders() {
     orderId: string,
     status: Order["status"],
     processedBy?: string,
-    currentUserRole?: string
+    currentUserRole?: string,
+    userName?: string
   ): Promise<boolean> => {
     try {
       // Vérifications de sécurité selon le rôle
@@ -53,6 +54,40 @@ export function useOrders() {
         throw new Error(
           "Les administrateurs ne peuvent pas annuler les commandes"
         );
+      }
+
+      // Vérifications spécifiques pour les livreurs
+      if (currentUserRole === "livreur") {
+        // Les livreurs ne peuvent que marquer comme "delivered"
+        if (status !== "delivered") {
+          throw new Error(
+            "Les livreurs ne peuvent que marquer les commandes comme livrées"
+          );
+        }
+
+        // Vérifier que la commande est dans un état qui peut être livré
+        const { data: currentOrder } = await supabase
+          .from("orders")
+          .select("status, payment_status")
+          .eq("id", orderId)
+          .single();
+
+        if (!currentOrder) {
+          throw new Error("Commande non trouvée");
+        }
+
+        if (
+          currentOrder.status !== "confirmed" &&
+          currentOrder.status !== "shipped"
+        ) {
+          throw new Error(
+            `Impossible de livrer une commande avec le statut "${currentOrder.status}"`
+          );
+        }
+
+        if (currentOrder.payment_status !== "paid") {
+          throw new Error("Impossible de livrer une commande non payée");
+        }
       }
 
       // Vérifier si on essaie de confirmer une commande
@@ -76,19 +111,33 @@ export function useOrders() {
         updated_at: string;
         payment_status?: Order["payment_status"];
         processed_by?: string;
+        delivered_by?: string;
+        delivered_by_name?: string;
+        delivered_at?: string;
       } = {
         status,
         updated_at: new Date().toISOString(),
       };
 
+      // Gestion spécifique pour l'annulation
       if (status === "cancelled") {
         updates.payment_status = "refunded";
       }
 
-      if (processedBy) {
-        updates.processed_by = processedBy;
+      // Gestion spécifique pour la livraison
+      if (status === "delivered" && processedBy && userName) {
+        updates.delivered_by = processedBy;
+        updates.delivered_by_name = userName;
+        updates.delivered_at = new Date().toISOString();
+
+        // Une fois livrée, on peut aussi marquer le paiement comme complété
+        updates.payment_status = "paid";
       }
 
+      if (processedBy && status !== "delivered") {
+        updates.processed_by = processedBy;
+      }
+      
       const { error } = await supabase
         .from("orders")
         .update(updates)
@@ -101,6 +150,40 @@ export function useOrders() {
       throw err;
     }
   };
+
+  // Fonction dédiée pour les livreurs
+const markOrderAsDelivered = async (
+  orderId: string,
+  deliveredBy: string,
+  deliveredByName: string
+): Promise<boolean> => {
+  try {
+    const updates = {
+      status: 'delivered' as Order['status'],
+      delivered_by: deliveredBy,
+      delivered_by_name: deliveredByName,
+      delivered_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase
+      .from('orders')
+      .update(updates)
+      .eq('id', orderId);
+
+    if (error) throw error;
+    
+    // Mettre à jour le cache local
+    setOrders(prev => prev.map(order => 
+      order.id === orderId ? { ...order, ...updates } : order
+    ));
+    
+    return true;
+  } catch (err) {
+    console.error('Error marking order as delivered:', err);
+    throw err;
+  }
+};
 
   // Remplacer la fonction updatePaymentStatus existante par :
   const updatePaymentStatus = async (
@@ -273,5 +356,6 @@ export function useOrders() {
     updatePaymentStatus,
     createOrder,
     refetch: fetchOrders,
+    markOrderAsDelivered,
   };
 }
