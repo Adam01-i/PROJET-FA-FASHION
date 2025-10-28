@@ -18,7 +18,7 @@ import { useOrders } from "../../hooks/useOrders";
 import { useToastContext } from "../../hooks/ToastProvider";
 import OrderDetailsModal from "../AuthOrdersModals/OrderDetailsModal";
 import { supabase } from "../../lib/supabaseClient";
-import CreateOrderModal from "../AuthOrdersModals/CreateOrderModal"; // Nouveau modal
+import CreateOrderModal from "../AuthOrdersModals/CreateOrderModal";
 
 interface OrdersSectionProps {
   searchTerm: string;
@@ -81,13 +81,6 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
     };
     getUserInfo();
   }, []);
-
-  // Fermer le menu quand on clique ailleurs
-  // useEffect(() => {
-  //   const handleClickOutside = () => setIsActionsMenuOpen(null);
-  //   document.addEventListener('click', handleClickOutside);
-  //   return () => document.removeEventListener('click', handleClickOutside);
-  // }, []);
 
   const filteredOrders = orders.filter(
     (order) =>

@@ -9,6 +9,8 @@ import {
   Download,
   X,
   Printer,
+  Clock,
+  Truck,
 } from "lucide-react";
 import { Order } from "../../models";
 import {
@@ -167,16 +169,16 @@ export default function OrderDetailsModal({
     return statusMap[status];
   };
 
-  const getPaymentMethodDisplayName = (method?: string): string => {
-    const methodMap: Record<string, string> = {
-      wave: "Wave",
-      orange_money: "Orange Money",
-      mobile_money: "Mobile Money",
-      credit_card: "Carte de crédit",
-      cash: "Espèces",
-    };
-    return method ? methodMap[method] || method : "Non spécifié";
-  };
+  // const getPaymentMethodDisplayName = (method?: string): string => {
+  //   const methodMap: Record<string, string> = {
+  //     wave: "Wave",
+  //     orange_money: "Orange Money",
+  //     mobile_money: "Mobile Money",
+  //     credit_card: "Carte de crédit",
+  //     cash: "Espèces",
+  //   };
+  //   return method ? methodMap[method] || method : "Non spécifié";
+  // };
 
   const handlePrintInvoice = (): void => {
     if (invoiceSettingsLoading) {
@@ -439,6 +441,66 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                   </div>
                 </div>
               )}
+
+              {/* Informations Livreur */}
+              {(currentOrder.delivered_by ||
+                currentOrder.delivered_by_name) && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <Truck className="h-5 w-5 mr-2" />
+                    Informations Livreur
+                  </h3>
+                  <div className="bg-green-50 p-4 rounded-lg space-y-3">
+                    {currentOrder.delivered_by_name && (
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 text-green-400 mr-2" />
+                        <div>
+                          <p className="text-sm text-green-600">
+                            Nom du livreur
+                          </p>
+                          <p className="text-sm font-medium text-green-900">
+                            {currentOrder.delivered_by_name}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {currentOrder.delivered_by && (
+                      <div className="flex items-center">
+                        <div className="h-4 w-4 text-green-400 mr-2 flex items-center justify-center">
+                          <span className="text-xs">ID</span>
+                        </div>
+                        <div>
+                          <p className="text-sm text-green-600">ID Livreur</p>
+                          <p className="text-sm font-medium text-green-900">
+                            {currentOrder.delivered_by.slice(0, 8)}...
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {currentOrder.delivered_at && (
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 text-green-400 mr-2" />
+                        <div>
+                          <p className="text-sm text-green-600">
+                            Date de livraison
+                          </p>
+                          <p className="text-sm font-medium text-green-900">
+                            {new Date(
+                              currentOrder.delivered_at
+                            ).toLocaleDateString("fr-FR", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Statuts et Actions */}
@@ -447,7 +509,7 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                 Gestion de la Commande
               </h3>
               {/* Statut de la commande */}
-              <div>
+              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Statut de la commande
                 </label>
@@ -496,9 +558,33 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                     ⚠️ Commande annulée - modifications désactivées
                   </div>
                 )}
+                 {currentOrder.payment_status === "paid" &&
+                  currentOrder.processed_by && (
+                    <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                      <p className="text-xs text-green-700">
+                        ✅ Paiement confirmé par:{" "}
+                        {currentOrder.processed_by?.full_name || "Assistant"}
+                      </p>
+                      <p className="text-xs text-green-600">
+                        Le{" "}
+                        {currentOrder.updated_at
+                          ? new Date(
+                              currentOrder.updated_at
+                            ).toLocaleDateString("fr-FR", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "Date non disponible"}
+                      </p>
+                    </div>
+                  )}
               </div>
+
               {/* Statut de paiement */}
-              <div>
+              <div className="bg-blue-50 p-4 rounded-lg space-y-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Statut de paiement
                 </label>
@@ -531,36 +617,14 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                     {getPaymentStatusDisplayName(currentOrder.payment_status)}
                   </span>
                 </div>
-                {currentOrder.payment_method && (
+                {/* {currentOrder.payment_method && (
                   <div className="mt-2 text-sm text-gray-600">
                     Méthode:{" "}
                     {getPaymentMethodDisplayName(currentOrder.payment_method)}
                   </div>
-                )}
+                )} */}
 
-                {currentOrder.payment_status === "paid" &&
-                  currentOrder.processed_by && (
-                    <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
-                      <p className="text-xs text-green-700">
-                        ✅ Paiement confirmé par:{" "}
-                        {currentOrder.processed_by?.full_name || "Assistant"}
-                      </p>
-                      <p className="text-xs text-green-600">
-                        Le{" "}
-                        {currentOrder.updated_at
-                          ? new Date(
-                              currentOrder.updated_at
-                            ).toLocaleDateString("fr-FR", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "Date non disponible"}
-                      </p>
-                    </div>
-                  )}
+               
               </div>
 
               {currentOrder.processed_by && (
@@ -675,8 +739,39 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                 </div>
               ))}
             </div>
-            <div className="mt-4 p-4 bg-indigo-50 rounded-lg">
+            <div className="mt-4 p-4 bg-indigo-50 rounded-lg space-y-3">
+              {/* Sous-total */}
               <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-indigo-700">
+                  Sous-total
+                </span>
+                <span className="text-sm font-medium text-indigo-900">
+                  {formatXOF(
+                    currentOrder.subtotal_amount || currentOrder.total_amount
+                  )}
+                </span>
+              </div>
+
+              {/* Frais de livraison */}
+              {currentOrder.delivery_fee && currentOrder.delivery_fee > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-indigo-700 flex items-center">
+                    <Truck className="h-4 w-4 mr-1" />
+                    Frais de livraison
+                    {currentOrder.delivery_location_name && (
+                      <span className="text-xs text-indigo-500 ml-1">
+                        ({currentOrder.delivery_location_name})
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-sm font-medium text-indigo-900">
+                    {formatXOF(currentOrder.delivery_fee)}
+                  </span>
+                </div>
+              )}
+
+              {/* Total */}
+              <div className="flex justify-between items-center pt-2 border-t border-indigo-200">
                 <span className="text-lg font-semibold text-indigo-900 flex items-center">
                   <DollarSign className="h-5 w-5 mr-1" />
                   Total
