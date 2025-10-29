@@ -12,8 +12,8 @@ interface DeliveryOrderDetailsModalProps {
 export default function DeliveryOrderDetailsModal({
   order,
   onClose,
-  onMarkAsDelivered,
-  canMarkAsDelivered,
+  // onMarkAsDelivered,
+  // canMarkAsDelivered,
 }: DeliveryOrderDetailsModalProps) {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -25,7 +25,7 @@ export default function DeliveryOrderDetailsModal({
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full transform transition-all">
           {/* Header avec gradient */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-t-2xl p-6 text-white">
+          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-t-2xl p-6 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white/20 rounded-lg">
@@ -227,7 +227,7 @@ export default function DeliveryOrderDetailsModal({
               >
                 Fermer
               </button>
-              {canMarkAsDelivered && (order.status === 'confirmed' || order.status === 'shipped') && (
+              {/* {canMarkAsDelivered && (order.status === 'confirmed' || order.status === 'shipped') && (
                 <button
                   onClick={() => onMarkAsDelivered(order)}
                   className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg flex items-center"
@@ -235,7 +235,7 @@ export default function DeliveryOrderDetailsModal({
                   <Truck className="h-4 w-4 mr-2" />
                   Marquer comme livrée
                 </button>
-              )}
+              )} */}
             </div>
           </div>
         </div>

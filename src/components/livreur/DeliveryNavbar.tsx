@@ -85,8 +85,8 @@ export default function DeliveryNavbar({
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled 
-          ? 'bg-white shadow-2xl backdrop-blur-xl bg-opacity-95 border-b border-green-100' 
-          : 'bg-gradient-to-r from-green-600 to-green-700'
+          ? 'bg-white shadow-2xl backdrop-blur-xl bg-opacity-95 border-b border-blue-100' 
+          : 'bg-gradient-to-r from-blue-600 to-indigo-700'
       }`}>
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
@@ -94,23 +94,23 @@ export default function DeliveryNavbar({
             <div className="flex items-center space-x-4 group">
               <div className={`p-3 rounded-2xl transition-all duration-300 group-hover:scale-110 ${
                 isScrolled 
-                  ? 'bg-green-100 shadow-lg' 
+                  ? 'bg-blue-100 shadow-lg' 
                   : 'bg-white bg-opacity-20 backdrop-blur-sm'
               }`}>
                 <Truck className={`h-7 w-7 transition-colors ${
-                  isScrolled ? 'text-green-600' : 'text-white'
+                  isScrolled ? 'text-blue-600' : 'text-white'
                 }`} />
               </div>
               <div className="flex flex-col">
                 <span className={`text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent transition-all ${
                   isScrolled 
-                    ? 'from-green-600 to-green-800' 
-                    : 'from-white to-green-100'
+                    ? 'from-blue-600 to-blue-800' 
+                    : 'from-white to-blue-100'
                 }`}>
                   Fa-Fashion
                 </span>
                 <span className={`text-xs font-semibold tracking-wider ${
-                  isScrolled ? 'text-green-400' : 'text-green-200'
+                  isScrolled ? 'text-blue-400' : 'text-blue-200'
                 }`}>
                   PANEL LIVREUR
                 </span>
@@ -126,7 +126,7 @@ export default function DeliveryNavbar({
                   placeholder="Rechercher une commande..."
                   value={searchTerm}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -141,9 +141,9 @@ export default function DeliveryNavbar({
                     onClick={() => handleNavClick(item.key)}
                     className={`flex items-center space-x-3 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
                       isActive(item.key)
-                        ? 'bg-white text-green-600 shadow-lg shadow-green-200' 
+                        ? 'bg-white text-blue-600 shadow-lg shadow-blue-200' 
                         : isScrolled
-                        ? 'text-gray-700 hover:bg-green-50 hover:text-green-600'
+                        ? 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
                         : 'text-white hover:bg-white hover:bg-opacity-20 hover:backdrop-blur-sm'
                     }`}
                   >
@@ -173,7 +173,7 @@ export default function DeliveryNavbar({
                     onClick={handleSignOutClick}
                     className={`group p-3 rounded-2xl transition-all duration-300 transform hover:scale-110 ${
                       isScrolled 
-                        ? 'bg-green-50 text-green-600 hover:bg-green-100 hover:shadow-lg' 
+                        ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-lg' 
                         : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30 hover:backdrop-blur-sm'
                     }`}
                     title="Déconnexion"
@@ -188,7 +188,7 @@ export default function DeliveryNavbar({
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className={`lg:hidden p-3 rounded-2xl transition-all duration-300 transform hover:scale-110 ${
                   isScrolled 
-                    ? 'bg-green-50 text-green-600 hover:bg-green-100 hover:shadow-lg' 
+                    ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-lg' 
                     : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30 hover:backdrop-blur-sm'
                 }`}
               >
@@ -203,8 +203,8 @@ export default function DeliveryNavbar({
           isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         } ${
           isScrolled 
-            ? 'bg-white border-t border-green-100 shadow-lg' 
-            : 'bg-green-700 border-t border-green-500 backdrop-blur-xl'
+            ? 'bg-white border-t border-blue-100 shadow-lg' 
+            : 'bg-blue-700 border-t border-blue-500 backdrop-blur-xl'
         }`}>
           <div className="px-6 py-6">
             {/* Barre de recherche mobile */}
@@ -216,7 +216,7 @@ export default function DeliveryNavbar({
                   placeholder="Rechercher une commande..."
                   value={searchTerm}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -230,10 +230,10 @@ export default function DeliveryNavbar({
                     onClick={() => handleNavClick(item.key)}
                     className={`flex items-center space-x-4 p-4 rounded-2xl font-semibold transition-all duration-300 w-full text-left ${
                       isActive(item.key)
-                        ? 'bg-green-600 text-white shadow-lg shadow-green-300'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-300'
                         : isScrolled
-                        ? 'bg-green-50 text-green-600 hover:bg-green-100 hover:shadow-md'
-                        : 'bg-green-600 text-white hover:bg-green-500 hover:shadow-md'
+                        ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-md'
+                        : 'bg-blue-600 text-white hover:bg-blue-500 hover:shadow-md'
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -261,8 +261,8 @@ export default function DeliveryNavbar({
               {user && (
                 <div className={`mt-4 p-4 rounded-2xl border ${
                   isScrolled 
-                    ? 'bg-green-50 border-green-200 text-green-700' 
-                    : 'bg-green-600 border-green-500 text-white'
+                    ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                    : 'bg-blue-600 border-blue-500 text-white'
                 }`}>
                   <div className="flex items-center space-x-3">
                     <User className="h-5 w-5" />

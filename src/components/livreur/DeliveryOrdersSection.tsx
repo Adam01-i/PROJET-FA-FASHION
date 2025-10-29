@@ -8,7 +8,8 @@ import {
   Filter,
   Calendar,
   DollarSign,
-  ChevronDown
+  ChevronDown,
+  Users,
 } from "lucide-react";
 import { Order } from "../../models";
 import { useOrders } from "../../hooks/useOrders";
@@ -40,9 +41,16 @@ export default function DeliveryOrdersSection({
   const [currentUserRole, setCurrentUserRole] = useState<string>();
   
   // États pour les filtres
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
+  const [customMonth, setCustomMonth] = useState<string>("");
+  const [customYear, setCustomYear] = useState<string>("");
+  const [deliveryManFilter, setDeliveryManFilter] = useState<string>("all");
+  const [locationFilter, setLocationFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Données pour les filtres
+  const [deliveryMen, setDeliveryMen] = useState<string[]>([]);
+  const [deliveryLocations, setDeliveryLocations] = useState<string[]>([]);
 
   useEffect(() => {
     const getUserInfo = async () => {
@@ -63,9 +71,38 @@ export default function DeliveryOrdersSection({
     getUserInfo();
   }, []);
 
-  const canMarkAsDelivered = currentUserRole === "livreur";
+  // Récupérer la liste des livreurs et lieux de livraison
+  useEffect(() => {
+    const fetchFilterData = () => {
+      // Livreurs uniques
+      const uniqueDeliveryMen = Array.from(
+        new Set(
+          orders
+            .filter(order => order.delivered_by_name)
+            .map(order => order.delivered_by_name)
+        )
+      ).filter(Boolean) as string[];
 
-  // Fonction de filtrage améliorée
+      // Lieux de livraison uniques
+      const uniqueLocations = Array.from(
+        new Set(
+          orders
+            .filter(order => order.delivery_location_name)
+            .map(order => order.delivery_location_name)
+        )
+      ).filter(Boolean) as string[];
+
+      setDeliveryMen(uniqueDeliveryMen);
+      setDeliveryLocations(uniqueLocations);
+    };
+
+    fetchFilterData();
+  }, [orders]);
+
+  const canMarkAsDelivered = currentUserRole === "livreur" || currentUserRole === "admin";
+  const isAdmin = currentUserRole === "admin";
+
+  // Fonction de filtrage avancée
   const filteredOrders = orders.filter((order) => {
     // Filtre de recherche
     const matchesSearch =
@@ -76,39 +113,56 @@ export default function DeliveryOrdersSection({
     // Filtre principal (livrées vs à livrer)
     const matchesMainFilter = showDeliveredOnly 
       ? order.status === "delivered"
-      : order.status === "confirmed" || order.status === "shipped";
+      : order.status === "confirmed";
 
-    // Filtre de statut supplémentaire
-    const matchesStatusFilter = statusFilter === "all" || order.status === statusFilter;
+    // Filtre par livreur (seulement pour l'admin et les commandes livrées)
+    const matchesDeliveryManFilter = 
+      deliveryManFilter === "all" || 
+      (showDeliveredOnly && order.delivered_by_name === deliveryManFilter) ||
+      (!showDeliveredOnly && deliveryManFilter === "all");
 
-    // Filtre de date
+    // Filtre par lieu de livraison
+    const matchesLocationFilter = 
+      locationFilter === "all" || 
+      order.delivery_location_name === locationFilter;
+
+    // Filtre de date avancé
     const matchesDateFilter = (() => {
-        const orderDate = new Date(order.created_at);
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-  
-        switch (dateFilter) {
-          case "today":
-            return orderDate.toDateString() === today.toDateString();
-          case "yesterday":
-            return orderDate.toDateString() === yesterday.toDateString();
-          case "week": {
-            const weekAgo = new Date(today);
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            return orderDate >= weekAgo;
-          }
-          case "month": {
-            const monthAgo = new Date(today);
-            monthAgo.setMonth(monthAgo.getMonth() - 1);
-            return orderDate >= monthAgo;
-          }
-          default:
-            return true;
-        }
-      })();
+      if (dateFilter === "all") return true;
 
-    return matchesSearch && matchesMainFilter && matchesStatusFilter && matchesDateFilter;
+      const orderDate = new Date(order.created_at);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      switch (dateFilter) {
+        case "today":
+          return orderDate.toDateString() === today.toDateString();
+        case "yesterday":
+          return orderDate.toDateString() === yesterday.toDateString();
+        case "week": {
+          const weekAgo = new Date(today);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          return orderDate >= weekAgo;
+        }
+        case "month": {
+          const monthAgo = new Date(today);
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          return orderDate >= monthAgo;
+        }
+        case "custom": {
+          if (!customMonth || !customYear) return true;
+          const filterDate = new Date(parseInt(customYear), parseInt(customMonth) - 1);
+          return orderDate.getMonth() === filterDate.getMonth() && 
+                 orderDate.getFullYear() === filterDate.getFullYear();
+        }
+        default:
+          return true;
+      }
+    })();
+
+    return matchesSearch && matchesMainFilter && matchesDeliveryManFilter && 
+           matchesLocationFilter && matchesDateFilter;
   });
 
   const handleMarkAsDelivered = async (): Promise<void> => {
@@ -138,8 +192,6 @@ export default function DeliveryOrdersSection({
     switch (status) {
       case "confirmed":
         return "bg-orange-500/10 text-orange-700 border-orange-200";
-      case "shipped":
-        return "bg-blue-500/10 text-blue-700 border-blue-200";
       case "delivered":
         return "bg-green-500/10 text-green-700 border-green-200";
       case "cancelled":
@@ -153,23 +205,39 @@ export default function DeliveryOrdersSection({
     const statusMap: Record<Order["status"], string> = {
       pending: "⏳ En attente",
       confirmed: "✅ Confirmée",
-      shipped: "🚚 En livraison",
       delivered: "📦 Livrée",
       cancelled: "❌ Annulée",
+      shipped: ""
     };
     return statusMap[status];
   };
 
-  // // Statistiques
-  // const ordersToDeliver = orders.filter(o => o.status === "confirmed" || o.status === "shipped").length;
-  // const deliveredOrders = orders.filter(o => o.status === "delivered").length;
+  // Générer les options d'années et mois
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const months = [
+    { value: "1", label: "Janvier" },
+    { value: "2", label: "Février" },
+    { value: "3", label: "Mars" },
+    { value: "4", label: "Avril" },
+    { value: "5", label: "Mai" },
+    { value: "6", label: "Juin" },
+    { value: "7", label: "Juillet" },
+    { value: "8", label: "Août" },
+    { value: "9", label: "Septembre" },
+    { value: "10", label: "Octobre" },
+    { value: "11", label: "Novembre" },
+    { value: "12", label: "Décembre" },
+  ];
+
+  // Statistiques
   const confirmedOrders = orders.filter(o => o.status === "confirmed").length;
-  const shippedOrders = orders.filter(o => o.status === "shipped").length;
+  const deliveredOrders = orders.filter(o => o.status === "delivered").length;
 
   return (
     <div className="space-y-6">
       {/* Header avec statistiques */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 text-white">
+      <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 text-white">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-bold">
@@ -178,8 +246,10 @@ export default function DeliveryOrdersSection({
             <p className="text-blue-100 mt-1">
               {showDeliveredOnly 
                 ? "Historique des commandes livrées" 
-                : "Commandes en attente de livraison"
+                : "Commandes confirmées en attente de livraison"
               }
+              {deliveryManFilter !== "all" && ` - Livreur: ${deliveryManFilter}`}
+              {locationFilter !== "all" && ` - Lieu: ${locationFilter}`}
             </p>
           </div>
           <div className="flex items-center space-x-4 mt-4 lg:mt-0">
@@ -187,16 +257,20 @@ export default function DeliveryOrdersSection({
               <div className="text-2xl font-bold">{filteredOrders.length}</div>
               <div className="text-blue-200 text-sm">Commandes</div>
             </div>
-            {!showDeliveredOnly && (
+            {!showDeliveredOnly ? (
               <>
                 <div className="w-px h-8 bg-blue-500/50"></div>
                 <div className="text-center">
                   <div className="text-xl font-bold">{confirmedOrders}</div>
-                  <div className="text-blue-200 text-sm">Confirmées</div>
+                  <div className="text-blue-200 text-sm">À livrer</div>
                 </div>
+              </>
+            ) : (
+              <>
+                <div className="w-px h-8 bg-blue-500/50"></div>
                 <div className="text-center">
-                  <div className="text-xl font-bold">{shippedOrders}</div>
-                  <div className="text-blue-200 text-sm">En livraison</div>
+                  <div className="text-xl font-bold">{deliveredOrders}</div>
+                  <div className="text-blue-200 text-sm">Livrées</div>
                 </div>
               </>
             )}
@@ -204,7 +278,7 @@ export default function DeliveryOrdersSection({
         </div>
       </div>
 
-      {/* Barre de filtres */}
+      {/* Barre de filtres avancée */}
       <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center space-x-4">
@@ -213,30 +287,12 @@ export default function DeliveryOrdersSection({
               className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               <Filter className="h-4 w-4 mr-2" />
-              Filtres
+              Filtres avancés
               <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
             </button>
             
             {showFilters && (
               <div className="flex flex-wrap gap-3">
-                {/* Filtre statut */}
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="all">Tous les statuts</option>
-                  {!showDeliveredOnly && (
-                    <>
-                      <option value="confirmed">Confirmées</option>
-                      <option value="shipped">En livraison</option>
-                    </>
-                  )}
-                  {showDeliveredOnly && (
-                    <option value="delivered">Livrées</option>
-                  )}
-                </select>
-
                 {/* Filtre date */}
                 <select
                   value={dateFilter}
@@ -248,6 +304,67 @@ export default function DeliveryOrdersSection({
                   <option value="yesterday">Hier</option>
                   <option value="week">Cette semaine</option>
                   <option value="month">Ce mois</option>
+                  <option value="custom">Mois/Année spécifique</option>
+                </select>
+
+                {/* Sélection mois/année pour filtre custom */}
+                {dateFilter === "custom" && (
+                  <>
+                    <select
+                      value={customMonth}
+                      onChange={(e) => setCustomMonth(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Mois</option>
+                      {months.map(month => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={customYear}
+                      onChange={(e) => setCustomYear(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Année</option>
+                      {years.map(year => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
+
+                {/* Filtre par livreur (seulement pour admin et commandes livrées) */}
+                {isAdmin && showDeliveredOnly && (
+                  <select
+                    value={deliveryManFilter}
+                    onChange={(e) => setDeliveryManFilter(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">Tous les livreurs</option>
+                    {deliveryMen.map(deliveryMan => (
+                      <option key={deliveryMan} value={deliveryMan}>
+                        {deliveryMan}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {/* Filtre par lieu de livraison */}
+                <select
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">Tous les lieux</option>
+                  {deliveryLocations.map(location => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
@@ -268,8 +385,8 @@ export default function DeliveryOrdersSection({
               Aucune commande {showDeliveredOnly ? "livrée" : "à livrer"}
             </p>
             <p className="text-gray-600 mt-1">
-              {searchTerm || statusFilter !== "all" || dateFilter !== "all"
-                ? "Aucune commande ne correspond à vos critères"
+              {searchTerm || dateFilter !== "all" || deliveryManFilter !== "all" || locationFilter !== "all"
+                ? "Aucune commande ne correspond à vos critères de filtrage"
                 : showDeliveredOnly
                 ? "Aucune commande livrée pour le moment"
                 : "Toutes les commandes sont livrées !"
@@ -300,6 +417,13 @@ export default function DeliveryOrdersSection({
                             day: 'numeric'
                           })}
                         </p>
+                        {/* Afficher le livreur pour les commandes livrées */}
+                        {showDeliveredOnly && order.delivered_by_name && (
+                          <p className="text-sm text-green-600 mt-1 flex items-center">
+                            <Users className="h-3 w-3 mr-1" />
+                            Livré par: {order.delivered_by_name}
+                          </p>
+                        )}
                       </div>
                       <span className={`px-3 py-1 text-sm rounded-full border ${getStatusColor(order.status)}`}>
                         {getStatusDisplayName(order.status)}
@@ -346,17 +470,6 @@ export default function DeliveryOrdersSection({
                           </p>
                         </div>
                       </div>
-
-                      {/* Délai */}
-                      {/* <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <Clock className="h-5 w-5 text-purple-600" />
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">Délai</p>
-                          <p className="text-gray-600 text-sm">
-                            {Math.floor((new Date().getTime() - new Date(order.created_at).getTime()) / (1000 * 3600 * 24))}j
-                          </p>
-                        </div>
-                      </div> */}
                     </div>
                   </div>
 
@@ -369,7 +482,7 @@ export default function DeliveryOrdersSection({
                       Voir détails
                     </button>
 
-                    {!showDeliveredOnly && (order.status === "confirmed" || order.status === "shipped") && (
+                    {!showDeliveredOnly && order.status === "confirmed" && (
                       <button
                         onClick={() => setOrderToMark(order)}
                         disabled={!canMarkAsDelivered}

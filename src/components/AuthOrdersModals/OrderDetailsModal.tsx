@@ -541,7 +541,7 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
                   !canConfirmOrder(currentOrder) && (
                     <div className="mt-2 text-xs text-yellow-600">
                       ⚠️ Pour confirmer cette commande, le paiement doit être
-                      marqué comme "Payé" et une preuve doit être uploadée
+                      marqué comme "Payé" 
                     </div>
                   )}
                 <div className="mt-2">

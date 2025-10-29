@@ -134,7 +134,7 @@ const updateOrderStatus = async (
     // Vérifier la confirmation de commande
     if (status === "confirmed" && order.payment_status !== "paid") {
       throw new Error(
-        "Impossible de confirmer une commande sans preuve de paiement et statut payé"
+        "⚠️ Pour confirmer cette commande, le paiement doit être marqué comme Payé "
       );
     }
 
@@ -310,7 +310,6 @@ const markOrderAsDelivered = async (
     }
   };
 
-  // Ajoutez cette fonction dans votre useOrders.ts
 const createAssistantOrder = async (orderData: {
   customer_phone: string;
   customer_name?: string;
