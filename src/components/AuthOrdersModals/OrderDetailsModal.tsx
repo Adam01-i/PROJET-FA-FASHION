@@ -248,35 +248,44 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
   };
 
   // Vérifie si l'utilisateur peut modifier le statut de la commande
-  const canModifyOrderStatus = (order: Order, userRole?: string): boolean => {
-    if (order.status === "cancelled") return false;
-    if (userRole === "assistant") return false;
-    if (userRole === "admin" && order.status === "confirmed") return false;
-    if (userRole === "admin" && order.status === "delivered") return false;
+const canModifyOrderStatus = (order: Order, userRole?: string): boolean => {
+  if (order.status === "cancelled") return false;
+  if (order.status === "delivered") return false; // Une fois livrée, plus de modifications
+  
+  // Vérifier les permissions selon le rôle
+  const allowedRoles = ["admin", "assistant", "livreur"];
+  if (!userRole || !allowedRoles.includes(userRole)) {
+    return false;
+  }
 
-    return true;
-  };
+  // Tous les rôles autorisés peuvent modifier le statut
+  return true;
+};
 
   const canConfirmOrder = (order: Order): boolean => {
     return order.payment_status === "paid" && !!order.payment_proof;
   };
 
-  const getAvailableStatusOptions = (userRole?: string): Order["status"][] => {
-    const options: Order["status"][] = ["pending"];
+const getAvailableStatusOptions = (userRole?: string, currentStatus?: Order["status"]): Order["status"][] => {
+  const options: Order["status"][] = [];
 
-    if (userRole === "admin") {
-      options.push("confirmed");
-    }
-
-    if (userRole === "client") {
-      options.push("cancelled");
-    }
-    if (userRole === "livreur") {
-      options.push("delivered");
-    }
-
+  // Rôles autorisés à modifier les statuts
+  const allowedRoles = ["admin", "assistant", "livreur"];
+  
+  if (!userRole || !allowedRoles.includes(userRole)) {
     return options;
-  };
+  }
+
+  // Tous les rôles autorisés peuvent voir ces statuts
+  options.push("pending", "confirmed", "cancelled");
+  
+  // Permettre "delivered" seulement si la commande est confirmée ou en cours
+  if (currentStatus === "confirmed" || currentStatus === "shipped") {
+    options.push("delivered");
+  }
+
+  return options;
+};
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

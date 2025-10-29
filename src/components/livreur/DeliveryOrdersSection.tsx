@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { 
-  Truck, 
-  PackageCheck, 
-  MapPin, 
-  Phone, 
-  User, 
+import {
+  Truck,
+  PackageCheck,
+  MapPin,
+  Phone,
+  User,
   Filter,
   Calendar,
   DollarSign,
@@ -39,7 +39,7 @@ export default function DeliveryOrdersSection({
   const [currentUserId, setCurrentUserId] = useState<string>();
   const [currentUserName, setCurrentUserName] = useState<string>();
   const [currentUserRole, setCurrentUserRole] = useState<string>();
-  
+
   // États pour les filtres
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [customMonth, setCustomMonth] = useState<string>("");
@@ -78,8 +78,8 @@ export default function DeliveryOrdersSection({
       const uniqueDeliveryMen = Array.from(
         new Set(
           orders
-            .filter(order => order.delivered_by_name)
-            .map(order => order.delivered_by_name)
+            .filter((order) => order.delivered_by_name)
+            .map((order) => order.delivered_by_name)
         )
       ).filter(Boolean) as string[];
 
@@ -87,8 +87,8 @@ export default function DeliveryOrdersSection({
       const uniqueLocations = Array.from(
         new Set(
           orders
-            .filter(order => order.delivery_location_name)
-            .map(order => order.delivery_location_name)
+            .filter((order) => order.delivery_location_name)
+            .map((order) => order.delivery_location_name)
         )
       ).filter(Boolean) as string[];
 
@@ -99,7 +99,9 @@ export default function DeliveryOrdersSection({
     fetchFilterData();
   }, [orders]);
 
-  const canMarkAsDelivered = currentUserRole === "livreur" || currentUserRole === "admin";
+  const canMarkAsDelivered =
+    currentUserRole &&
+    ["livreur", "admin", "assistant"].includes(currentUserRole);
   const isAdmin = currentUserRole === "admin";
 
   // Fonction de filtrage avancée
@@ -111,19 +113,19 @@ export default function DeliveryOrdersSection({
       order.customer_phone?.includes(searchTerm);
 
     // Filtre principal (livrées vs à livrer)
-    const matchesMainFilter = showDeliveredOnly 
+    const matchesMainFilter = showDeliveredOnly
       ? order.status === "delivered"
-      : order.status === "confirmed";
+      : order.status === "confirmed" || order.status === "shipped"; // ← AJOUTER shipped
 
     // Filtre par livreur (seulement pour l'admin et les commandes livrées)
-    const matchesDeliveryManFilter = 
-      deliveryManFilter === "all" || 
+    const matchesDeliveryManFilter =
+      deliveryManFilter === "all" ||
       (showDeliveredOnly && order.delivered_by_name === deliveryManFilter) ||
       (!showDeliveredOnly && deliveryManFilter === "all");
 
     // Filtre par lieu de livraison
-    const matchesLocationFilter = 
-      locationFilter === "all" || 
+    const matchesLocationFilter =
+      locationFilter === "all" ||
       order.delivery_location_name === locationFilter;
 
     // Filtre de date avancé
@@ -152,17 +154,27 @@ export default function DeliveryOrdersSection({
         }
         case "custom": {
           if (!customMonth || !customYear) return true;
-          const filterDate = new Date(parseInt(customYear), parseInt(customMonth) - 1);
-          return orderDate.getMonth() === filterDate.getMonth() && 
-                 orderDate.getFullYear() === filterDate.getFullYear();
+          const filterDate = new Date(
+            parseInt(customYear),
+            parseInt(customMonth) - 1
+          );
+          return (
+            orderDate.getMonth() === filterDate.getMonth() &&
+            orderDate.getFullYear() === filterDate.getFullYear()
+          );
         }
         default:
           return true;
       }
     })();
 
-    return matchesSearch && matchesMainFilter && matchesDeliveryManFilter && 
-           matchesLocationFilter && matchesDateFilter;
+    return (
+      matchesSearch &&
+      matchesMainFilter &&
+      matchesDeliveryManFilter &&
+      matchesLocationFilter &&
+      matchesDateFilter
+    );
   });
 
   const handleMarkAsDelivered = async (): Promise<void> => {
@@ -177,12 +189,20 @@ export default function DeliveryOrdersSection({
         "livreur",
         currentUserName
       );
-      success("Commande livrée", "La commande a été marquée comme livrée avec succès");
+      success(
+        "Commande livrée",
+        "La commande a été marquée comme livrée avec succès"
+      );
       setOrderToMark(null);
       refetch();
     } catch (error) {
       console.error("Error marking order as delivered:", error);
-      toastError("Erreur", error instanceof Error ? error.message : "Erreur lors de la mise à jour du statut");
+      toastError(
+        "Erreur",
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de la mise à jour du statut"
+      );
     } finally {
       setIsConfirming(false);
     }
@@ -207,7 +227,7 @@ export default function DeliveryOrdersSection({
       confirmed: "✅ Confirmée",
       delivered: "📦 Livrée",
       cancelled: "❌ Annulée",
-      shipped: ""
+      shipped: "",
     };
     return statusMap[status];
   };
@@ -231,8 +251,8 @@ export default function DeliveryOrdersSection({
   ];
 
   // Statistiques
-  const confirmedOrders = orders.filter(o => o.status === "confirmed").length;
-  const deliveredOrders = orders.filter(o => o.status === "delivered").length;
+  const confirmedOrders = orders.filter((o) => o.status === "confirmed").length;
+  const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
 
   return (
     <div className="space-y-6">
@@ -241,14 +261,16 @@ export default function DeliveryOrdersSection({
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-bold">
-              {showDeliveredOnly ? "📦 Commandes Livrées" : "🚚 Commandes à Livrer"}
+              {showDeliveredOnly
+                ? "📦 Commandes Livrées"
+                : "🚚 Commandes à Livrer"}
             </h1>
             <p className="text-blue-100 mt-1">
-              {showDeliveredOnly 
-                ? "Historique des commandes livrées" 
-                : "Commandes confirmées en attente de livraison"
-              }
-              {deliveryManFilter !== "all" && ` - Livreur: ${deliveryManFilter}`}
+              {showDeliveredOnly
+                ? "Historique des commandes livrées"
+                : "Commandes confirmées en attente de livraison"}
+              {deliveryManFilter !== "all" &&
+                ` - Livreur: ${deliveryManFilter}`}
               {locationFilter !== "all" && ` - Lieu: ${locationFilter}`}
             </p>
           </div>
@@ -288,9 +310,13 @@ export default function DeliveryOrdersSection({
             >
               <Filter className="h-4 w-4 mr-2" />
               Filtres avancés
-              <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`h-4 w-4 ml-2 transition-transform ${
+                  showFilters ? "rotate-180" : ""
+                }`}
+              />
             </button>
-            
+
             {showFilters && (
               <div className="flex flex-wrap gap-3">
                 {/* Filtre date */}
@@ -316,7 +342,7 @@ export default function DeliveryOrdersSection({
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Mois</option>
-                      {months.map(month => (
+                      {months.map((month) => (
                         <option key={month.value} value={month.value}>
                           {month.label}
                         </option>
@@ -328,7 +354,7 @@ export default function DeliveryOrdersSection({
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Année</option>
-                      {years.map(year => (
+                      {years.map((year) => (
                         <option key={year} value={year}>
                           {year}
                         </option>
@@ -345,7 +371,7 @@ export default function DeliveryOrdersSection({
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="all">Tous les livreurs</option>
-                    {deliveryMen.map(deliveryMan => (
+                    {deliveryMen.map((deliveryMan) => (
                       <option key={deliveryMan} value={deliveryMan}>
                         {deliveryMan}
                       </option>
@@ -360,7 +386,7 @@ export default function DeliveryOrdersSection({
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="all">Tous les lieux</option>
-                  {deliveryLocations.map(location => (
+                  {deliveryLocations.map((location) => (
                     <option key={location} value={location}>
                       {location}
                     </option>
@@ -371,7 +397,9 @@ export default function DeliveryOrdersSection({
           </div>
 
           <div className="text-sm text-gray-600">
-            {filteredOrders.length} commande{filteredOrders.length > 1 ? 's' : ''} trouvée{filteredOrders.length > 1 ? 's' : ''}
+            {filteredOrders.length} commande
+            {filteredOrders.length > 1 ? "s" : ""} trouvée
+            {filteredOrders.length > 1 ? "s" : ""}
           </div>
         </div>
       </div>
@@ -385,12 +413,14 @@ export default function DeliveryOrdersSection({
               Aucune commande {showDeliveredOnly ? "livrée" : "à livrer"}
             </p>
             <p className="text-gray-600 mt-1">
-              {searchTerm || dateFilter !== "all" || deliveryManFilter !== "all" || locationFilter !== "all"
+              {searchTerm ||
+              dateFilter !== "all" ||
+              deliveryManFilter !== "all" ||
+              locationFilter !== "all"
                 ? "Aucune commande ne correspond à vos critères de filtrage"
                 : showDeliveredOnly
                 ? "Aucune commande livrée pour le moment"
-                : "Toutes les commandes sont livrées !"
-              }
+                : "Toutes les commandes sont livrées !"}
             </p>
           </div>
         ) : (
@@ -410,12 +440,15 @@ export default function DeliveryOrdersSection({
                         </h3>
                         <p className="text-sm text-gray-500 mt-1 flex items-center">
                           <Calendar className="h-3 w-3 mr-1" />
-                          {new Date(order.created_at).toLocaleDateString('fr-FR', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
+                          {new Date(order.created_at).toLocaleDateString(
+                            "fr-FR",
+                            {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )}
                         </p>
                         {/* Afficher le livreur pour les commandes livrées */}
                         {showDeliveredOnly && order.delivered_by_name && (
@@ -425,7 +458,11 @@ export default function DeliveryOrdersSection({
                           </p>
                         )}
                       </div>
-                      <span className={`px-3 py-1 text-sm rounded-full border ${getStatusColor(order.status)}`}>
+                      <span
+                        className={`px-3 py-1 text-sm rounded-full border ${getStatusColor(
+                          order.status
+                        )}`}
+                      >
                         {getStatusDisplayName(order.status)}
                       </span>
                     </div>
@@ -464,7 +501,9 @@ export default function DeliveryOrdersSection({
                       <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                         <DollarSign className="h-5 w-5 text-green-600" />
                         <div>
-                          <p className="font-medium text-gray-900 text-sm">Total</p>
+                          <p className="font-medium text-gray-900 text-sm">
+                            Total
+                          </p>
                           <p className="text-gray-600 text-sm font-semibold">
                             {formatXOF(order.total_amount)}
                           </p>
@@ -491,7 +530,11 @@ export default function DeliveryOrdersSection({
                             ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
                             : "bg-gray-100 text-gray-400 cursor-not-allowed"
                         }`}
-                        title={!canMarkAsDelivered ? "Seuls les livreurs peuvent marquer une commande comme livrée" : ""}
+                        title={
+                          !canMarkAsDelivered
+                            ? "Seuls les livreurs, assistants et administrateurs peuvent marquer une commande comme livrée"
+                            : ""
+                        }
                       >
                         <PackageCheck className="h-4 w-4 mr-2" />
                         {canMarkAsDelivered ? "Marquer livrée" : "Non autorisé"}
@@ -514,7 +557,9 @@ export default function DeliveryOrdersSection({
         message={
           orderToMark ? (
             <div className="space-y-3">
-              <p>Êtes-vous sûr de vouloir marquer cette commande comme livrée ?</p>
+              <p>
+                Êtes-vous sûr de vouloir marquer cette commande comme livrée ?
+              </p>
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
                 <p className="font-semibold text-gray-900">
                   Commande #{orderToMark.id.slice(0, 8).toUpperCase()}
@@ -533,7 +578,9 @@ export default function DeliveryOrdersSection({
                 ⚠️ Cette action est irréversible
               </p>
             </div>
-          ) : ""
+          ) : (
+            ""
+          )
         }
         confirmText="Confirmer la livraison"
         variant="primary"
@@ -545,7 +592,7 @@ export default function DeliveryOrdersSection({
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onMarkAsDelivered={(order) => setOrderToMark(order)}
-          canMarkAsDelivered={!showDeliveredOnly && canMarkAsDelivered}
+          canMarkAsDelivered={Boolean(!showDeliveredOnly && canMarkAsDelivered)}
         />
       )}
     </div>

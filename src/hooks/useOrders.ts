@@ -43,13 +43,6 @@ const updateOrderStatus = async (
   userName?: string
 ): Promise<boolean> => {
   try {
-    // Vérifications de sécurité selon le rôle
-    if (currentUserRole === "assistant") {
-      throw new Error(
-        "Les assistants ne peuvent pas modifier le statut des commandes"
-      );
-    }
-
     // Récupérer la commande complète avec ses items
     const { data: order } = await supabase
       .from("orders")
@@ -67,6 +60,36 @@ const updateOrderStatus = async (
       throw new Error("Commande non trouvée");
     }
 
+    // Vérifications de sécurité selon le rôle
+    const allowedRoles = ["admin", "assistant", "livreur"];
+    if (!currentUserRole || !allowedRoles.includes(currentUserRole)) {
+      throw new Error(
+        "Seuls les administrateurs, assistants et livreurs peuvent modifier le statut des commandes"
+      );
+    }
+
+    // Vérifications spécifiques pour la livraison
+    if (status === "delivered") {
+      // Vérifier que l'utilisateur a le droit de marquer comme livré
+      const allowedRolesForDelivery = ["livreur", "admin", "assistant"];
+      if (!currentUserRole || !allowedRolesForDelivery.includes(currentUserRole)) {
+        throw new Error(
+          "Seuls les livreurs, assistants et administrateurs peuvent marquer les commandes comme livrées"
+        );
+      }
+
+      // Vérifier que la commande est dans un état qui peut être livré
+      if (order.status !== "confirmed" && order.status !== "shipped") {
+        throw new Error(
+          `Impossible de livrer une commande avec le statut "${order.status}"`
+        );
+      }
+
+      if (order.payment_status !== "paid") {
+        throw new Error("Impossible de livrer une commande non payée");
+      }
+    }
+
     // Vérifier les stocks avant confirmation
     if (status === "confirmed") {
       for (const item of order.order_items) {
@@ -76,6 +99,13 @@ const updateOrderStatus = async (
           );
         }
       }
+    }
+
+    // Vérifier la confirmation de commande
+    if (status === "confirmed" && order.payment_status !== "paid") {
+      throw new Error(
+        "⚠️ Pour confirmer cette commande, le paiement doit être marqué comme Payé"
+      );
     }
 
     // Mettre à jour les stocks si la commande est confirmée
@@ -112,32 +142,6 @@ const updateOrderStatus = async (
       }
     }
 
-    // Vérifications supplémentaires pour les livreurs
-    if (currentUserRole === "livreur") {
-      if (status !== "delivered") {
-        throw new Error(
-          "Les livreurs ne peuvent que marquer les commandes comme livrées"
-        );
-      }
-
-      if (order.status !== "confirmed" && order.status !== "shipped") {
-        throw new Error(
-          `Impossible de livrer une commande avec le statut "${order.status}"`
-        );
-      }
-
-      if (order.payment_status !== "paid") {
-        throw new Error("Impossible de livrer une commande non payée");
-      }
-    }
-
-    // Vérifier la confirmation de commande
-    if (status === "confirmed" && order.payment_status !== "paid") {
-      throw new Error(
-        "⚠️ Pour confirmer cette commande, le paiement doit être marqué comme Payé "
-      );
-    }
-
     const updates: {
       status: Order['status'];
       updated_at: string;
@@ -164,6 +168,7 @@ const updateOrderStatus = async (
       updates.payment_status = "paid";
     }
 
+    // Enregistrer qui a traité la commande (sauf pour la livraison où on utilise delivered_by)
     if (processedBy && status !== "delivered") {
       updates.processed_by = processedBy;
     }
@@ -181,7 +186,6 @@ const updateOrderStatus = async (
     throw err;
   }
 };
-
   // Fonction dédiée pour les livreurs
 const markOrderAsDelivered = async (
   orderId: string,
