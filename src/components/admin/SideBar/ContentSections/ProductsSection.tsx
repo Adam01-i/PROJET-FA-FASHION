@@ -9,6 +9,7 @@ import { useToastContext } from "../../../../hooks/ToastProvider";
 import ProductModal from "../../Modals/ProductModal";
 import RestockModal from "../../Modals/RestockModal";
 import StatsDashboard from "../../Stats/StatsDashboard";
+import ConfirmationModal from "../../../../ui/ConfirmationModal";
 
 interface ProductsSectionProps {
   searchTerm: string;
@@ -51,6 +52,28 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
     image_url: "",
   });
   const { success, error: toastError } = useToastContext();
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+  const [productToToggle, setProductToToggle] = useState<Product | null>(null);
+
+  // Fonction pour ouvrir le modal de confirmation
+  const openConfirmationModal = (product: Product) => {
+    setProductToToggle(product);
+    setIsConfirmationModalOpen(true);
+  };
+
+  // Fonction pour fermer le modal
+  const closeConfirmationModal = () => {
+    setIsConfirmationModalOpen(false);
+    setProductToToggle(null);
+  };
+
+  // Fonction de confirmation
+  const handleConfirmToggle = async () => {
+    if (productToToggle) {
+      await handleTogglePublication(productToToggle);
+      closeConfirmationModal();
+    }
+  };
 
   // Logs de débogage
   useEffect(() => {
@@ -86,7 +109,7 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
   const getStockStatus = (quantity: number, isPublic: boolean) => {
     if (!isPublic) {
       return {
-        text: "Privé",
+        text: "INACTIF",
         color: "bg-gray-100 text-gray-800 border border-gray-300",
         bgColor: "bg-gray-50",
         textColor: "text-gray-600",
@@ -123,8 +146,6 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
   const handleTogglePublication = async (product: Product) => {
     try {
       const newVisibility = !product.is_public;
-
-      // Si on désactive le produit, mettre le stock à zéro
       const updates: any = {
         is_public: newVisibility,
         updated_at: new Date().toISOString(),
@@ -238,32 +259,35 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
     }
   };
 
-const handleRestock = async (
-  productId: string,
-  quantity: number,
-  newPrice: number,
-  reason: string
-) => {
-  try {
-    // Mettre à jour le stock ET le prix
-    await restockProduct(productId, quantity, reason);
-    
-    // Mettre à jour le prix séparément
-    await updateProduct(productId, {
-      price: newPrice,
-      updated_at: new Date().toISOString()
-    });
-    
-    await refetchProducts();
-    await refetchStats();
-    success("Succès", `Stock réapprovisionné de ${quantity} unités et prix mis à jour`);
-    setIsRestockModalOpen(false);
-    setRestockingProduct(null);
-  } catch (error) {
-    console.error("Error restocking product:", error);
-    throw error;
-  }
-};
+  const handleRestock = async (
+    productId: string,
+    quantity: number,
+    newPrice: number,
+    reason: string
+  ) => {
+    try {
+      // Mettre à jour le stock ET le prix
+      await restockProduct(productId, quantity, reason);
+
+      // Mettre à jour le prix séparément
+      await updateProduct(productId, {
+        price: newPrice,
+        updated_at: new Date().toISOString(),
+      });
+
+      await refetchProducts();
+      await refetchStats();
+      success(
+        "Succès",
+        `Stock réapprovisionné de ${quantity} unités et prix mis à jour`
+      );
+      setIsRestockModalOpen(false);
+      setRestockingProduct(null);
+    } catch (error) {
+      console.error("Error restocking product:", error);
+      throw error;
+    }
+  };
 
   const closeEditModal = () => {
     setIsEditModalOpen(false);
@@ -411,14 +435,14 @@ const handleRestock = async (
                       </button>
                       {/* BOUTON POUR MODIFIER LA VISIBILITÉ */}
                       <button
-                        onClick={() => handleTogglePublication(product)}
+                        onClick={() => openConfirmationModal(product)}
                         className={`p-2 rounded-lg transition-colors ${
                           product.is_public
                             ? "text-orange-600 hover:bg-orange-50"
                             : "text-green-600 hover:bg-green-50"
                         }`}
                         title={
-                          product.is_public ? "Rendre privé" : "Rendre public"
+                          product.is_public ? "Rendre INACTIF" : "Rendre ACTIF"
                         }
                       >
                         {product.is_public ? (
@@ -472,6 +496,52 @@ const handleRestock = async (
           onRestock={handleRestock}
         />
       )}
+
+       {/* MODAL DE CONFIRMATION */}
+      <ConfirmationModal
+        isOpen={isConfirmationModalOpen}
+        onClose={closeConfirmationModal}
+        onConfirm={handleConfirmToggle}
+        title={
+          productToToggle?.is_public
+            ? "Rendre le produit INACTIF"
+            : "Rendre le produit ACTIF"
+        }
+        message={
+          productToToggle && (
+            <div className="space-y-3">
+              <p>
+                Êtes-vous sûr de vouloir{" "}
+                <strong>
+                  {productToToggle.is_public ? "rendre INACTIF" : "rendre ACTIF"}
+                </strong>{" "}
+                le produit <strong>"{productToToggle.name}"</strong> ?
+              </p>
+              
+              {productToToggle.is_public && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-yellow-800 text-sm">
+                    ⚠️ <strong>Attention :</strong> En rendant ce produit INACTIF, 
+                    le stock sera automatiquement mis à zéro.
+                  </p>
+                </div>
+              )}
+              
+              {!productToToggle.is_public && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-blue-800 text-sm">
+                    ✅ Le produit sera ACTIF par les clients et vous pourrez 
+                    gérer son stock normalement.
+                  </p>
+                </div>
+              )}
+            </div>
+          )
+        }
+        confirmText={productToToggle?.is_public ? "Rendre INACTIF" : "Rendre ACTIF"}
+        cancelText="Annuler"
+        variant={productToToggle?.is_public ? "danger" : "primary"}
+      />
     </>
   );
 }
