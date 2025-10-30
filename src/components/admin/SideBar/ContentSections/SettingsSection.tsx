@@ -58,8 +58,14 @@ export default function SettingsSection() {
   );
   const [activeTab, setActiveTab] = useState<"active" | "inactive">("active");
   const inactiveDeliveryLocations = localSettings.deliveryLocations?.filter(
-  (location) => !location.is_active
-);
+    (location) => !location.is_active
+  );
+  // Ajoutez cet état avec les autres useState
+  const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
+  const [newLocation, setNewLocation] = useState({
+    name: "",
+    delivery_fee: 0,
+  });
 
   // Synchroniser les settings locaux quand les données changent
   useEffect(() => {
@@ -163,10 +169,15 @@ export default function SettingsSection() {
 
   // Handler pour ajouter un lieu de livraison
   const handleAddDeliveryLocation = (): void => {
-    const newLocation: DeliveryLocation = {
+    if (!newLocation.name.trim()) {
+      toastError("Erreur", "Le nom du lieu est obligatoire");
+      return;
+    }
+
+    const location: DeliveryLocation = {
       id: `temp-${Date.now()}`,
-      name: "",
-      delivery_fee: 0,
+      name: newLocation.name.trim(),
+      delivery_fee: newLocation.delivery_fee,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -174,8 +185,17 @@ export default function SettingsSection() {
 
     setLocalSettings((prev: SiteSettingsData) => ({
       ...prev,
-      deliveryLocations: [...prev.deliveryLocations, newLocation],
+      deliveryLocations: [...prev.deliveryLocations, location],
     }));
+
+    // Réinitialiser le formulaire et fermer la modal
+    setNewLocation({
+      name: "",
+      delivery_fee: 0,
+    });
+    setIsAddLocationModalOpen(false);
+
+    success("Succès", "Lieu de livraison ajouté avec succès");
   };
 
   // Handler pour modifier un lieu de livraison
@@ -518,7 +538,6 @@ export default function SettingsSection() {
       </div>
 
       {/* Gestion des lieux de livraison */}
-      {/* Gestion des lieux de livraison */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -529,7 +548,7 @@ export default function SettingsSection() {
               </h3>
             </div>
             <button
-              onClick={handleAddDeliveryLocation}
+              onClick={() => setIsAddLocationModalOpen(true)}
               className="px-4 py-2 bg-white text-purple-600 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
             >
               + Ajouter un lieu
@@ -806,6 +825,106 @@ export default function SettingsSection() {
           </div>
         </div>
       </div>
+      {/* Modal d'ajout de lieu de livraison */}
+      {isAddLocationModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+            {/* En-tête de la modal */}
+            <div className="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Truck className="h-5 w-5 text-white" />
+                  <h3 className="text-lg font-semibold text-white">
+                    Nouveau lieu de livraison
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setIsAddLocationModalOpen(false)}
+                  className="text-white hover:text-gray-200 transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Corps de la modal */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Nom du lieu *
+                </label>
+                <input
+                  type="text"
+                  value={newLocation.name}
+                  onChange={(e) =>
+                    setNewLocation((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  className="block w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-colors"
+                  placeholder="Ex: Dakar, Plateau"
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Nom de la zone ou ville de livraison
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Frais de livraison (XOF)
+                </label>
+                <input
+                  type="number"
+                  value={newLocation.delivery_fee}
+                  onChange={(e) =>
+                    setNewLocation((prev) => ({
+                      ...prev,
+                      delivery_fee: Number(e.target.value),
+                    }))
+                  }
+                  className="block w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-purple-500 focus:ring-purple-500 transition-colors"
+                  placeholder="2000"
+                  min="0"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Montant des frais de livraison pour cette zone
+                </p>
+              </div>
+            </div>
+
+            {/* Pied de la modal */}
+            <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200">
+              <button
+                onClick={() => setIsAddLocationModalOpen(false)}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleAddDeliveryLocation}
+                disabled={!newLocation.name.trim()}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Ajouter le lieu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bouton de sauvegarde */}
       <div className="flex justify-end">
