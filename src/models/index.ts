@@ -188,6 +188,11 @@ export interface InventoryStats {
   totalValue: number;
   totalSales: number;
   assistantSales: number;
+
+  currentMonthSales: number;
+  currentWeekSales: number;
+  bestSellingProduct?: string;
+  revenueGrowth?: number;
 }
 
 export interface ProductSale {

@@ -48,6 +48,7 @@ export default function InventorySection() {
   const [, setSelectedProduct] = useState<Product | null>(null);
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
   const { success, error: toastError } = useToastContext();
+  const [selectedMonth, setSelectedMonth] = useState<string>("all"); // "all" pour tous les mois par défaut
 
   const loading =
     productsLoading || categoriesLoading || salesLoading || statsLoading;
@@ -79,6 +80,7 @@ export default function InventorySection() {
       0
     );
 
+    // Fournir toutes les propriétés attendues par InventoryStats, avec des valeurs par défaut
     return {
       totalProducts,
       lowStockProducts,
@@ -86,7 +88,10 @@ export default function InventorySection() {
       totalValue,
       totalSales,
       assistantSales,
-    };
+      // Valeurs par défaut pour les métriques temporelles (peuvent être calculées plus finement si des dates sont disponibles)
+      currentMonthSales: 0,
+      currentWeekSales: 0,
+    } as InventoryStats;
   }, [inventoryStats, products, productSales]);
 
   // Alertes de stock faible dynamiques
@@ -109,13 +114,39 @@ export default function InventorySection() {
       }));
   }, [products]);
 
-  // Produits filtrés et triés
+  // Produits filtrés et triés avec filtre par mois
   const filteredProducts = useMemo(() => {
-    let filtered = products.filter(
-      (product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Filtrer UNIQUEMENT les produits publics (is_public === true)
+    let filtered = products.filter((product) => product.is_public === true);
+
+    // Appliquer le filtre par mois si sélectionné
+    if (selectedMonth !== "all") {
+      const selectedDate = new Date(selectedMonth + "-01");
+      const monthStart = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        1
+      );
+      const monthEnd = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth() + 1,
+        0
+      );
+
+      filtered = filtered.filter((product) => {
+        const productDate = new Date(product.created_at);
+        return productDate >= monthStart && productDate <= monthEnd;
+      });
+    }
+
+    // Ensuite appliquer le filtre de recherche
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (product) =>
+          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
 
     // Filtre par catégorie
     if (filters.category !== "all") {
@@ -184,7 +215,7 @@ export default function InventorySection() {
     });
 
     return filtered;
-  }, [products, searchTerm, filters, productSales]);
+  }, [products, selectedMonth, searchTerm, filters, productSales]);
 
   const formatXOF = (amount: number): string => {
     return amount.toLocaleString("fr-FR", {
@@ -224,47 +255,246 @@ export default function InventorySection() {
     }
   };
 
-  const handleExportInventory = () => {
-    // Créer un CSV des produits
-    const headers = [
-      "Nom",
-      "Description",
-      "Prix",
-      "Stock",
-      "Catégorie",
-      "Statut",
-    ];
-    const csvData = filteredProducts.map((product) => [
-      product.name,
-      product.description || "",
-      formatXOF(product.price),
-      product.stock_quantity.toString(),
-      categories.find((c) => c.id === product.category_id)?.name ||
-        "Non catégorisé",
-      getStockStatusText(product.stock_quantity),
-    ]);
+  // Fonction pour générer les 12 derniers mois + option "Tous les mois"
+  const getLast12Months = () => {
+    const months = [];
 
-    const csvContent = [headers, ...csvData]
-      .map((row) => row.map((field) => `"${field}"`).join(","))
+    // Option "Tous les mois"
+    months.push({ value: "all", label: "Tous les mois" });
+
+    const today = new Date();
+
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const value = date.toISOString().slice(0, 7);
+      const label = date.toLocaleString("fr-FR", {
+        month: "long",
+        year: "numeric",
+      });
+      months.push({ value, label });
+    }
+
+    return months;
+  };
+  const handleExportInventory = () => {
+    let periodLabel = "Tous les mois";
+    let fileName = "inventaire-complet";
+
+    if (selectedMonth !== "all") {
+      const selectedDate = new Date(selectedMonth + "-01");
+      const month = selectedDate.toLocaleString("fr-FR", { month: "long" });
+      const year = selectedDate.getFullYear();
+      periodLabel = `${month} ${year}`;
+      fileName = `inventaire-${month}-${year}`;
+    }
+
+    const formattedDate = new Date().toLocaleDateString("fr-FR");
+
+    // En-têtes professionnels pour Excel
+    const headers = [
+      "ID Produit",
+      "Nom du Produit",
+      "Description",
+      "Catégorie",
+      "Prix Unitaire (XOF)",
+      "Stock Actuel",
+      "Statut Stock",
+      "Niveau Urgence",
+      "Ventes Total",
+      "Revenu Total (XOF)",
+      "Date de Création",
+      "Dernière Mise à Jour",
+    ];
+
+    // Données des produits avec calculs réels
+    const csvData = filteredProducts.map((product) => {
+      const productSale = productSales.find((s) => s.product_id === product.id);
+      const category = categories.find((c) => c.id === product.category_id);
+
+      // Déterminer le niveau d'urgence du stock
+      let urgencyLevel = "Normal";
+      if (product.stock_quantity === 0) {
+        urgencyLevel = "Rupture";
+      } else if (product.stock_quantity <= 3) {
+        urgencyLevel = "Critique";
+      } else if (product.stock_quantity <= 5) {
+        urgencyLevel = "Faible";
+      } else if (product.stock_quantity <= 10) {
+        urgencyLevel = "Attention";
+      }
+
+      return [
+        product.id,
+        product.name,
+        product.description || "N/A",
+        category?.name || "Non catégorisé",
+        product.price.toString().replace(".", ","),
+        product.stock_quantity.toString(),
+        getStockStatusText(product.stock_quantity),
+        urgencyLevel,
+        (productSale?.quantity_sold || 0).toString(),
+        (productSale?.total_revenue || 0).toString().replace(".", ","),
+        new Date(product.created_at).toLocaleDateString("fr-FR"),
+        product.updated_at
+          ? new Date(product.updated_at).toLocaleDateString("fr-FR")
+          : "N/A",
+      ];
+    });
+
+    // Ligne de résumé détaillée
+    const totalStockValue = filteredProducts.reduce(
+      (sum, product) => sum + product.price * product.stock_quantity,
+      0
+    );
+    const totalRevenue = filteredProducts.reduce((sum, product) => {
+      const productSale = productSales.find((s) => s.product_id === product.id);
+      return sum + (productSale?.total_revenue || 0);
+    }, 0);
+    const totalUnitsSold = filteredProducts.reduce((sum, product) => {
+      const productSale = productSales.find((s) => s.product_id === product.id);
+      return sum + (productSale?.quantity_sold || 0);
+    }, 0);
+
+    const summaryRow1 = ["", "", "", "", "", "", "", "", "", "", "", ""];
+    const summaryRow2 = [
+      "RÉSUMÉ INVENTAIRE",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ];
+    const summaryRow3 = [
+      `Total Produits: ${filteredProducts.length}`,
+      "",
+      `Stock Faible: ${
+        filteredProducts.filter(
+          (p) => p.stock_quantity > 0 && p.stock_quantity <= 5
+        ).length
+      }`,
+      "",
+      `Rupture: ${
+        filteredProducts.filter((p) => p.stock_quantity === 0).length
+      }`,
+      "",
+      `Ventes Total: ${totalUnitsSold} unités`,
+      "",
+      `Revenu Total: ${formatXOF(totalRevenue).replace("CFA", "XOF")}`,
+      "",
+      `Valeur Stock: ${formatXOF(totalStockValue).replace("CFA", "XOF")}`,
+      "",
+    ];
+    const summaryRow4 = [
+      "INFORMATIONS EXPORT",
+      "",
+      `Date: ${formattedDate}`,
+      "",
+      `Période: ${periodLabel}`,
+      "",
+      `Généré automatiquement`,
+      "",
+      "",
+      "",
+      "",
+      "",
+    ];
+
+    // Créer le contenu CSV avec séparateur point-virgule pour Excel français
+    const csvContent = [
+      [`INVENTAIRE ${periodLabel.toUpperCase()}`], // Utiliser periodLabel adapté
+      [""],
+      headers,
+      ...csvData,
+      summaryRow1,
+      summaryRow2,
+      summaryRow3,
+      summaryRow4,
+    ]
+      .map((row) => row.map((field) => `"${field}"`).join(";"))
       .join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    // Créer le blob avec BOM pour Excel
+    const blob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
 
     link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `inventaire-${new Date().toISOString().split("T")[0]}.csv`
-    );
+    link.setAttribute("download", `${fileName}.csv`); // Utiliser fileName adapté
     link.style.visibility = "hidden";
 
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    success("Export réussi", "L'inventaire a été exporté avec succès");
+    // Libérer l'URL
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+
+    success(
+      "Export réussi",
+      `L'inventaire ${periodLabel.toLowerCase()} a été exporté avec succès`
+    );
   };
+
+  // Statistiques adaptées au filtre de mois
+const filteredStats: InventoryStats = useMemo(() => {
+  // Utiliser les produits filtrés pour calculer les stats
+  const totalProducts = filteredProducts.length;
+  const lowStockProducts = filteredProducts.filter(
+    (p) => p.stock_quantity > 0 && p.stock_quantity <= 5
+  ).length;
+  const outOfStockProducts = filteredProducts.filter(
+    (p) => p.stock_quantity === 0
+  ).length;
+  const totalValue = filteredProducts.reduce(
+    (sum, product) => sum + product.price * product.stock_quantity,
+    0
+  );
+
+  // Calculer les ventes basées sur les produits filtrés
+  const totalSales = filteredProducts.reduce((sum, product) => {
+    const productSale = productSales.find((s) => s.product_id === product.id);
+    return sum + (productSale?.quantity_sold || 0);
+  }, 0);
+
+  // Pour les ventes du mois/semaine, on peut les calculer dynamiquement
+  // ou utiliser les stats globales si le filtre "Tous les mois" est actif
+  let currentMonthSales = stats.currentMonthSales;
+  let currentWeekSales = stats.currentWeekSales;
+
+  // Si un mois spécifique est sélectionné, adapter les stats de ventes
+  if (selectedMonth !== "all") {
+    // Calculer les ventes pour le mois sélectionné
+    currentMonthSales = filteredProducts.reduce((sum, product) => {
+      const productSale = productSales.find((s) => s.product_id === product.id);
+      return sum + (productSale?.quantity_sold || 0);
+    }, 0);
+    
+    // Pour la semaine, on pourrait faire un calcul similaire si on avait les dates de vente
+    currentWeekSales = 0; // Ou calculer basé sur la semaine du mois sélectionné
+  }
+
+  return {
+    totalProducts,
+    lowStockProducts,
+    outOfStockProducts,
+    totalValue,
+    totalSales,
+    assistantSales: stats.assistantSales, // Garder les stats globales pour l'assistant
+    currentMonthSales,
+    currentWeekSales,
+    bestSellingProduct: stats.bestSellingProduct,
+    revenueGrowth: stats.revenueGrowth,
+  };
+}, [filteredProducts, productSales, stats, selectedMonth]);
+
 
   const handleRefresh = async () => {
     await refetchProducts();
@@ -361,15 +591,47 @@ export default function InventorySection() {
             Suivi et gestion des stocks de vos produits
           </p>
         </div> */}
-        <div className="flex items-center space-x-3 mt-4 lg:mt-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4 lg:mt-0">
+          {/* Sélecteur de mois */}
+          <div className="flex items-center space-x-2">
+            <label
+              htmlFor="month-select"
+              className="text-sm font-medium text-gray-700 whitespace-nowrap"
+            >
+              Période:
+            </label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              {getLast12Months().map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Bouton d'export */}
           <button
             onClick={handleExportInventory}
             disabled={filteredProducts.length === 0}
             className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
           >
             <Download className="h-4 w-4" />
-            <span>Exporter</span>
+            <span>
+              Exporter{" "}
+              {selectedMonth !== "all"
+                ? `(${new Date(selectedMonth + "-01").toLocaleString("fr-FR", {
+                    month: "long",
+                    year: "numeric",
+                  })})`
+                : "(Tous les mois)"}
+            </span>
           </button>
+
+          {/* Bouton d'actualisation */}
           <button
             onClick={handleRefresh}
             disabled={isUpdatingStock}
@@ -383,65 +645,152 @@ export default function InventorySection() {
         </div>
       </div>
       {/* Statistiques dynamiques */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Total Produits
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {stats.totalProducts}
-              </p>
-            </div>
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Package className="h-6 w-6 text-blue-600" />
-            </div>
+      {/* Statistiques dynamiques - Adaptées au filtre de mois */}
+<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  {selectedMonth === "all" ? (
+    // Afficher les stats globales quand aucun filtre de mois n'est appliqué
+    <>
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">
+              Ventes du Mois
+            </p>
+            <p className="text-2xl font-bold text-green-600">
+              {stats.currentMonthSales}
+            </p>
           </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Stock Faible</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {stats.lowStockProducts}
-              </p>
-            </div>
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <AlertTriangle className="h-6 w-6 text-yellow-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Ventes Total</p>
-              <p className="text-2xl font-bold text-green-600">
-                {stats.totalSales}
-              </p>
-            </div>
-            <div className="p-2 bg-green-100 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Valeur Stock</p>
-              <p className="text-lg font-bold text-purple-600">
-                {formatXOF(stats.totalValue)}
-              </p>
-            </div>
-            {/* <div className="p-2 bg-purple-100 rounded-lg">
-              <DollarSign className="h-6 w-6 text-purple-600" />
-            </div> */}
+          <div className="p-2 bg-green-100 rounded-lg">
+            <TrendingUp className="h-6 w-6 text-green-600" />
           </div>
         </div>
       </div>
+
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">
+              Ventes de la Semaine
+            </p>
+            <p className="text-2xl font-bold text-blue-600">
+              {stats.currentWeekSales}
+            </p>
+          </div>
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <TrendingUp className="h-6 w-6 text-blue-600" />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">Ventes Total</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {stats.totalSales}
+            </p>
+          </div>
+          <div className="p-2 bg-purple-100 rounded-lg">
+            <TrendingUp className="h-6 w-6 text-purple-600" />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">Valeur Stock</p>
+            <p className="text-lg font-bold text-indigo-600">
+              {formatXOF(stats.totalValue)}
+            </p>
+          </div>
+          <div className="p-2 bg-indigo-100 rounded-lg">
+            <Package className="h-6 w-6 text-indigo-600" />
+          </div>
+        </div>
+      </div>
+    </>
+  ) : (
+    // Afficher les stats adaptées quand un mois est sélectionné
+    <>
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">
+              Produits du Mois
+            </p>
+            <p className="text-2xl font-bold text-green-600">
+              {filteredProducts.length}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {new Date(selectedMonth + "-01").toLocaleString("fr-FR", { 
+                month: "long", 
+                year: "numeric" 
+              })}
+            </p>
+          </div>
+          <div className="p-2 bg-green-100 rounded-lg">
+            <Package className="h-6 w-6 text-green-600" />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">
+              Stock Faible
+            </p>
+            <p className="text-2xl font-bold text-yellow-600">
+              {filteredProducts.filter(p => p.stock_quantity > 0 && p.stock_quantity <= 5).length}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Attention requise
+            </p>
+          </div>
+          <div className="p-2 bg-yellow-100 rounded-lg">
+            <AlertTriangle className="h-6 w-6 text-yellow-600" />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">En Rupture</p>
+            <p className="text-2xl font-bold text-red-600">
+              {filteredProducts.filter(p => p.stock_quantity === 0).length}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Réapprovisionnement
+            </p>
+          </div>
+          <div className="p-2 bg-red-100 rounded-lg">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-4 border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">Valeur Stock</p>
+            <p className="text-lg font-bold text-indigo-600">
+              {formatXOF(filteredProducts.reduce((sum, product) => sum + product.price * product.stock_quantity, 0))}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Valeur du mois
+            </p>
+          </div>
+          <div className="p-2 bg-indigo-100 rounded-lg">
+            <Package className="h-6 w-6 text-indigo-600" />
+          </div>
+        </div>
+      </div>
+    </>
+  )}
+</div>
+
       {/* Alertes de stock faible dynamiques */}
       {lowStockAlerts.length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">

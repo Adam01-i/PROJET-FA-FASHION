@@ -200,8 +200,8 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
 
   const getPublicationStatus = (isPublic: boolean) => {
     return isPublic 
-      ? { text: "Public", color: "bg-blue-100 text-blue-800", icon: Eye }
-      : { text: "Privé", color: "bg-gray-100 text-gray-800", icon: EyeOff };
+      ? { text: "Actif", color: "bg-blue-100 text-blue-800", icon: Eye }
+      : { text: "Inactif", color: "bg-gray-100 text-gray-800", icon: EyeOff };
   };
 
   // Affichage temporaire simple pour debug
