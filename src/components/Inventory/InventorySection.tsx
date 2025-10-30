@@ -16,7 +16,7 @@ import {
 import {
   Product,
   InventoryStats,
-  LowStockAlert,
+  // LowStockAlert,
   InventoryFilters,
 } from "../../models";
 import { useToastContext } from "../../hooks/ToastProvider";
@@ -95,24 +95,24 @@ export default function InventorySection() {
   }, [inventoryStats, products, productSales]);
 
   // Alertes de stock faible dynamiques
-  const lowStockAlerts: LowStockAlert[] = useMemo(() => {
-    return products
-      .filter(
-        (product) => product.stock_quantity > 0 && product.stock_quantity <= 10
-      )
-      .map((product) => ({
-        product_id: product.id,
-        product_name: product.name,
-        current_stock: product.stock_quantity,
-        threshold: 10,
-        urgency:
-          product.stock_quantity <= 3
-            ? "high"
-            : product.stock_quantity <= 5
-            ? "medium"
-            : ("low" as const),
-      }));
-  }, [products]);
+  // const lowStockAlerts: LowStockAlert[] = useMemo(() => {
+  //   return products
+  //     .filter(
+  //       (product) => product.stock_quantity > 0 && product.stock_quantity <= 10
+  //     )
+  //     .map((product) => ({
+  //       product_id: product.id,
+  //       product_name: product.name,
+  //       current_stock: product.stock_quantity,
+  //       threshold: 10,
+  //       urgency:
+  //         product.stock_quantity <= 3
+  //           ? "high"
+  //           : product.stock_quantity <= 5
+  //           ? "medium"
+  //           : ("low" as const),
+  //     }));
+  // }, [products]);
 
   // Produits filtrés et triés avec filtre par mois
   const filteredProducts = useMemo(() => {
@@ -792,7 +792,7 @@ export default function InventorySection() {
 </div>
 
       {/* Alertes de stock faible dynamiques */}
-      {lowStockAlerts.length > 0 && (
+      {/* {lowStockAlerts.length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
@@ -829,7 +829,7 @@ export default function InventorySection() {
             ))}
           </div>
         </div>
-      )}
+      )} */}
 
       <div className="bg-white rounded-xl p-4 border border-gray-200">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">

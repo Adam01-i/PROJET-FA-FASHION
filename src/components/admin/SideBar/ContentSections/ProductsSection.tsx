@@ -8,6 +8,7 @@ import { Product } from "../../../../models";
 import { useToastContext } from "../../../../hooks/ToastProvider";
 import ProductModal from "../../Modals/ProductModal";
 import RestockModal from "../../Modals/RestockModal";
+import StatsDashboard from "../../Stats/StatsDashboard";
 
 interface ProductsSectionProps {
   searchTerm: string;
@@ -19,13 +20,28 @@ function formatXOF(amount: number): string {
 }
 
 export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
-  const { products, loading: productsLoading, error: productsError, refetch: refetchProducts, restockProduct, updateProduct } = useProducts();
-  const { stats, lowStockAlerts, loading: statsLoading, error: statsError, refetch: refetchStats } = useInventoryStats();
+  const {
+    products,
+    loading: productsLoading,
+    error: productsError,
+    refetch: refetchProducts,
+    restockProduct,
+    updateProduct,
+  } = useProducts();
+  const {
+    stats,
+    lowStockAlerts,
+    loading: statsLoading,
+    error: statsError,
+    refetch: refetchStats,
+  } = useInventoryStats();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [restockingProduct, setRestockingProduct] = useState<Product | null>(null);
+  const [restockingProduct, setRestockingProduct] = useState<Product | null>(
+    null
+  );
   const [currentProduct, setCurrentProduct] = useState({
     name: "",
     description: "",
@@ -38,15 +54,23 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
 
   // Logs de débogage
   useEffect(() => {
-    console.log('🔍 ProductsSection - État actuel:');
-    console.log('📦 Produits:', products);
-    console.log('📊 Stats:', stats);
-    console.log('⚠️ Alertes:', lowStockAlerts);
-    console.log('🔄 Loading produits:', productsLoading);
-    console.log('🔄 Loading stats:', statsLoading);
-    console.log('❌ Erreur produits:', productsError);
-    console.log('❌ Erreur stats:', statsError);
-  }, [products, stats, lowStockAlerts, productsLoading, statsLoading, productsError, statsError]);
+    console.log("🔍 ProductsSection - État actuel:");
+    console.log("📦 Produits:", products);
+    console.log("📊 Stats:", stats);
+    console.log("⚠️ Alertes:", lowStockAlerts);
+    console.log("🔄 Loading produits:", productsLoading);
+    console.log("🔄 Loading stats:", statsLoading);
+    console.log("❌ Erreur produits:", productsError);
+    console.log("❌ Erreur stats:", statsError);
+  }, [
+    products,
+    stats,
+    lowStockAlerts,
+    productsLoading,
+    statsLoading,
+    productsError,
+    statsError,
+  ]);
 
   const loading = productsLoading || statsLoading;
 
@@ -54,33 +78,79 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+      (product.category_name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ??
+        false)
   );
+  const getStockStatus = (quantity: number, isPublic: boolean) => {
+    if (!isPublic) {
+      return {
+        text: "Privé",
+        color: "bg-gray-100 text-gray-800 border border-gray-300",
+        bgColor: "bg-gray-50",
+        textColor: "text-gray-600",
+      };
+    }
+
+    if (quantity === 0) {
+      return {
+        text: "Rupture",
+        color: "bg-red-100 text-red-800 border border-red-200",
+        bgColor: "bg-red-50",
+        textColor: "text-red-700",
+      };
+    }
+
+    if (quantity <= 5) {
+      return {
+        text: "Stock faible",
+        color: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+        bgColor: "bg-yellow-50",
+        textColor: "text-yellow-700",
+      };
+    }
+
+    return {
+      text: "En stock",
+      color: "bg-green-100 text-green-800 border border-green-200",
+      bgColor: "bg-green-50",
+      textColor: "text-green-700",
+    };
+  };
 
   // FONCTION RÉTABLIE POUR LA VISIBILITÉ DES PRODUITS
   const handleTogglePublication = async (product: Product) => {
     try {
       const newVisibility = !product.is_public;
-      
-      // Utiliser la fonction updateProduct du hook
-      await updateProduct(product.id, { 
+
+      // Si on désactive le produit, mettre le stock à zéro
+      const updates: any = {
         is_public: newVisibility,
-        updated_at: new Date().toISOString()
-      });
+        updated_at: new Date().toISOString(),
+      };
+
+      if (!newVisibility) {
+        updates.stock_quantity = 0;
+      }
+
+      await updateProduct(product.id, updates);
 
       success(
         newVisibility ? "Produit publié" : "Produit masqué",
-        newVisibility 
-          ? "Le produit est maintenant visible par les clients" 
-          : "Le produit a été retiré de la vue publique"
+        newVisibility
+          ? "Le produit est maintenant visible par les clients"
+          : "Le produit a été retiré de la vue publique et le stock a été mis à zéro"
       );
-      
-      // Recharger les données
+
       await refetchProducts();
       await refetchStats();
     } catch (error) {
       console.error("Error toggling publication:", error);
-      toastError("Erreur", "Erreur lors de la modification de la visibilité du produit");
+      toastError(
+        "Erreur",
+        "Erreur lors de la modification de la visibilité du produit"
+      );
     }
   };
 
@@ -89,7 +159,7 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
       console.error("Product is undefined in handleEditClick");
       return;
     }
-    
+
     setEditingProduct(product);
     setCurrentProduct({
       name: product.name,
@@ -156,26 +226,44 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
       // Recharger les produits et statistiques
       await refetchProducts();
       await refetchStats();
-      success("Succès", editingProduct ? "Produit modifié avec succès" : "Produit ajouté avec succès");
+      success(
+        "Succès",
+        editingProduct
+          ? "Produit modifié avec succès"
+          : "Produit ajouté avec succès"
+      );
     } catch (error) {
       console.error("Error saving product:", error);
       throw error;
     }
   };
 
-  const handleRestock = async (productId: string, quantity: number, reason: string) => {
-    try {
-      await restockProduct(productId, quantity, reason);
-      await refetchProducts();
-      await refetchStats();
-      success("Succès", `Stock réapprovisionné de ${quantity} unités`);
-      setIsRestockModalOpen(false);
-      setRestockingProduct(null);
-    } catch (error) {
-      console.error("Error restocking product:", error);
-      throw error;
-    }
-  };
+const handleRestock = async (
+  productId: string,
+  quantity: number,
+  newPrice: number,
+  reason: string
+) => {
+  try {
+    // Mettre à jour le stock ET le prix
+    await restockProduct(productId, quantity, reason);
+    
+    // Mettre à jour le prix séparément
+    await updateProduct(productId, {
+      price: newPrice,
+      updated_at: new Date().toISOString()
+    });
+    
+    await refetchProducts();
+    await refetchStats();
+    success("Succès", `Stock réapprovisionné de ${quantity} unités et prix mis à jour`);
+    setIsRestockModalOpen(false);
+    setRestockingProduct(null);
+  } catch (error) {
+    console.error("Error restocking product:", error);
+    throw error;
+  }
+};
 
   const closeEditModal = () => {
     setIsEditModalOpen(false);
@@ -192,14 +280,8 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
     setRestockingProduct(null);
   };
 
-  const getStockStatus = (quantity: number) => {
-    if (quantity > 10) return { text: "En stock", color: "bg-green-100 text-green-800" };
-    if (quantity > 0) return { text: "Stock faible", color: "bg-yellow-100 text-yellow-800" };
-    return { text: "Rupture", color: "bg-red-100 text-red-800" };
-  };
-
   const getPublicationStatus = (isPublic: boolean) => {
-    return isPublic 
+    return isPublic
       ? { text: "Actif", color: "bg-blue-100 text-blue-800", icon: Eye }
       : { text: "Inactif", color: "bg-gray-100 text-gray-800", icon: EyeOff };
   };
@@ -218,7 +300,7 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
     return (
       <div className="p-8 text-center text-red-600">
         <p>Erreur: {productsError}</p>
-        <button 
+        <button
           onClick={() => refetchProducts()}
           className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg"
         >
@@ -244,24 +326,13 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
         </div>
 
         {/* Statistiques de debug */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg border">
-            <p className="text-sm text-gray-600">Total</p>
-            <p className="text-2xl font-bold">{stats?.totalProducts || 0}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <p className="text-sm text-gray-600">Stock faible</p>
-            <p className="text-2xl font-bold text-yellow-600">{stats?.lowStockProducts || 0}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <p className="text-sm text-gray-600">Rupture</p>
-            <p className="text-2xl font-bold text-red-600">{stats?.outOfStockProducts || 0}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <p className="text-sm text-gray-600">Alertes</p>
-            <p className="text-2xl font-bold text-orange-600">{lowStockAlerts.length}</p>
-          </div>
-        </div>
+        {stats && (
+          <StatsDashboard
+            stats={stats}
+            lowStockAlerts={lowStockAlerts}
+            loading={statsLoading}
+          />
+        )}
 
         {/* Liste simple des produits */}
         <div className="bg-white rounded-lg border">
@@ -270,16 +341,34 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
           </div>
           <div className="divide-y">
             {filteredProducts.map((product) => {
-              const stockStatus = getStockStatus(product.stock_quantity);
-              const publicationStatus = getPublicationStatus(product.is_public ?? true);
+              const stockStatus = getStockStatus(
+                product.stock_quantity,
+                product.is_public ?? true
+              );
+              const publicationStatus = getPublicationStatus(
+                product.is_public ?? true
+              );
               const PublicationIcon = publicationStatus.icon;
-              
+
               return (
-                <div key={product.id} className="p-4 flex items-center justify-between">
+                <div
+                  key={product.id}
+                  className={`p-4 flex items-center justify-between transition-all duration-200 ${
+                    stockStatus.bgColor
+                  } border-l-4 ${
+                    stockStatus.textColor === "text-red-700"
+                      ? "border-l-red-500"
+                      : stockStatus.textColor === "text-yellow-700"
+                      ? "border-l-yellow-500"
+                      : stockStatus.textColor === "text-gray-600"
+                      ? "border-l-gray-500"
+                      : "border-l-green-500"
+                  }`}
+                >
                   <div className="flex items-center space-x-4">
                     {product.image_url ? (
-                      <img 
-                        src={product.image_url} 
+                      <img
+                        src={product.image_url}
                         alt={product.name}
                         className="h-12 w-12 rounded-lg object-cover"
                       />
@@ -290,14 +379,20 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
                     )}
                     <div>
                       <h3 className="font-medium">{product.name}</h3>
-                      <p className="text-sm text-gray-600">{formatXOF(product.price)}</p>
+                      <p className="text-sm text-gray-600">
+                        {formatXOF(product.price)}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <span className={`px-3 py-1 rounded-full text-sm ${stockStatus.color}`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm ${stockStatus.color}`}
+                    >
                       {stockStatus.text} ({product.stock_quantity})
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-sm flex items-center ${publicationStatus.color}`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm flex items-center ${publicationStatus.color}`}
+                    >
                       <PublicationIcon className="h-4 w-4 mr-1" />
                       {publicationStatus.text}
                     </span>
@@ -318,13 +413,19 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
                       <button
                         onClick={() => handleTogglePublication(product)}
                         className={`p-2 rounded-lg transition-colors ${
-                          product.is_public 
-                            ? "text-orange-600 hover:bg-orange-50" 
+                          product.is_public
+                            ? "text-orange-600 hover:bg-orange-50"
                             : "text-green-600 hover:bg-green-50"
                         }`}
-                        title={product.is_public ? "Rendre privé" : "Rendre public"}
+                        title={
+                          product.is_public ? "Rendre privé" : "Rendre public"
+                        }
                       >
-                        {product.is_public ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {product.is_public ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
