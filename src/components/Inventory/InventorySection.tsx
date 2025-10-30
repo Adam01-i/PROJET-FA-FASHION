@@ -444,56 +444,56 @@ export default function InventorySection() {
   };
 
   // Statistiques adaptées au filtre de mois
-const filteredStats: InventoryStats = useMemo(() => {
-  // Utiliser les produits filtrés pour calculer les stats
-  const totalProducts = filteredProducts.length;
-  const lowStockProducts = filteredProducts.filter(
-    (p) => p.stock_quantity > 0 && p.stock_quantity <= 5
-  ).length;
-  const outOfStockProducts = filteredProducts.filter(
-    (p) => p.stock_quantity === 0
-  ).length;
-  const totalValue = filteredProducts.reduce(
-    (sum, product) => sum + product.price * product.stock_quantity,
-    0
-  );
+// const filteredStats: InventoryStats = useMemo(() => {
+//   // Utiliser les produits filtrés pour calculer les stats
+//   const totalProducts = filteredProducts.length;
+//   const lowStockProducts = filteredProducts.filter(
+//     (p) => p.stock_quantity > 0 && p.stock_quantity <= 5
+//   ).length;
+//   const outOfStockProducts = filteredProducts.filter(
+//     (p) => p.stock_quantity === 0
+//   ).length;
+//   const totalValue = filteredProducts.reduce(
+//     (sum, product) => sum + product.price * product.stock_quantity,
+//     0
+//   );
 
-  // Calculer les ventes basées sur les produits filtrés
-  const totalSales = filteredProducts.reduce((sum, product) => {
-    const productSale = productSales.find((s) => s.product_id === product.id);
-    return sum + (productSale?.quantity_sold || 0);
-  }, 0);
+//   // Calculer les ventes basées sur les produits filtrés
+//   const totalSales = filteredProducts.reduce((sum, product) => {
+//     const productSale = productSales.find((s) => s.product_id === product.id);
+//     return sum + (productSale?.quantity_sold || 0);
+//   }, 0);
 
-  // Pour les ventes du mois/semaine, on peut les calculer dynamiquement
-  // ou utiliser les stats globales si le filtre "Tous les mois" est actif
-  let currentMonthSales = stats.currentMonthSales;
-  let currentWeekSales = stats.currentWeekSales;
+//   // Pour les ventes du mois/semaine, on peut les calculer dynamiquement
+//   // ou utiliser les stats globales si le filtre "Tous les mois" est actif
+//   let currentMonthSales = stats.currentMonthSales;
+//   let currentWeekSales = stats.currentWeekSales;
 
-  // Si un mois spécifique est sélectionné, adapter les stats de ventes
-  if (selectedMonth !== "all") {
-    // Calculer les ventes pour le mois sélectionné
-    currentMonthSales = filteredProducts.reduce((sum, product) => {
-      const productSale = productSales.find((s) => s.product_id === product.id);
-      return sum + (productSale?.quantity_sold || 0);
-    }, 0);
+//   // Si un mois spécifique est sélectionné, adapter les stats de ventes
+//   if (selectedMonth !== "all") {
+//     // Calculer les ventes pour le mois sélectionné
+//     currentMonthSales = filteredProducts.reduce((sum, product) => {
+//       const productSale = productSales.find((s) => s.product_id === product.id);
+//       return sum + (productSale?.quantity_sold || 0);
+//     }, 0);
     
-    // Pour la semaine, on pourrait faire un calcul similaire si on avait les dates de vente
-    currentWeekSales = 0; // Ou calculer basé sur la semaine du mois sélectionné
-  }
+//     // Pour la semaine, on pourrait faire un calcul similaire si on avait les dates de vente
+//     currentWeekSales = 0; // Ou calculer basé sur la semaine du mois sélectionné
+//   }
 
-  return {
-    totalProducts,
-    lowStockProducts,
-    outOfStockProducts,
-    totalValue,
-    totalSales,
-    assistantSales: stats.assistantSales, // Garder les stats globales pour l'assistant
-    currentMonthSales,
-    currentWeekSales,
-    bestSellingProduct: stats.bestSellingProduct,
-    revenueGrowth: stats.revenueGrowth,
-  };
-}, [filteredProducts, productSales, stats, selectedMonth]);
+//   return {
+//     totalProducts,
+//     lowStockProducts,
+//     outOfStockProducts,
+//     totalValue,
+//     totalSales,
+//     assistantSales: stats.assistantSales, // Garder les stats globales pour l'assistant
+//     currentMonthSales,
+//     currentWeekSales,
+//     bestSellingProduct: stats.bestSellingProduct,
+//     revenueGrowth: stats.revenueGrowth,
+//   };
+// }, [filteredProducts, productSales, stats, selectedMonth]);
 
 
   const handleRefresh = async () => {
