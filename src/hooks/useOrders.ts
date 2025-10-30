@@ -35,190 +35,213 @@ export function useOrders() {
     }
   };
 
-const updateOrderStatus = async (
-  orderId: string,
-  status: Order["status"],
-  processedBy?: string,
-  currentUserRole?: string,
-  userName?: string
-): Promise<boolean> => {
-  try {
-    // Récupérer la commande complète avec ses items
-    const { data: order } = await supabase
-      .from("orders")
-      .select(`
+  const updateOrderStatus = async (
+    orderId: string,
+    status: Order["status"],
+    processedBy?: string,
+    currentUserRole?: string,
+    userName?: string
+  ): Promise<boolean> => {
+    try {
+      // Récupérer la commande complète avec ses items
+      const { data: order } = await supabase
+        .from("orders")
+        .select(
+          `
         *,
         order_items (
           *,
           product:products (*)
         )
-      `)
-      .eq("id", orderId)
-      .single();
+      `
+        )
+        .eq("id", orderId)
+        .single();
 
-    if (!order) {
-      throw new Error("Commande non trouvée");
-    }
+      if (!order) {
+        throw new Error("Commande non trouvée");
+      }
 
-    // Vérifications de sécurité selon le rôle
-    const allowedRoles = ["admin", "assistant", "livreur"];
-    if (!currentUserRole || !allowedRoles.includes(currentUserRole)) {
-      throw new Error(
-        "Seuls les administrateurs, assistants et livreurs peuvent modifier le statut des commandes"
-      );
-    }
-
-    // Vérifications spécifiques pour la livraison
-    if (status === "delivered") {
-      // Vérifier que l'utilisateur a le droit de marquer comme livré
-      const allowedRolesForDelivery = ["livreur", "admin", "assistant"];
-      if (!currentUserRole || !allowedRolesForDelivery.includes(currentUserRole)) {
+      // Vérifications de sécurité selon le rôle
+      const allowedRoles = ["admin", "assistant", "livreur"];
+      if (!currentUserRole || !allowedRoles.includes(currentUserRole)) {
         throw new Error(
-          "Seuls les livreurs, assistants et administrateurs peuvent marquer les commandes comme livrées"
+          "Seuls les administrateurs, assistants et livreurs peuvent modifier le statut des commandes"
         );
       }
 
-      // Vérifier que la commande est dans un état qui peut être livré
-      if (order.status !== "confirmed" && order.status !== "shipped") {
-        throw new Error(
-          `Impossible de livrer une commande avec le statut "${order.status}"`
-        );
-      }
-
-      if (order.payment_status !== "paid") {
-        throw new Error("Impossible de livrer une commande non payée");
-      }
-    }
-
-    // Vérifier les stocks avant confirmation
-    if (status === "confirmed") {
-      for (const item of order.order_items) {
-        if (item.product.stock_quantity < item.quantity) {
+      // Vérifications spécifiques pour la livraison
+      if (status === "delivered") {
+        // Vérifier que l'utilisateur a le droit de marquer comme livré
+        const allowedRolesForDelivery = ["livreur", "admin", "assistant"];
+        if (
+          !currentUserRole ||
+          !allowedRolesForDelivery.includes(currentUserRole)
+        ) {
           throw new Error(
-            `Stock insuffisant pour ${item.product.name}. Stock disponible: ${item.product.stock_quantity}, Quantité demandée: ${item.quantity}`
+            "Seuls les livreurs, assistants et administrateurs peuvent marquer les commandes comme livrées"
           );
         }
-      }
-    }
 
-    // Vérifier la confirmation de commande
-    if (status === "confirmed" && order.payment_status !== "paid") {
-      throw new Error(
-        "⚠️ Pour confirmer cette commande, le paiement doit être marqué comme Payé"
-      );
-    }
+        // Vérifier que la commande est dans un état qui peut être livré
+        if (order.status !== "confirmed" && order.status !== "shipped") {
+          throw new Error(
+            `Impossible de livrer une commande avec le statut "${order.status}"`
+          );
+        }
 
-    // Mettre à jour les stocks si la commande est confirmée
-    if (status === "confirmed") {
-      for (const item of order.order_items) {
-        const newStock = item.product.stock_quantity - item.quantity;
-        
-        const { error: stockError } = await supabase
-          .from("products")
-          .update({ stock_quantity: newStock })
-          .eq("id", item.product_id);
-
-        if (stockError) {
-          console.error("Error updating product stock:", stockError);
-          throw new Error(`Erreur de mise à jour du stock pour ${item.product.name}`);
+        if (order.payment_status !== "paid") {
+          throw new Error("Impossible de livrer une commande non payée");
         }
       }
-    }
 
-    // Restaurer les stocks si la commande est annulée
-    if (status === "cancelled" && order.status === "confirmed") {
-      for (const item of order.order_items) {
-        const newStock = item.product.stock_quantity + item.quantity;
-        
-        const { error: stockError } = await supabase
-          .from("products")
-          .update({ stock_quantity: newStock })
-          .eq("id", item.product_id);
+      // Dans updateOrderStatus - La logique actuelle est correcte
+      if (status === "confirmed") {
+        for (const item of order.order_items) {
+          if (item.product.stock_quantity < item.quantity) {
+            throw new Error(
+              `Stock insuffisant pour ${item.product.name}. Stock disponible: ${item.product.stock_quantity}, Quantité demandée: ${item.quantity}`
+            );
+          }
+        }
 
-        if (stockError) {
-          console.error("Error restoring product stock:", stockError);
-          throw new Error(`Erreur de restauration du stock pour ${item.product.name}`);
+        // Diminuer le stock seulement lors de la confirmation
+        for (const item of order.order_items) {
+          const newStock = item.product.stock_quantity - item.quantity;
+
+          const { error: stockError } = await supabase
+            .from("products")
+            .update({ stock_quantity: newStock })
+            .eq("id", item.product_id);
+
+          if (stockError) throw stockError;
         }
       }
+
+      // Vérifier la confirmation de commande
+      if (status === "confirmed" && order.payment_status !== "paid") {
+        throw new Error(
+          "⚠️ Pour confirmer cette commande, le paiement doit être marqué comme Payé"
+        );
+      }
+
+      // Mettre à jour les stocks si la commande est confirmée
+      if (status === "confirmed") {
+        for (const item of order.order_items) {
+          const newStock = item.product.stock_quantity - item.quantity;
+
+          const { error: stockError } = await supabase
+            .from("products")
+            .update({ stock_quantity: newStock })
+            .eq("id", item.product_id);
+
+          if (stockError) {
+            console.error("Error updating product stock:", stockError);
+            throw new Error(
+              `Erreur de mise à jour du stock pour ${item.product.name}`
+            );
+          }
+        }
+      }
+
+      // Restaurer les stocks si la commande est annulée
+      if (status === "cancelled" && order.status === "confirmed") {
+        for (const item of order.order_items) {
+          const newStock = item.product.stock_quantity + item.quantity;
+
+          const { error: stockError } = await supabase
+            .from("products")
+            .update({ stock_quantity: newStock })
+            .eq("id", item.product_id);
+
+          if (stockError) {
+            console.error("Error restoring product stock:", stockError);
+            throw new Error(
+              `Erreur de restauration du stock pour ${item.product.name}`
+            );
+          }
+        }
+      }
+
+      const updates: {
+        status: Order["status"];
+        updated_at: string;
+        payment_status?: Order["payment_status"];
+        delivered_by?: string;
+        delivered_by_name?: string;
+        delivered_at?: string;
+        processed_by?: string;
+      } = {
+        status,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Gestion spécifique pour l'annulation
+      if (status === "cancelled") {
+        updates.payment_status = "refunded";
+      }
+
+      // Gestion spécifique pour la livraison
+      if (status === "delivered" && processedBy && userName) {
+        updates.delivered_by = processedBy;
+        updates.delivered_by_name = userName;
+        updates.delivered_at = new Date().toISOString();
+        updates.payment_status = "paid";
+      }
+
+      // Enregistrer qui a traité la commande (sauf pour la livraison où on utilise delivered_by)
+      if (processedBy && status !== "delivered") {
+        updates.processed_by = processedBy;
+      }
+
+      const { error } = await supabase
+        .from("orders")
+        .update(updates)
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      return true;
+    } catch (err) {
+      console.error("Error updating order:", err);
+      throw err;
     }
-
-    const updates: {
-      status: Order['status'];
-      updated_at: string;
-      payment_status?: Order['payment_status'];
-      delivered_by?: string;
-      delivered_by_name?: string;
-      delivered_at?: string;
-      processed_by?: string;
-    } = {
-      status,
-      updated_at: new Date().toISOString(),
-    };
-
-    // Gestion spécifique pour l'annulation
-    if (status === "cancelled") {
-      updates.payment_status = "refunded";
-    }
-
-    // Gestion spécifique pour la livraison
-    if (status === "delivered" && processedBy && userName) {
-      updates.delivered_by = processedBy;
-      updates.delivered_by_name = userName;
-      updates.delivered_at = new Date().toISOString();
-      updates.payment_status = "paid";
-    }
-
-    // Enregistrer qui a traité la commande (sauf pour la livraison où on utilise delivered_by)
-    if (processedBy && status !== "delivered") {
-      updates.processed_by = processedBy;
-    }
-
-    const { error } = await supabase
-      .from("orders")
-      .update(updates)
-      .eq("id", orderId);
-
-    if (error) throw error;
-
-    return true;
-  } catch (err) {
-    console.error("Error updating order:", err);
-    throw err;
-  }
-};
+  };
   // Fonction dédiée pour les livreurs
-const markOrderAsDelivered = async (
-  orderId: string,
-  deliveredBy: string,
-  deliveredByName: string
-): Promise<boolean> => {
-  try {
-    const updates = {
-      status: 'delivered' as Order['status'],
-      delivered_by: deliveredBy,
-      delivered_by_name: deliveredByName,
-      delivered_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+  const markOrderAsDelivered = async (
+    orderId: string,
+    deliveredBy: string,
+    deliveredByName: string
+  ): Promise<boolean> => {
+    try {
+      const updates = {
+        status: "delivered" as Order["status"],
+        delivered_by: deliveredBy,
+        delivered_by_name: deliveredByName,
+        delivered_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-    const { error } = await supabase
-      .from('orders')
-      .update(updates)
-      .eq('id', orderId);
+      const { error } = await supabase
+        .from("orders")
+        .update(updates)
+        .eq("id", orderId);
 
-    if (error) throw error;
-    
-    // Mettre à jour le cache local
-    setOrders(prev => prev.map(order => 
-      order.id === orderId ? { ...order, ...updates } : order
-    ));
-    
-    return true;
-  } catch (err) {
-    console.error('Error marking order as delivered:', err);
-    throw err;
-  }
-};
+      if (error) throw error;
+
+      // Mettre à jour le cache local
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId ? { ...order, ...updates } : order
+        )
+      );
+
+      return true;
+    } catch (err) {
+      console.error("Error marking order as delivered:", err);
+      throw err;
+    }
+  };
 
   // Remplacer la fonction updatePaymentStatus existante par :
   const updatePaymentStatus = async (
@@ -314,52 +337,70 @@ const markOrderAsDelivered = async (
     }
   };
 
-const createAssistantOrder = async (orderData: {
-  customer_phone: string;
-  customer_name?: string;
-  subtotal_amount: number;
-  delivery_fee: number;
-  total_amount: number;
-  delivery_location_id: string;
-  delivery_location_name: string;
-  order_items: Array<{
-    product_id: string;
-    quantity: number;
-    price: number;
-  }>;
-  assistant_id?: string;
-  assistant_name?: string;
-}): Promise<{id: string}> => {
-  try {
-    const { data, error } = await supabase.rpc('create_assistant_order_with_delivery', {
-      customer_phone: orderData.customer_phone,
-      customer_name: orderData.customer_name || null,
-      subtotal_amount: orderData.subtotal_amount,
-      delivery_fee: orderData.delivery_fee,
-      total_amount: orderData.total_amount,
-      delivery_location_id: orderData.delivery_location_id,
-      delivery_location_name: orderData.delivery_location_name,
-      order_items: orderData.order_items,
-      assistant_id: orderData.assistant_id || null,
-      assistant_name: orderData.assistant_name || null
-    });
+  // Dans useOrders.ts - Modifier createAssistantOrder pour ne pas diminuer le stock
+  const createAssistantOrder = async (orderData: {
+    customer_phone: string;
+    customer_name?: string;
+    subtotal_amount: number;
+    delivery_fee: number;
+    total_amount: number;
+    delivery_location_id: string;
+    delivery_location_name: string;
+    order_items: Array<{
+      product_id: string;
+      quantity: number;
+      price: number;
+    }>;
+    assistant_id?: string;
+    assistant_name?: string;
+  }): Promise<{ id: string }> => {
+    try {
+      // Utiliser une transaction manuelle au lieu de la RPC
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert([
+          {
+            customer_phone: orderData.customer_phone,
+            customer_name: orderData.customer_name,
+            subtotal_amount: orderData.subtotal_amount,
+            delivery_fee: orderData.delivery_fee,
+            total_amount: orderData.total_amount,
+            delivery_location_id: orderData.delivery_location_id,
+            delivery_location_name: orderData.delivery_location_name,
+            assistant_id: orderData.assistant_id,
+            assistant_name: orderData.assistant_name,
+            status: "pending", // IMPORTANT: Statut initial en "pending"
+            payment_status: "pending",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
 
-    if (error) {
-      console.error('RPC Error details:', error);
-      throw new Error(`Erreur lors de la création de la commande: ${error.message}`);
+      if (orderError) throw orderError;
+
+      // Créer les order_items SANS diminuer le stock
+      const orderItems = orderData.order_items.map((item) => ({
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+        created_at: new Date().toISOString(),
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      return { id: order.id };
+    } catch (err) {
+      console.error("Error in createAssistantOrder:", err);
+      throw err;
     }
-
-    if (!data) {
-      throw new Error('Aucun ID de commande retourné');
-    }
-
-    return { id: data };
-  } catch (err) {
-    console.error('Error in createAssistantOrder:', err);
-    throw err;
-  }
-};
-
+  };
   // Remplacer l'abonnement existant dans useEffect par :
   useEffect(() => {
     fetchOrders();
