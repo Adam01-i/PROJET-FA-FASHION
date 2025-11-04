@@ -11,6 +11,8 @@ const ORDER_STATUS_CONFIG = {
   pending: { label: "En attente", color: "bg-yellow-100 text-yellow-800" },
   confirmed: { label: "Confirmée", color: "bg-blue-100 text-blue-800" },
   cancelled: { label: "Annulée", color: "bg-red-100 text-red-800" },
+  shipped: { label: "Expédiée", color: "bg-indigo-100 text-indigo-800" },
+  delivered: { label: "Livrée", color: "bg-green-100 text-green-800" },
 };
 
 const PAYMENT_STATUS_CONFIG = {

@@ -1,4 +1,4 @@
-// hooks/useMyOrders.ts
+// hooks/useMyOrders.ts - VERSION CORRIGÉE
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -29,7 +29,6 @@ const waitForSupabase = async (timeout = 5000): Promise<boolean> => {
   
   while (Date.now() - startTime < timeout) {
     try {
-      // Vérifier si Supabase répond
       const { error } = await supabase.auth.getSession();
       if (!error) {
         return true;
@@ -52,39 +51,6 @@ export function useMyOrders() {
     searchQuery: "",
   });
   const navigate = useNavigate();
-
-  // ✅ Récupérer le numéro de support avec gestion d'erreur robuste
-  const getSupportPhone = async (): Promise<string> => {
-    // Vérifier d'abord la connexion internet
-    if (!checkInternetConnection()) {
-      console.warn("No internet connection for support phone fetch");
-      return "221761994984"; // Retourner la valeur par défaut
-    }
-
-    try {
-      // Attendre que Supabase soit prêt
-      const isSupabaseReady = await waitForSupabase(3000);
-      if (!isSupabaseReady) {
-        console.warn("Supabase not ready for support phone fetch");
-        return "221761994984";
-      }
-
-      const { data, error } = await supabase
-        .from("store_settings")
-        .select("phone")
-        .single(); // Timeout de 5 secondes
-
-      if (error) {
-        console.warn("Error fetching support phone (non-critical):", error);
-        return "221761994984"; // Numéro par défaut sans throw d'erreur
-      }
-
-      return data?.phone || "221761994984";
-    } catch (error) {
-      console.warn("Network error fetching support phone (non-critical):", error);
-      return "221761994984"; // Retourner la valeur par défaut sans bloquer
-    }
-  };
 
   // ✅ Fetch des commandes avec gestion robuste des erreurs
   const fetchOrders = async () => {
@@ -130,49 +96,40 @@ export function useMyOrders() {
 
       console.log("User authenticated:", session.user.id);
 
-      // Utiliser la vue normale user_orders_view avec timeout
-      const { data, error: fetchError } = await supabase
-        .from("user_orders_view")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false }); 
+      // ESSAYER D'ABORD LA VUE
+      let ordersData: Order[] = [];
+      let viewError = null;
 
-      if (fetchError) {
-        console.error("Supabase fetch error:", fetchError);
+      try {
+        const { data, error: fetchError } = await supabase
+          .from("user_orders_view")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .order("created_at", { ascending: false });
 
-        // Gestion spécifique des erreurs réseau
-        if (fetchError.message.includes('NetworkError') || fetchError.message.includes('fetch')) {
-          setError("Problème de connexion réseau. Vérifiez votre internet et réessayez.");
-          return;
+        if (fetchError) {
+          console.warn("View fetch error, trying fallback:", fetchError);
+          viewError = fetchError;
+        } else {
+          console.log("Orders fetched successfully from view:", data?.length || 0);
+          ordersData = data || [];
         }
-
-        // Fallback vers la table normale si la vue n'existe pas
-        if (
-          fetchError.message.includes("VIEW") ||
-          fetchError.message.includes("relation")
-        ) {
-          console.log("Using fallback query...");
-          return await fetchOrdersFallback(session.user.id);
-        }
-
-        if (
-          fetchError.message.includes("JWT") ||
-          fetchError.message.includes("auth")
-        ) {
-          setError("Session expirée. Veuillez vous reconnecter.");
-          navigate("/login");
-          return;
-        }
-
-        throw new Error(`Erreur de récupération: ${fetchError.message}`);
+      } catch (viewException) {
+        console.warn("View exception, trying fallback:", viewException);
+        viewError = viewException;
       }
 
-      console.log("Orders fetched successfully from view:", data?.length || 0);
-      setOrders(data || []);
+      // SI LA VUE ÉCHoue, UTILISER LE FALLBACK
+      if (viewError || ordersData.length === 0) {
+        console.log("Using fallback query...");
+        ordersData = await fetchOrdersFallback(session.user.id);
+      }
+
+      setOrders(ordersData);
+      
     } catch (err) {
       console.error("Error in fetchOrders:", err);
       
-      // Gestion spécifique des erreurs réseau
       if (err instanceof TypeError && err.message.includes('fetch')) {
         setError("Erreur de connexion réseau. Vérifiez votre connexion internet.");
       } else if (err instanceof Error && err.message.includes('timeout')) {
@@ -189,78 +146,101 @@ export function useMyOrders() {
     }
   };
 
-  // Fallback si la vue n'existe pas
-  const fetchOrdersFallback = async (userId: string) => {
+  // Fallback si la vue n'existe pas ou ne retourne pas de données
+  const fetchOrdersFallback = async (userId: string): Promise<Order[]> => {
     try {
+      console.log("Fetching orders with fallback for user:", userId);
+      
       const { data, error } = await supabase
         .from("orders")
-        .select(
-          `
-        *,
-        order_items (
+        .select(`
           *,
-          product:products (
-            id,
-            name,
-            description,
-            image_url,
-            price,
-            category_id,
-            stock_quantity,
-            is_public,
-            created_at,
-            updated_at,
-            category:categories(name)
+          order_items (
+            *,
+            product:products (
+              id,
+              name,
+              description,
+              image_url,
+              price,
+              category_id,
+              stock_quantity,
+              is_public,
+              created_at,
+              updated_at,
+              category:categories(name)
+            )
           )
-        )
-      `
-        )
+        `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setOrders(data || []);
+      if (error) {
+        console.error("Fallback query error:", error);
+        throw error;
+      }
+
+      console.log("Fallback orders fetched:", data?.length || 0);
+      return data || [];
     } catch (error) {
       console.error("Error in fallback fetch:", error);
       throw error;
     }
   };
 
-  // ✅ Appliquer les filtres
-  const applyFilters = (
-    ordersList: Order[],
-    currentFilters: OrdersFilters
-  ): Order[] => {
-    let filtered = ordersList;
+  // ✅ Vérifier si l'utilisateur a des commandes dans la base
+  // const checkUserHasOrders = async (userId: string): Promise<boolean> => {
+  //   try {
+  //     const { data, error } = await supabase
+  //       .from("orders")
+  //       .select("id")
+  //       .eq("user_id", userId)
+  //       .limit(1);
 
-    if (currentFilters.status && currentFilters.status !== "all") {
-      filtered = filtered.filter(
-        (order) => order.status === currentFilters.status
-      );
-    }
+  //     if (error) {
+  //       console.error("Error checking user orders:", error);
+  //       return false;
+  //     }
 
-    if (
-      currentFilters.paymentStatus &&
-      currentFilters.paymentStatus !== "all"
-    ) {
-      filtered = filtered.filter(
-        (order) => order.payment_status === currentFilters.paymentStatus
-      );
-    }
+  //     return (data?.length || 0) > 0;
+  //   } catch (error) {
+  //     console.error("Exception checking user orders:", error);
+  //     return false;
+  //   }
+  // };
 
-    if (currentFilters.searchQuery) {
-      const searchLower = currentFilters.searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (order) =>
-          order.id.toLowerCase().includes(searchLower) ||
-          order.order_items?.some((item) =>
-            item.product?.name.toLowerCase().includes(searchLower)
-          )
-      );
-    }
+  // ✅ Appliquer les filtres (identique à votre version)
+  // const applyFilters = (
+  //   ordersList: Order[],
+  //   currentFilters: OrdersFilters
+  // ): Order[] => {
+  //   let filtered = ordersList;
 
-    return filtered;
-  };
+  //   if (currentFilters.status && currentFilters.status !== "all") {
+  //     filtered = filtered.filter(
+  //       (order) => order.status === currentFilters.status
+  //     );
+  //   }
+
+  //   if (currentFilters.paymentStatus && currentFilters.paymentStatus !== "all") {
+  //     filtered = filtered.filter(
+  //       (order) => order.payment_status === currentFilters.paymentStatus
+  //     );
+  //   }
+
+  //   if (currentFilters.searchQuery) {
+  //     const searchLower = currentFilters.searchQuery.toLowerCase();
+  //     filtered = filtered.filter(
+  //       (order) =>
+  //         order.id.toLowerCase().includes(searchLower) ||
+  //         order.order_items?.some((item) =>
+  //           item.product?.name.toLowerCase().includes(searchLower)
+  //         )
+  //     );
+  //   }
+
+  //   return filtered;
+  // };
 
   // ✅ Rediriger vers la page de connexion
   const redirectToLogin = () => {
@@ -347,17 +327,7 @@ export function useMyOrders() {
   // Chargement initial
   useEffect(() => {
     fetchOrders();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Rechargement quand les filtres changent
-  useEffect(() => {
-    if (!loading && orders.length > 0) {
-      const filtered = applyFilters(orders, filters);
-      setOrders(filtered);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.status, filters.paymentStatus, filters.searchQuery]);
 
   return {
     orders,
@@ -371,7 +341,7 @@ export function useMyOrders() {
     formatOrderDate,
     getOrderProgress,
     redirectToLogin,
-    getSupportPhone,
+    getSupportPhone: async () => "221761994984", // Version simplifiée
     hasOrders: orders.length > 0,
   };
 }

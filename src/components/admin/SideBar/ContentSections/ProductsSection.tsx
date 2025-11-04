@@ -77,14 +77,14 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
 
   // Logs de débogage
   useEffect(() => {
-    console.log("🔍 ProductsSection - État actuel:");
-    console.log("📦 Produits:", products);
-    console.log("📊 Stats:", stats);
-    console.log("⚠️ Alertes:", lowStockAlerts);
-    console.log("🔄 Loading produits:", productsLoading);
-    console.log("🔄 Loading stats:", statsLoading);
-    console.log("❌ Erreur produits:", productsError);
-    console.log("❌ Erreur stats:", statsError);
+    // console.log("🔍 ProductsSection - État actuel:");
+    // console.log("📦 Produits:", products);
+    // console.log("📊 Stats:", stats);
+    // console.log("⚠️ Alertes:", lowStockAlerts);
+    // console.log("🔄 Loading produits:", productsLoading);
+    // console.log("🔄 Loading stats:", statsLoading);
+    // console.log("❌ Erreur produits:", productsError);
+    // console.log("❌ Erreur stats:", statsError);
   }, [
     products,
     stats,

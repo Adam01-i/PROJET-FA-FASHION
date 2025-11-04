@@ -26,7 +26,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
     e.preventDefault();
     e.stopPropagation();
 
-    console.log("🛒 Ajout au panier:", product.name);
+    // console.log("🛒 Ajout au panier:", product.name);
     onAddToCart(product);
 
     // Afficher le toast de confirmation
@@ -58,7 +58,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
         });
         success("Partagé !", "Le produit a été partagé avec succès");
       } catch (error) {
-        console.log("Erreur de partage:", error);
+        // console.log("Erreur de partage:", error);
       }
     } else {
       // Fallback pour les navigateurs qui ne supportent pas l'API Web Share

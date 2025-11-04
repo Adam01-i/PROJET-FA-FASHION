@@ -4,13 +4,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, 
   Home, 
-  LogOut, 
+  // LogOut, 
   Search, 
   // Menu, 
   // X,
-  User,
-  Heart,
+  // Heart,
   Package,
+  Heart,
   // User
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
@@ -102,9 +102,9 @@ export default function Navbar() {
     }
   };
 
-  const handleSignOutClick = () => {
-    setShowLogoutModal(true);
-  };
+  // const handleSignOutClick = () => {
+  //   setShowLogoutModal(true);
+  // };
 
   const handleSearch = (e: FormEvent) => {
   e.preventDefault();
@@ -224,7 +224,7 @@ export default function Navbar() {
               </Link>
 
               {/* Commandes */}
-              <Link 
+              {/* <Link 
                 to="/orders" 
                 className={`p-2 rounded-lg transition-all duration-300 ${
                   isScrolled 
@@ -235,8 +235,8 @@ export default function Navbar() {
                 title="Mes commandes"
               >
                 <Package className="h-5 w-5" />
-              </Link>
-
+              </Link> */}
+  
               {/* Panier */}
               <Link 
                 to="/cart" 
@@ -257,7 +257,7 @@ export default function Navbar() {
               </Link>
 
               {/* Utilisateur */}
-              {user ? (
+              {/* {user ? (
                 <div className="flex items-center space-x-2">
                   <div className={`hidden sm:flex items-center space-x-2 px-3 py-1 rounded-full ${
                     isScrolled ? 'bg-pink-100' : 'bg-white bg-opacity-20'
@@ -294,7 +294,7 @@ export default function Navbar() {
                 >
                   <User className="h-5 w-5" />
                 </Link>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -379,7 +379,7 @@ export default function Navbar() {
                 <span>Favoris</span>
               </Link>
               
-              <Link
+              {/* <Link
                 to="/orders"
                 className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
                   isScrolled
@@ -390,10 +390,10 @@ export default function Navbar() {
               >
                 <Package className="h-5 w-5" />
                 <span>Commandes</span>
-              </Link>
+              </Link> */}
               
               {/* Lien de connexion/déconnexion */}
-              {user ? (
+              {/* {user ? (
                 <button
                   onClick={handleSignOutClick}
                   className={`flex items-center justify-center space-x-2 py-3 rounded-xl font-medium transition-colors ${
@@ -418,7 +418,7 @@ export default function Navbar() {
                   <User className="h-5 w-5" />
                   <span>Connexion</span>
                 </Link>
-              )}
+              )} */}
             </div>
           </div>
         </div>

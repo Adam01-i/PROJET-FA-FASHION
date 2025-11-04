@@ -22,7 +22,7 @@ export default function ClientHome() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('🔄 Début du chargement des données...');
+        // console.log('🔄 Début du chargement des données...');
         
         // Récupérer les produits
         const { data: productsData, error: productsError } = await supabase
