@@ -237,19 +237,19 @@ export default function RevenueSection() {
           <table className="w-full min-w-[400px] sm:min-w-[500px]">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-2 px-2 text-xs font-medium text-gray-600 whitespace-nowrap">
+                <th className="text-left py-2 px-2 text-sm sm:text-base lg:text-lg font-medium text-gray-600 whitespace-nowrap">
                   Produit
                 </th>
-                <th className="text-left py-2 px-1 text-xs font-medium text-gray-600 whitespace-nowrap hidden xs:table-cell">
+                <th className="text-left py-2 px-1 text-sm sm:text-base lg:text-lg font-medium text-gray-600 whitespace-nowrap hidden xs:table-cell">
                   Catégorie
                 </th>
-                <th className="text-left py-2 px-1 text-xs font-medium text-gray-600 whitespace-nowrap">
+                <th className="text-left py-2 px-1 text-sm sm:text-base lg:text-lg font-medium text-gray-600 whitespace-nowrap">
                   Qté
                 </th>
-                <th className="text-left py-2 px-1 text-xs font-medium text-gray-600 whitespace-nowrap">
+                <th className="text-left py-2 px-1 text-sm sm:text-base lg:text-lg font-medium text-gray-600 whitespace-nowrap">
                   Revenue
                 </th>
-                <th className="text-left py-2 px-1 text-xs font-medium text-gray-600 whitespace-nowrap">
+                <th className="text-left py-2 px-1 text-sm sm:text-base lg:text-lgfont-medium text-gray-600 whitespace-nowrap">
                   Stock
                 </th>
               </tr>
@@ -269,7 +269,7 @@ export default function RevenueSection() {
                           className="w-5 h-5 xs:w-6 xs:h-6 rounded object-cover flex-shrink-0"
                         />
                       )}
-                      <span className="font-medium text-gray-900 text-xs truncate max-w-[80px] xs:max-w-[120px] sm:max-w-none">
+                      <span className="font-medium text-gray-900 text-sm sm:text-basetruncate max-w-[80px] xs:max-w-[120px] sm:max-w-none">
                         {sale.product_name}
                       </span>
                     </div>
