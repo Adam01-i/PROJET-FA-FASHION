@@ -364,7 +364,6 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
           />
         )}
         {/* Liste simple des produits */}
-        // Par :
         <div className="bg-white rounded-lg border">
           <div className="p-4 border-b">
             <h2 className="text-lg font-semibold">Liste des produits</h2>
