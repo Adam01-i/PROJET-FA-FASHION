@@ -61,6 +61,9 @@ export default function ClientCart() {
     const deliveryFee = selectedLocation.delivery_fee;
     const totalWithDelivery = subtotal + deliveryFee;
 
+    // Dans ClientCart.tsx - AJOUTER cette fonction
+
+
     // Utiliser RPC pour créer la commande guest
     const { data, error } = await supabase.rpc("create_guest_order", {
       customer_phone: cleanPhone,
@@ -158,51 +161,81 @@ export default function ClientCart() {
   };
 
   const handleWhatsAppOrder = async () => {
-    try {
-      setIsProcessing(true);
+  try {
+    setIsProcessing(true);
 
-      if (!showCustomerForm) {
-        setShowCustomerForm(true);
-        return;
-      }
-
-      // Validation
-      if (!phoneNumber.trim()) {
-        throw new Error("Le numéro de téléphone est obligatoire");
-      }
-
-      if (!selectedLocation) {
-        throw new Error("Veuillez sélectionner un lieu de livraison");
-      }
-
-      // Créer la commande dans la base de données
-      const order = await createOrder();
-
-      // Générer le message WhatsApp
-      const message = generateWhatsAppMessage(order.id);
-      const whatsappNumber = "221782906487"; // Votre numéro WhatsApp business
-      const encodedMessage = encodeURIComponent(message);
-
-      // Ouvrir WhatsApp
-      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-      window.open(whatsappUrl, "_blank");
-
-      // Vider le panier après envoi
-      clearCart();
-      setShowCustomerForm(false);
-      setPhoneNumber("");
-      setCustomerName("");
-    } catch (error) {
-      console.error("Error creating order:", error);
-      alert(
-        error instanceof Error
-          ? error.message
-          : "Une erreur est survenue lors de la création de la commande."
-      );
-    } finally {
-      setIsProcessing(false);
+    if (!showCustomerForm) {
+      setShowCustomerForm(true);
+      return;
     }
-  };
+
+    // Validation
+    if (!phoneNumber.trim()) {
+      throw new Error("Le numéro de téléphone est obligatoire");
+    }
+
+    if (!selectedLocation) {
+      throw new Error("Veuillez sélectionner un lieu de livraison");
+    }
+
+    // Créer la commande dans la base de données
+    const order = await createOrder();
+
+        const fetchWhatsAppNumber = async (): Promise<string> => {
+      try {
+        const { data, error } = await supabase
+          .from("store_settings")
+          .select("phone")
+          .single();
+
+        if (error) {
+          console.error("Error fetching WhatsApp number:", error);
+          return "221782906487"; // Fallback au numéro par défaut
+        }
+
+        // Nettoyer le numéro (supprimer les espaces, +, etc.)
+        const cleanNumber = data?.phone?.replace(/\D/g, "") || "221782906487";
+
+        // S'assurer que le numéro a le format international sans le +
+        return cleanNumber.startsWith("221")
+          ? cleanNumber
+          : `221${cleanNumber}`;
+      } catch (error) {
+        console.error("Exception fetching WhatsApp number:", error);
+        return "221782906487"; // Fallback au numéro par défaut
+      }
+    };
+    
+    // RÉCUPÉRER LE NUMÉRO WHATSAPP DEPUIS store_settings
+    const whatsappNumber = await fetchWhatsAppNumber();
+    console.log("Using WhatsApp number from store_settings:", whatsappNumber);
+
+    // Générer le message WhatsApp
+    const message = generateWhatsAppMessage(order.id);
+    const encodedMessage = encodeURIComponent(message);
+
+    // Ouvrir WhatsApp
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+    window.open(whatsappUrl, "_blank");
+
+    // Vider le panier après envoi
+    clearCart();
+    setShowCustomerForm(false);
+    setPhoneNumber("");
+    setCustomerName("");
+  } catch (error) {
+    console.error("Error creating order:", error);
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Une erreur est survenue lors de la création de la commande."
+    );
+  } finally {
+    setIsProcessing(false);
+  }
+};
+  
+
   const handlePhoneChange = (value: string) => {
     const cleaned = value.replace(/\D/g, "");
     let formatted = cleaned;
