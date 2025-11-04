@@ -338,17 +338,23 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
     <>
       {/* Interface temporaire simplifiée pour debug */}
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Produits ({products.length})</h1>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">
+              Produits ({products.length})
+            </h1>
+            <p className="text-sm text-gray-600 mt-1 sm:hidden">
+              {filteredProducts.length} produit(s) filtré(s)
+            </p>
+          </div>
           <button
             onClick={handleAddClick}
-            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg"
+            className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg w-full sm:w-auto"
           >
             <Plus className="h-5 w-5 mr-2" />
-            Ajouter
+            <span className="whitespace-nowrap">Ajouter un produit</span>
           </button>
         </div>
-
         {/* Statistiques de debug */}
         {stats && (
           <StatsDashboard
@@ -357,11 +363,14 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
             loading={statsLoading}
           />
         )}
-
         {/* Liste simple des produits */}
+        // Par :
         <div className="bg-white rounded-lg border">
           <div className="p-4 border-b">
             <h2 className="text-lg font-semibold">Liste des produits</h2>
+            <p className="text-sm text-gray-600 hidden sm:block mt-1">
+              {filteredProducts.length} produit(s) trouvé(s)
+            </p>
           </div>
           <div className="divide-y">
             {filteredProducts.map((product) => {
@@ -377,7 +386,7 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
               return (
                 <div
                   key={product.id}
-                  className={`p-4 flex items-center justify-between transition-all duration-200 ${
+                  className={`p-4 transition-all duration-200 ${
                     stockStatus.bgColor
                   } border-l-4 ${
                     stockStatus.textColor === "text-red-700"
@@ -389,51 +398,59 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
                       : "border-l-green-500"
                   }`}
                 >
-                  <div className="flex items-center space-x-4">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="h-12 w-12 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <Package className="h-6 w-6 text-gray-400" />
+                  {/* Version mobile */}
+                  <div className="sm:hidden space-y-3">
+                    <div className="flex items-start space-x-3">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <Package className="h-6 w-6 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm truncate">
+                          {product.name}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {formatXOF(product.price)}
+                        </p>
                       </div>
-                    )}
-                    <div>
-                      <h3 className="font-medium">{product.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {formatXOF(product.price)}
-                      </p>
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm ${stockStatus.color}`}
-                    >
-                      {stockStatus.text} ({product.stock_quantity})
-                    </span>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm flex items-center ${publicationStatus.color}`}
-                    >
-                      <PublicationIcon className="h-4 w-4 mr-1" />
-                      {publicationStatus.text}
-                    </span>
-                    <div className="flex space-x-2">
+
+                    <div className="flex flex-wrap gap-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${stockStatus.color}`}
+                      >
+                        {stockStatus.text} ({product.stock_quantity})
+                      </span>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs flex items-center ${publicationStatus.color}`}
+                      >
+                        <PublicationIcon className="h-3 w-3 mr-1" />
+                        {publicationStatus.text}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between pt-2">
                       <button
                         onClick={() => handleEditClick(product)}
                         className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                        title="Modifier"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleRestockClick(product)}
                         className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                        title="Réapprovisionner"
                       >
                         <RefreshCw className="h-4 w-4" />
                       </button>
-                      {/* BOUTON POUR MODIFIER LA VISIBILITÉ */}
                       <button
                         onClick={() => openConfirmationModal(product)}
                         className={`p-2 rounded-lg transition-colors ${
@@ -453,16 +470,95 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
                       </button>
                     </div>
                   </div>
+
+                  {/* Version desktop */}
+                  <div className="hidden sm:flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="h-12 w-12 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                          <Package className="h-6 w-6 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <h3 className="font-medium truncate">{product.name}</h3>
+                        <p className="text-sm text-gray-600">
+                          {formatXOF(product.price)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm ${stockStatus.color}`}
+                      >
+                        {stockStatus.text} ({product.stock_quantity})
+                      </span>
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm flex items-center ${publicationStatus.color}`}
+                      >
+                        <PublicationIcon className="h-4 w-4 mr-1" />
+                        {publicationStatus.text}
+                      </span>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEditClick(product)}
+                          className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                          title="Modifier"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRestockClick(product)}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                          title="Réapprovisionner"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => openConfirmationModal(product)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            product.is_public
+                              ? "text-orange-600 hover:bg-orange-50"
+                              : "text-green-600 hover:bg-green-50"
+                          }`}
+                          title={
+                            product.is_public
+                              ? "Rendre INACTIF"
+                              : "Rendre ACTIF"
+                          }
+                        >
+                          {product.is_public ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
-
         {filteredProducts.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-600">Aucun produit trouvé</p>
+          <div className="text-center py-8 sm:py-12">
+            <Package className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-gray-300 mb-3 sm:mb-4" />
+            <p className="text-gray-600 text-sm sm:text-base">
+              {searchTerm
+                ? "Aucun produit ne correspond à votre recherche"
+                : "Aucun produit trouvé"}
+            </p>
+            {searchTerm && (
+              <p className="text-gray-500 text-xs sm:text-sm mt-2">
+                Essayez de modifier vos termes de recherche
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -497,7 +593,7 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
         />
       )}
 
-       {/* MODAL DE CONFIRMATION */}
+      {/* MODAL DE CONFIRMATION */}
       <ConfirmationModal
         isOpen={isConfirmationModalOpen}
         onClose={closeConfirmationModal}
@@ -513,24 +609,26 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
               <p>
                 Êtes-vous sûr de vouloir{" "}
                 <strong>
-                  {productToToggle.is_public ? "rendre INACTIF" : "rendre ACTIF"}
+                  {productToToggle.is_public
+                    ? "rendre INACTIF"
+                    : "rendre ACTIF"}
                 </strong>{" "}
                 le produit <strong>"{productToToggle.name}"</strong> ?
               </p>
-              
+
               {productToToggle.is_public && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                   <p className="text-yellow-800 text-sm">
-                    ⚠️ <strong>Attention :</strong> En rendant ce produit INACTIF, 
-                    le stock sera automatiquement mis à zéro.
+                    ⚠️ <strong>Attention :</strong> En rendant ce produit
+                    INACTIF, le stock sera automatiquement mis à zéro.
                   </p>
                 </div>
               )}
-              
+
               {!productToToggle.is_public && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-blue-800 text-sm">
-                    ✅ Le produit sera ACTIF par les clients et vous pourrez 
+                    ✅ Le produit sera ACTIF par les clients et vous pourrez
                     gérer son stock normalement.
                   </p>
                 </div>
@@ -538,7 +636,9 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
             </div>
           )
         }
-        confirmText={productToToggle?.is_public ? "Rendre INACTIF" : "Rendre ACTIF"}
+        confirmText={
+          productToToggle?.is_public ? "Rendre INACTIF" : "Rendre ACTIF"
+        }
         cancelText="Annuler"
         variant={productToToggle?.is_public ? "danger" : "primary"}
       />

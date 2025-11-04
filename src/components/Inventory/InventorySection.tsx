@@ -5,16 +5,16 @@ import {
   TrendingUp,
   // DollarSign,
   Search,
-  Plus,
-  Minus,
-  Eye,
+  // Plus,
+  // Minus,
+  // Eye,
   Grid3X3,
   List,
   Download,
   RefreshCw,
 } from "lucide-react";
 import {
-  Product,
+  // Product,
   InventoryStats,
   // LowStockAlert,
   InventoryFilters,
@@ -31,7 +31,6 @@ export default function InventorySection() {
     loading: productsLoading,
     error: productsError,
     refetch: refetchProducts,
-    updateProductStock,
   } = useProducts();
   const { categories, loading: categoriesLoading } = useCategories();
   const { productSales, loading: salesLoading } = useProductSales();
@@ -45,9 +44,8 @@ export default function InventorySection() {
     sortOrder: "asc",
   });
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [, setSelectedProduct] = useState<Product | null>(null);
-  const [isUpdatingStock, setIsUpdatingStock] = useState(false);
-  const { success, error: toastError } = useToastContext();
+  const [isUpdatingStock,] = useState(false);
+  const { success, } = useToastContext();
   const [selectedMonth, setSelectedMonth] = useState<string>("all"); // "all" pour tous les mois par défaut
 
   const loading =
@@ -236,24 +234,24 @@ export default function InventorySection() {
     return "En stock";
   };
 
-  const handleUpdateStock = async (productId: string, newQuantity: number) => {
-    if (newQuantity < 0) return;
+  // const handleUpdateStock = async (productId: string, newQuantity: number) => {
+  //   if (newQuantity < 0) return;
 
-    setIsUpdatingStock(true);
-    try {
-      await updateProductStock(productId, newQuantity);
-      success("Stock mis à jour", "La quantité a été mise à jour avec succès");
-    } catch (err: unknown) {
-      console.error("Erreur mise à jour stock:", err);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Erreur lors de la mise à jour du stock";
-      toastError("Erreur", errorMessage);
-    } finally {
-      setIsUpdatingStock(false);
-    }
-  };
+  //   setIsUpdatingStock(true);
+  //   try {
+  //     await updateProductStock(productId, newQuantity);
+  //     success("Stock mis à jour", "La quantité a été mise à jour avec succès");
+  //   } catch (err: unknown) {
+  //     console.error("Erreur mise à jour stock:", err);
+  //     const errorMessage =
+  //       err instanceof Error
+  //         ? err.message
+  //         : "Erreur lors de la mise à jour du stock";
+  //     toastError("Erreur", errorMessage);
+  //   } finally {
+  //     setIsUpdatingStock(false);
+  //   }
+  // };
 
   // Fonction pour générer les 12 derniers mois + option "Tous les mois"
   const getLast12Months = () => {
@@ -1051,9 +1049,9 @@ export default function InventorySection() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Revenu
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {/* <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
-                  </th>
+                  </th> */}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -1116,7 +1114,7 @@ export default function InventorySection() {
                       <td className="px-4 py-3 text-sm font-medium text-green-600">
                         {formatXOF(productSale?.total_revenue || 0)}
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium">
+                      {/* <td className="px-4 py-3 text-sm font-medium">
                         <div className="flex items-center space-x-1 sm:space-x-2">
                           <button
                             onClick={() =>
@@ -1154,7 +1152,7 @@ export default function InventorySection() {
                             <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                           </button>
                         </div>
-                      </td>
+                      </td> */}
                     </tr>
                   );
                 })}

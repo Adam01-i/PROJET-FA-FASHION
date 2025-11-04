@@ -1,4 +1,4 @@
-// hooks/useRevenueStats.ts
+// hooks/useRevenueStats.ts - VOTRE VERSION ACTUELLE EST DÉJÀ BONNE
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -13,7 +13,7 @@ export interface RevenueStats {
   dailyTrend: { date: string; revenue: number; orders: number }[];
 }
 
-export function useRevenueStats(timeRange: "day" | "week" | "month" | "year") {
+export function useRevenueStats(timeRange: "day" | "week" | "month" | "year" = "month") {
   const [stats, setStats] = useState<RevenueStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export function useRevenueStats(timeRange: "day" | "week" | "month" | "year") {
       setLoading(true);
       setError(null);
 
-      // 1. Récupérer les statistiques globales
+      // Ces appels utiliseront AUTOMATIQUEMENT les vues corrigées
       const { data: revenueData, error: revenueError } = await supabase
         .from("revenue_stats")
         .select("*")
@@ -31,24 +31,21 @@ export function useRevenueStats(timeRange: "day" | "week" | "month" | "year") {
 
       if (revenueError) throw revenueError;
 
-      // 2. Récupérer le revenue par catégorie
       const { data: categoryData, error: categoryError } = await supabase
         .from("revenue_by_category")
         .select("*");
 
       if (categoryError) throw categoryError;
 
-      // 3. Récupérer l'évolution quotidienne (adaptée à la période)
       let dailyTrendQuery = supabase
         .from("daily_revenue_trend")
         .select("*")
         .order("date", { ascending: false });
 
-      // Filtrer selon la période
       const startDate = new Date();
       switch (timeRange) {
         case "day":
-          startDate.setDate(startDate.getDate() - 7); // Afficher 7 jours pour le contexte
+          startDate.setDate(startDate.getDate() - 7);
           break;
         case "week":
           startDate.setDate(startDate.getDate() - 30);
@@ -62,19 +59,17 @@ export function useRevenueStats(timeRange: "day" | "week" | "month" | "year") {
       }
 
       dailyTrendQuery = dailyTrendQuery.gte("date", startDate.toISOString().split('T')[0]);
-
       const { data: trendData, error: trendError } = await dailyTrendQuery;
 
       if (trendError) throw trendError;
 
-      // Calculer la croissance du revenue
+      // Ces calculs utiliseront les données déjà filtrées par les vues SQL
       const currentRevenue = revenueData.current_month_revenue || 0;
       const previousRevenue = revenueData.previous_month_revenue || 0;
       const revenueGrowth = previousRevenue > 0 
         ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 
         : currentRevenue > 0 ? 100 : 0;
 
-      // Formater les données de tendance sans variable inutilisée
       const formattedTrend = (trendData || [])
         .map(day => ({
           date: new Date(day.date).toLocaleDateString("fr-FR", {
@@ -83,10 +78,10 @@ export function useRevenueStats(timeRange: "day" | "week" | "month" | "year") {
           }),
           revenue: day.daily_revenue || 0,
           orders: day.daily_orders || 0,
-          sortDate: new Date(day.date) // Variable temporaire pour le tri
+          sortDate: new Date(day.date)
         }))
         .sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime())
-        .map(({...rest }) => rest); // Supprimer sortDate après tri
+        .map(({ sortDate, ...rest }) => rest);
 
       const revenueStats: RevenueStats = {
         totalRevenue: revenueData.total_revenue || 0,
@@ -114,7 +109,6 @@ export function useRevenueStats(timeRange: "day" | "week" | "month" | "year") {
 
   useEffect(() => {
     fetchRevenueStats();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange]);
 
   return { stats, loading, error, refetch: fetchRevenueStats };
