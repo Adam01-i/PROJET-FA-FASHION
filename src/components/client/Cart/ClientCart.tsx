@@ -180,7 +180,7 @@ export default function ClientCart() {
 
       // Générer le message WhatsApp
       const message = generateWhatsAppMessage(order.id);
-      const whatsappNumber = "221761994984"; // Votre numéro WhatsApp business
+      const whatsappNumber = "221782906487"; // Votre numéro WhatsApp business
       const encodedMessage = encodeURIComponent(message);
 
       // Ouvrir WhatsApp
