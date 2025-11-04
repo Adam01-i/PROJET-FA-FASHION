@@ -44,6 +44,48 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
   const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>();
   const [currentUserName, setCurrentUserName] = useState<string>();
+  // Fonction pour vérifier si une commande peut être modifiée
+
+  const canModifyOrderStatus = (order: Order, userRole?: string): boolean => {
+    // Une fois confirmée, annulée ou livrée, plus de modifications
+    if (["confirmed", "cancelled", "delivered"].includes(order.status)) {
+      return false;
+    }
+
+    // Vérifier les permissions selon le rôle
+    const allowedRoles = ["admin", "assistant", "livreur"];
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      return false;
+    }
+
+    return true;
+  };
+
+  // Fonction pour obtenir les statuts disponibles selon le statut actuel
+  const getAvailableStatusOptions = (
+    currentStatus?: Order["status"]
+  ): Order["status"][] => {
+    const options: Order["status"][] = [];
+
+    switch (currentStatus) {
+      case "pending":
+        options.push("pending", "confirmed", "cancelled");
+        break;
+      case "confirmed":
+        options.push("confirmed", "delivered", "cancelled");
+        break;
+      case "delivered":
+        options.push("delivered");
+        break;
+      case "cancelled":
+        options.push("cancelled");
+        break;
+      default:
+        options.push("pending", "confirmed", "cancelled");
+    }
+
+    return options;
+  };
 
   // Récupérer le rôle au montage du composant
   useEffect(() => {
@@ -161,6 +203,21 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
     status: Order["status"]
   ): Promise<void> => {
     try {
+      // Récupérer la commande actuelle
+      const currentOrder = orders.find((o) => o.id === orderId);
+
+      // Vérifier si la commande peut être modifiée
+      if (
+        currentOrder &&
+        !canModifyOrderStatus(currentOrder, currentUserRole)
+      ) {
+        toastError(
+          "Modification impossible",
+          "Cette commande ne peut plus être modifiée car elle est déjà confirmée, annulée ou livrée"
+        );
+        return;
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -172,14 +229,14 @@ export default function OrdersSection({ searchTerm }: OrdersSectionProps) {
         .eq("id", user?.id)
         .single();
 
-      const currentUserRole = profile?.role;
+      const fetchedUserRole = profile?.role;
       const userName = profile?.full_name;
 
       await updateOrderStatus(
         orderId,
         status,
         currentUserId,
-        currentUserRole,
+        fetchedUserRole,
         userName
       );
       success("Statut mis à jour", "Le statut de la commande a été mis à jour");
@@ -631,7 +688,10 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
           onSendWhatsApp={handleSendWhatsApp}
           isUploadingProof={isUploadingProof}
           currentUserRole={currentUserRole}
-          onOrderUpdate={refetch} // Utiliser directement refetch
+          currentUserId={currentUserId}
+          onOrderUpdate={refetch}
+          canModifyOrderStatus={canModifyOrderStatus}
+          getAvailableStatusOptions={getAvailableStatusOptions}
         />
       )}
 

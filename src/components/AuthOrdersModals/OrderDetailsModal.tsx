@@ -33,6 +33,8 @@ interface OrderDetailsModalProps {
   currentUserId?: string;
   currentUserRole?: string;
   onOrderUpdate?: () => void;
+  canModifyOrderStatus?: (order: Order, userRole?: string) => boolean;
+  getAvailableStatusOptions?: (currentStatus?: Order["status"]) => Order["status"][];
 }
 
 function formatXOF(amount: number): string {
@@ -49,6 +51,8 @@ export default function OrderDetailsModal({
   isUploadingProof,
   currentUserRole,
   onOrderUpdate,
+  canModifyOrderStatus,
+  getAvailableStatusOptions,
 }: OrderDetailsModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -247,45 +251,10 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
     return order.status !== "cancelled" && order.payment_status !== "refunded";
   };
 
-  // Vérifie si l'utilisateur peut modifier le statut de la commande
-const canModifyOrderStatus = (order: Order, userRole?: string): boolean => {
-  if (order.status === "cancelled") return false;
-  if (order.status === "delivered") return false; // Une fois livrée, plus de modifications
-  
-  // Vérifier les permissions selon le rôle
-  const allowedRoles = ["admin", "assistant", "livreur"];
-  if (!userRole || !allowedRoles.includes(userRole)) {
-    return false;
-  }
-
-  // Tous les rôles autorisés peuvent modifier le statut
-  return true;
-};
-
   const canConfirmOrder = (order: Order): boolean => {
     return order.payment_status === "paid" && !!order.payment_proof;
   };
 
-const getAvailableStatusOptions = (userRole?: string, currentStatus?: Order["status"]): Order["status"][] => {
-  const options: Order["status"][] = [];
-
-  // Rôles autorisés à modifier les statuts
-  const allowedRoles = ["admin", "assistant", "livreur"];
-  
-  if (!userRole || !allowedRoles.includes(userRole)) {
-    return options;
-  }
-
-  // Tous les rôles autorisés peuvent voir ces statuts
-  options.push("pending", "confirmed", "cancelled");
-  
-  // Permettre "delivered" seulement si la commande est confirmée ou en cours
-  if (currentStatus === "confirmed" || currentStatus === "shipped") {
-    options.push("delivered");
-  }
-
-  return options;
-};
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -522,29 +491,30 @@ const getAvailableStatusOptions = (userRole?: string, currentStatus?: Order["sta
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Statut de la commande
                 </label>
-                <select
-                  value={currentOrder.status}
-                  onChange={(e) =>
-                    handleStatusChange(
-                      currentOrder.id,
-                      e.target.value as Order["status"]
-                    )
-                  }
-                  disabled={
-                    !canModifyOrderStatus(currentOrder, currentUserRole)
-                  }
-                  className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm ${
-                    !canModifyOrderStatus(currentOrder, currentUserRole)
-                      ? "bg-gray-100 cursor-not-allowed"
-                      : ""
-                  }`}
-                >
-                  {getAvailableStatusOptions(currentUserRole).map((status) => (
-                    <option key={status} value={status}>
-                      {getStatusDisplayName(status)}
-                    </option>
-                  ))}
-                </select>
+               <select
+    value={currentOrder.status}
+    onChange={(e) =>
+      handleStatusChange(
+        currentOrder.id,
+        e.target.value as Order["status"]
+      )
+    }
+    disabled={
+      !canModifyOrderStatus?.(currentOrder, currentUserRole) // ⚠️ Utilisez la fonction du parent
+    }
+    className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm ${
+      !canModifyOrderStatus?.(currentOrder, currentUserRole)
+        ? "bg-gray-100 cursor-not-allowed"
+        : ""
+    }`}
+  >
+    {(getAvailableStatusOptions?.(currentOrder.status) || []).map((status) => ( // ⚠️ Utilisez la fonction du parent
+      <option key={status} value={status}>
+        {getStatusDisplayName(status)}
+      </option>
+    ))}
+  </select>
+
                 {currentOrder.status === "pending" &&
                   currentUserRole === "admin" &&
                   !canConfirmOrder(currentOrder) && (

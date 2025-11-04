@@ -1,4 +1,4 @@
-// hooks/useInventoryStats.ts (version avec logging)
+// hooks/useInventoryStats.ts (version corrigée)
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { InventoryStats, LowStockAlert } from "../models";
@@ -12,16 +12,12 @@ export function useInventoryStats() {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      console.log("🔄 Début du chargement des stats...");
 
       // Récupérer les statistiques d'inventaire
       const { data: statsData, error: statsError } = await supabase
         .from("inventory_stats")
         .select("*")
         .single();
-
-      console.log("📊 Données stats brutes:", statsData);
-      console.log("❌ Erreur stats:", statsError);
 
       if (statsError) throw statsError;
 
@@ -30,9 +26,6 @@ export function useInventoryStats() {
         .from("low_stock_alerts")
         .select("*")
         .order("current_stock", { ascending: true });
-
-      console.log("⚠️ Alertes stock brutes:", alertsData);
-      console.log("❌ Erreur alertes:", alertsError);
 
       if (alertsError) throw alertsError;
 
@@ -62,9 +55,6 @@ export function useInventoryStats() {
         })
       );
 
-      console.log("✅ Stats formatées:", formattedStats);
-      console.log("✅ Alertes formatées:", formattedAlerts);
-
       setStats(formattedStats);
       setLowStockAlerts(formattedAlerts);
       setError(null);
@@ -73,14 +63,15 @@ export function useInventoryStats() {
       setError(err instanceof Error ? err.message : "Erreur de chargement");
     } finally {
       setLoading(false);
-      console.log("🏁 Chargement terminé, loading:", false);
     }
   };
 
   useEffect(() => {
     fetchStats();
 
-    // Abonnement aux changements
+    // DÉSACTIVÉ pour éviter les conflits avec useProducts
+    // Si vraiment nécessaire, utilisez un debounce
+    /*
     const subscription = supabase
       .channel("inventory_stats_changes")
       .on(
@@ -91,8 +82,7 @@ export function useInventoryStats() {
           table: "products",
         },
         () => {
-          console.log("🔄 Changement produit détecté, rechargement...");
-          fetchStats();
+          setTimeout(() => fetchStats(), 1000); // Debounce de 1s
         }
       )
       .subscribe();
@@ -100,6 +90,7 @@ export function useInventoryStats() {
     return () => {
       subscription.unsubscribe();
     };
+    */
   }, []);
 
   return {

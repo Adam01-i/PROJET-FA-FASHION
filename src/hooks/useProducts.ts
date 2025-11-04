@@ -1,5 +1,5 @@
 // hooks/useProducts.ts (version corrigée)
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Product, StockMovement } from '../models';
 
@@ -7,6 +7,7 @@ export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isSubscribed = useRef(false);
 
   const fetchProducts = async () => {
     try {
@@ -21,7 +22,6 @@ export function useProducts() {
 
       if (error) throw error;
       
-      // Formater les produits avec le nom de catégorie
       const formattedProducts: Product[] = (data || []).map(product => ({
         ...product,
         category_name: product.category?.name
@@ -35,10 +35,60 @@ export function useProducts() {
     }
   };
 
-  // AJOUTER CETTE FONCTION MANQUANTE
+  // NOUVELLE FONCTION POUR VENDRE UN PRODUIT
+  const sellProduct = async (productId: string, quantity: number, reason?: string, createdBy?: string) => {
+    try {
+      // Récupérer le produit actuel
+      const { data: currentProduct } = await supabase
+        .from('products')
+        .select('stock_quantity, sales_count')
+        .eq('id', productId)
+        .single();
+
+      if (!currentProduct) throw new Error('Produit non trouvé');
+
+      const newStock = currentProduct.stock_quantity - quantity;
+      const newSalesCount = (currentProduct.sales_count || 0) + quantity;
+
+      if (newStock < 0) {
+        throw new Error('Stock insuffisant');
+      }
+
+      // Mettre à jour le produit en UNE SEULE opération
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ 
+          stock_quantity: newStock,
+          sales_count: newSalesCount, // ← METTRE À JOUR LE COMPTEUR DE VENTES
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', productId);
+
+      if (updateError) throw updateError;
+
+      // Enregistrer le mouvement de vente
+      const { error: movementError } = await supabase
+        .from('stock_movements')
+        .insert({
+          product_id: productId,
+          movement_type: 'out',
+          quantity: quantity,
+          previous_stock: currentProduct.stock_quantity,
+          new_stock: newStock,
+          reason: reason || 'Vente',
+          created_by: createdBy
+        });
+
+      if (movementError) throw movementError;
+
+      return true;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Erreur lors de la vente');
+    }
+  };
+
   const updateProductStock = async (productId: string, newStock: number, reason?: string, createdBy?: string) => {
     try {
-      // Récupérer le stock actuel
       const { data: currentProduct } = await supabase
         .from('products')
         .select('stock_quantity')
@@ -50,7 +100,6 @@ export function useProducts() {
       const previousStock = currentProduct.stock_quantity;
       const quantityChange = newStock - previousStock;
 
-      // Mettre à jour le produit
       const { error: updateError } = await supabase
         .from('products')
         .update({ 
@@ -61,7 +110,6 @@ export function useProducts() {
 
       if (updateError) throw updateError;
 
-      // Enregistrer le mouvement de stock
       if (quantityChange !== 0) {
         const movementType = quantityChange > 0 ? 'in' : 'out';
         
@@ -108,7 +156,6 @@ export function useProducts() {
 
       if (updateError) throw updateError;
 
-      // Enregistrer le mouvement de réapprovisionnement
       const { error: movementError } = await supabase
         .from('stock_movements')
         .insert({
@@ -161,7 +208,6 @@ export function useProducts() {
 
       if (error) throw error;
 
-      // Formater le produit avec le nom de catégorie
       const formattedProduct: Product = {
         ...data,
         category_name: data.category?.name
@@ -207,7 +253,9 @@ export function useProducts() {
   useEffect(() => {
     fetchProducts();
 
-    // Abonnement en temps réel aux produits
+    if (isSubscribed.current) return;
+    isSubscribed.current = true;
+
     const subscription = supabase
       .channel('products_changes')
       .on(
@@ -218,6 +266,8 @@ export function useProducts() {
           table: 'products'
         },
         (payload) => {
+          console.log('🔄 Changement produit détecté:', payload.eventType);
+          
           if (payload.eventType === 'INSERT') {
             const newProduct = payload.new as Product;
             setProducts(prev => [newProduct, ...prev]);
@@ -234,6 +284,7 @@ export function useProducts() {
 
     return () => {
       subscription.unsubscribe();
+      isSubscribed.current = false;
     };
   }, []);
 
@@ -242,7 +293,7 @@ export function useProducts() {
     loading,
     error,
     refetch: fetchProducts,
-    // AJOUTER updateProductStock ici
+    sellProduct,
     updateProductStock,
     restockProduct,
     getStockMovements,
