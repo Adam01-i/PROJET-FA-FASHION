@@ -345,8 +345,9 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
   const pendingOrders = orders.filter((o) => o.status === "pending").length;
   const paidOrders = orders.filter((o) => o.payment_status === "paid").length;
   const delivereds = orders.filter((o) => o.status === "delivered").length;
+  // Ligne ~250 - Modifiez le calcul du revenu total
   const totalRevenue = orders
-    .filter((o) => o.payment_status === "paid")
+    .filter((o) => o.status === "confirmed" && o.payment_status === "paid")
     .reduce((sum, order) => sum + order.total_amount, 0);
 
   return (

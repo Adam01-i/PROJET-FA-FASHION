@@ -1,4 +1,4 @@
-// hooks/useProductSales.ts (version corrigée)
+// hooks/useProductSales.ts
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { ProductSale } from '../models';
@@ -9,7 +9,7 @@ export function useProductSales() {
 
   const fetchProductSales = async () => {
     try {
-      // Utiliser la vue qui ne compte que les commandes CONFIRMÉES
+      // Utiliser la vue product_sales_summary qui a déjà les filtres corrects
       const { data, error } = await supabase
         .from("product_sales_summary")
         .select("*")
@@ -38,7 +38,7 @@ export function useProductSales() {
   useEffect(() => {
     fetchProductSales();
 
-    // Abonnement aux changements pour mettre à jour en temps réel
+    // Souscription aux changements des commandes
     const subscription = supabase
       .channel('product_sales_changes')
       .on(
@@ -49,7 +49,6 @@ export function useProductSales() {
           table: 'orders'
         },
         () => {
-          // Recharger les données quand une commande change
           fetchProductSales();
         }
       )

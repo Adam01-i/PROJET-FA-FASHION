@@ -1,4 +1,4 @@
-// hooks/useInventoryStats.ts (version corrigée)
+// hooks/useInventoryStats.ts
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { InventoryStats, LowStockAlert } from "../models";
@@ -13,7 +13,7 @@ export function useInventoryStats() {
     try {
       setLoading(true);
 
-      // Récupérer les statistiques d'inventaire
+      // Récupérer les statistiques d'inventaire depuis la vue mise à jour
       const { data: statsData, error: statsError } = await supabase
         .from("inventory_stats")
         .select("*")
@@ -69,9 +69,7 @@ export function useInventoryStats() {
   useEffect(() => {
     fetchStats();
 
-    // DÉSACTIVÉ pour éviter les conflits avec useProducts
-    // Si vraiment nécessaire, utilisez un debounce
-    /*
+    // Souscription aux changements des commandes pour mettre à jour les stats
     const subscription = supabase
       .channel("inventory_stats_changes")
       .on(
@@ -79,10 +77,11 @@ export function useInventoryStats() {
         {
           event: "*",
           schema: "public",
-          table: "products",
+          table: "orders",
         },
         () => {
-          setTimeout(() => fetchStats(), 1000); // Debounce de 1s
+          // Debounce pour éviter les appels multiples
+          setTimeout(() => fetchStats(), 1000);
         }
       )
       .subscribe();
@@ -90,7 +89,6 @@ export function useInventoryStats() {
     return () => {
       subscription.unsubscribe();
     };
-    */
   }, []);
 
   return {

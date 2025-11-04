@@ -659,6 +659,7 @@ export default function InventorySection() {
             <p className="text-2xl font-bold text-green-600">
               {stats.currentMonthSales}
             </p>
+            
           </div>
           <div className="p-2 bg-green-100 rounded-lg">
             <TrendingUp className="h-6 w-6 text-green-600" />
