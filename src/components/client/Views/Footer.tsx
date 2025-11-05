@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Github, Linkedin, ExternalLink, Code } from 'lucide-react';
 import { useSiteSettings } from '../../../hooks/useSiteSettings';
 
 export default function Footer() {
@@ -16,15 +16,14 @@ export default function Footer() {
     );
   }
 
-  const { store, socialLinks } = settings;
+  const { store, socialLinks, developerInfo } = settings;
 
   return (
     <footer className="bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* À propos */}
-          <div>
+          <div className="lg:col-span-2">
             <h3 className="text-white text-lg font-semibold mb-4">À propos</h3>
             <p className="text-sm leading-relaxed">
               {store.description || "Fa-Fashion est votre destination en ligne pour des produits de qualité. Découvrez notre large sélection d'articles et profitez d'une expérience d'achat unique."}
@@ -72,46 +71,169 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Réseaux sociaux */}
+          {/* Section Développeur */}
           <div>
-            <h3 className="text-white text-lg font-semibold mb-4">Suivez-nous</h3>
-            <div className="flex space-x-4">
-              {[
-                { 
-                  icon: Facebook, 
-                  href: socialLinks.facebook_url || "#", 
-                  enabled: !!socialLinks.facebook_url 
-                },
-                { 
-                  icon: Twitter, 
-                  href: socialLinks.twitter_url || "#", 
-                  enabled: !!socialLinks.twitter_url 
-                },
-                { 
-                  icon: Instagram, 
-                  href: socialLinks.instagram_url || "#", 
-                  enabled: !!socialLinks.instagram_url 
-                },
-              ].map((social, idx) => (
-                social.enabled && (
-                  <a
-                    key={idx}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-indigo-400 transition-colors duration-200"
-                  >
-                    <social.icon className="h-6 w-6" />
-                  </a>
-                )
-              ))}
+            <h3 className="text-white text-lg font-semibold mb-4 flex items-center">
+              <Code className="h-5 w-5 mr-2" />
+              Développeur
+            </h3>
+            
+            {/* Nom du développeur */}
+            {developerInfo.developer_name && (
+              <div className="mb-3">
+                <p className="text-sm font-medium text-white">
+                  {developerInfo.developer_name}
+                </p>
+                {developerInfo.description && (
+                  <p className="text-xs text-gray-200 mt-1">
+                    {developerInfo.description}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Réseaux sociaux du développeur */}
+            <div className="flex flex-wrap gap-3">
+              {developerInfo.github_url && (
+                <a
+                  href={developerInfo.github_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-300 hover:text-white transition-colors duration-200"
+                  title="GitHub"
+                >
+                  <Github className="h-5 w-5" />
+                </a>
+              )}
+              
+              {developerInfo.linkedin_url && (
+                <a
+                  href={developerInfo.linkedin_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-300 hover:text-white transition-colors duration-200"
+                  title="LinkedIn"
+                >
+                  <Linkedin className="h-5 w-5" />
+                </a>
+              )}
+              
+              {developerInfo.instagram_url && (
+                <a
+                  href={developerInfo.instagram_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-300 hover:text-white transition-colors duration-200"
+                  title="Instagram"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+              )}
+              
+              {developerInfo.portfolio_url && (
+                <a
+                  href={developerInfo.portfolio_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-300 hover:text-white transition-colors duration-200"
+                  title="Portfolio"
+                >
+                  <ExternalLink className="h-5 w-5" />
+                </a>
+              )}
+              
             </div>
+
+            {/* Contact du développeur */}
+            {(developerInfo.developer_email || developerInfo.developer_phone) && (
+              <div className="mt-3 space-y-1">
+                {developerInfo.developer_email && (
+                  <div className="flex items-center text-xs">
+                    <Mail className="h-3 w-3 mr-1" />
+                    <a 
+                      href={`mailto:${developerInfo.developer_email}`}
+                      className="hover:text-white transition-colors"
+                    >
+                      {developerInfo.developer_email}
+                    </a>
+                  </div>
+                )}
+                {developerInfo.developer_phone && (
+                  <div className="flex items-center text-xs">
+                    <Phone className="h-3 w-3 mr-1" />
+                    <a 
+                      href={`tel:${developerInfo.developer_phone}`}
+                      className="hover:text-white transition-colors"
+                    >
+                      {developerInfo.developer_phone}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Bas de page */}
-        <div className="mt-12 pt-8 border-t border-gray-800 text-center text-sm opacity-70">
-          <p>&copy; {new Date().getFullYear()} {store.name || "Fa-Fashion"}. Tous droits réservés.</p>
+        {/* Réseaux sociaux de la boutique - Section déplacée ici */}
+        <div className="mt-8 pt-6 border-t border-gray-800">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div className="mb-4 md:mb-0">
+              <h4 className="text-white text-sm font-semibold mb-2">Suivez-nous</h4>
+              <div className="flex space-x-4">
+                {[
+                  { 
+                    icon: Facebook, 
+                    href: socialLinks.facebook_url || "#", 
+                    enabled: !!socialLinks.facebook_url,
+                    title: "Facebook"
+                  },
+                  { 
+                    icon: Twitter, 
+                    href: socialLinks.twitter_url || "#", 
+                    enabled: !!socialLinks.twitter_url,
+                    title: "Twitter"
+                  },
+                  { 
+                    icon: Instagram, 
+                    href: socialLinks.instagram_url || "#", 
+                    enabled: !!socialLinks.instagram_url,
+                    title: "Instagram"
+                  },
+                  { 
+                    icon: Linkedin, 
+                    href: socialLinks.linkedin_url || "#", 
+                    enabled: !!socialLinks.linkedin_url,
+                    title: "LinkedIn"
+                  },
+                ].map((social, idx) => (
+                  social.enabled && (
+                    <a
+                      key={idx}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-300 hover:text-white transition-colors duration-200"
+                      title={social.title}
+                    >
+                      <social.icon className="h-5 w-5" />
+                    </a>
+                  )
+                ))}
+              </div>
+            </div>
+            
+            {/* Bas de page */}
+            <div className="text-center md:text-right">
+              <p className="text-sm opacity-70">
+                &copy; {new Date().getFullYear()} {store.name || "Fa-Fashion"}. Tous droits réservés.
+              </p>
+              {developerInfo.developer_name && (
+                <p className="text-xs opacity-50 mt-1">
+                  Développé par {developerInfo.developer_name}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </footer>
