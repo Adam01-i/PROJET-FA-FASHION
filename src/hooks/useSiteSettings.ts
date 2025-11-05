@@ -151,99 +151,113 @@ export function useSiteSettings() {
     }
   }, []);
 
-  const saveSettings = async (
-    newSettings: SiteSettingsData
-  ): Promise<boolean> => {
-    try {
-      setError(null);
+// hooks/useSiteSettings.ts
+const saveSettings = async (newSettings: SiteSettingsData): Promise<boolean> => {
+  try {
+    setError(null);
 
-      // Séparer les nouveaux lieux des existants
-      const newLocations = newSettings.deliveryLocations.filter(loc => loc.id.startsWith('temp-'));
-      const existingLocations = newSettings.deliveryLocations.filter(loc => !loc.id.startsWith('temp-'));
+    console.log('Données à sauvegarder:', {
+      store: newSettings.store,
+      socialLinks: newSettings.socialLinks,
+      paymentMethods: newSettings.paymentMethods,
+      shipping: newSettings.shipping,
+      invoiceSettings: newSettings.invoiceSettings,
+      deliveryLocations: newSettings.deliveryLocations
+    });
+    
+    // Séparer les nouveaux lieux des existants
+    const newLocations = newSettings.deliveryLocations.filter(loc => !loc.id || loc.id.startsWith('temp-'));
+    const existingLocations = newSettings.deliveryLocations.filter(loc => loc.id && !loc.id.startsWith('temp-'));
 
-      // Mise à jour des lieux existants
-      const updatePromises = existingLocations.map(location =>
-        supabase
-          .from("delivery_locations")
-          .update({
+    // Mise à jour des lieux existants
+    const updatePromises = existingLocations.map(location => {
+      // N'envoyer que les champs nécessaires, pas l'objet complet
+      return supabase
+        .from("delivery_locations")
+        .update({
+          name: location.name,
+          delivery_fee: location.delivery_fee,
+          is_active: location.is_active,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", location.id);
+    });
+
+    // Insertion des nouveaux lieux (sans l'ID temporaire)
+    const insertPromises = newLocations.map(location => {
+      return supabase
+        .from("delivery_locations")
+        .insert([
+          {
             name: location.name,
             delivery_fee: location.delivery_fee,
             is_active: location.is_active,
+            created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          })
-          .eq("id", location.id)
-      );
+          }
+        ]);
+    });
 
-      // Insertion des nouveaux lieux
-      const insertPromises = newLocations.map(location =>
-        supabase
-          .from("delivery_locations")
-          .insert([
-            {
-              name: location.name,
-              delivery_fee: location.delivery_fee,
-              is_active: location.is_active,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            }
-          ])
-      );
-
-      // Exécuter les opérations sur delivery_locations
-      const deliveryResults = await Promise.all([...updatePromises, ...insertPromises]);
-      const deliveryHasError = deliveryResults.some(result => result.error);
-      if (deliveryHasError) {
-        throw new Error("Erreur lors de la sauvegarde des lieux de livraison");
-      }
-
-      // Sauvegarder dans les autres tables
-      const otherPromises = [
-        supabase.from("store_settings").upsert({
-          ...newSettings.store,
-          updated_at: new Date().toISOString(),
-        }),
-
-        supabase.from("social_links").upsert({
-          ...newSettings.socialLinks,
-          updated_at: new Date().toISOString(),
-        }),
-
-        supabase.from("payment_methods").upsert({
-          ...newSettings.paymentMethods,
-          updated_at: new Date().toISOString(),
-        }),
-
-        supabase.from("shipping_settings").upsert({
-          ...newSettings.shipping,
-          updated_at: new Date().toISOString(),
-        }),
-
-        supabase.from("invoice_settings").upsert({
-          ...newSettings.invoiceSettings,
-          updated_at: new Date().toISOString(),
-        }),
-      ];
-
-      const otherResults = await Promise.all(otherPromises);
-
-      // Vérifier s'il y a des erreurs dans les autres tables
-      const otherHasError = otherResults.some((result) => result.error);
-      if (otherHasError) {
-        throw new Error("Erreur lors de la sauvegarde des paramètres");
-      }
-
-      await fetchSettings();
-      return true;
-    } catch (err) {
-      console.error("Error saving settings:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Erreur lors de la sauvegarde des paramètres"
-      );
-      return false;
+    // Exécuter toutes les opérations sur delivery_locations
+    const deliveryOperations = [...updatePromises, ...insertPromises];
+    const deliveryResults = await Promise.all(deliveryOperations);
+    
+    // Vérifier les erreurs
+    const deliveryErrors = deliveryResults.filter(result => result.error);
+    if (deliveryErrors.length > 0) {
+      console.error('Delivery location errors:', deliveryErrors);
+      throw new Error("Erreur lors de la sauvegarde des lieux de livraison");
     }
-  };
+
+    // Sauvegarder dans les autres tables
+    const otherPromises = [
+      supabase.from("store_settings").upsert({
+        ...newSettings.store,
+        updated_at: new Date().toISOString(),
+      }),
+
+      supabase.from("social_links").upsert({
+        ...newSettings.socialLinks,
+        updated_at: new Date().toISOString(),
+      }),
+
+      supabase.from("payment_methods").upsert({
+        ...newSettings.paymentMethods,
+        updated_at: new Date().toISOString(),
+      }),
+
+      supabase.from("shipping_settings").upsert({
+        ...newSettings.shipping,
+        updated_at: new Date().toISOString(),
+      }),
+
+      supabase.from("invoice_settings").upsert({
+        ...newSettings.invoiceSettings,
+        updated_at: new Date().toISOString(),
+      }),
+    ];
+
+    const otherResults = await Promise.all(otherPromises);
+    const otherErrors = otherResults.filter(result => result.error);
+
+    if (otherErrors.length > 0) {
+      console.error('Other settings errors:', otherErrors);
+      throw new Error("Erreur lors de la sauvegarde des paramètres");
+    }
+
+    // Recharger les données pour avoir les vrais IDs des nouveaux lieux
+    await fetchSettings();
+    return true;
+  } catch (err) {
+    console.error('Error saving settings:', err);
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Erreur lors de la sauvegarde des paramètres"
+    );
+    return false;
+  }
+};
 
   const toggleDeliveryLocation = async (
     id: string,

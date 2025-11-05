@@ -168,6 +168,7 @@ export default function SettingsSection() {
   // AJOUTER après handleInvoiceSettingsChange :
 
   // Handler pour ajouter un lieu de livraison
+  // Dans votre composant SettingsSection
   const handleAddDeliveryLocation = (): void => {
     if (!newLocation.name.trim()) {
       toastError("Erreur", "Le nom du lieu est obligatoire");
@@ -175,7 +176,7 @@ export default function SettingsSection() {
     }
 
     const location: DeliveryLocation = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // ID temporaire plus unique
       name: newLocation.name.trim(),
       delivery_fee: newLocation.delivery_fee,
       is_active: true,
