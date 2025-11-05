@@ -248,3 +248,18 @@ export interface StockMovement {
   created_at: string;
   updated_at: string;
 }
+
+export interface DeveloperInfo {
+  id: string;
+  developer_name: string;
+  developer_email?: string;
+  developer_phone?: string;
+  developer_website?: string;
+  github_url?: string;
+  linkedin_url?: string;
+  instagram_url?: string;
+  portfolio_url?: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}

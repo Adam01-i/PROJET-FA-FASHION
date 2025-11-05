@@ -115,7 +115,7 @@ export default function SideBar({
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-100">
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4">
-            <p className="text-sm font-medium text-indigo-900">E-Shop Admin</p>
+            <p className="text-sm font-medium text-indigo-900">Fa-Fashion Admin</p>
             <p className="text-xs text-indigo-600 mt-1">Version 1.0.0</p>
           </div>
         </div>

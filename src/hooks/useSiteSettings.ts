@@ -7,6 +7,7 @@ import {
   ShippingSettings,
   InvoiceSettings,
   DeliveryLocation,
+  DeveloperInfo,
 } from "../models";
 
 // Interface pour combiner tous les paramètres (à définir localement)
@@ -16,7 +17,8 @@ interface SiteSettingsData {
   paymentMethods: PaymentMethods;
   shipping: ShippingSettings;
   invoiceSettings: InvoiceSettings;
-  deliveryLocations: DeliveryLocation[]; // Ajouter cette ligne
+  deliveryLocations: DeliveryLocation[];
+  developerInfo: DeveloperInfo; // Nouveau
 }
 
 // Valeurs par défaut vides - les données viendront de la base de données
@@ -90,6 +92,21 @@ const defaultInvoiceSettings: InvoiceSettings = {
   updated_at: "",
 };
 
+const defaultDeveloperInfo: DeveloperInfo = {
+  id: "",
+  developer_name: "",
+  developer_email: "",
+  developer_phone: "",
+  developer_website: "",
+  github_url: "",
+  linkedin_url: "",
+  instagram_url: "",
+  portfolio_url: "",
+  description: "",
+  created_at: "",
+  updated_at: "",
+};
+
 const defaultSettings: SiteSettingsData = {
   store: defaultStoreSettings,
   socialLinks: defaultSocialLinks,
@@ -97,6 +114,7 @@ const defaultSettings: SiteSettingsData = {
   shipping: defaultShippingSettings,
   invoiceSettings: defaultInvoiceSettings,
   deliveryLocations: [],
+  developerInfo: defaultDeveloperInfo,
 };
 
 const defaultDeliveryLocations: DeliveryLocation[] = [];
@@ -119,6 +137,7 @@ export function useSiteSettings() {
         { data: shippingData },
         { data: invoiceData },
         { data: deliveryLocationsData },
+        { data: developerData }, // Nouveau
       ] = await Promise.all([
         supabase.from("store_settings").select("*").limit(1).single(),
         supabase.from("social_links").select("*").limit(1).single(),
@@ -126,6 +145,7 @@ export function useSiteSettings() {
         supabase.from("shipping_settings").select("*").limit(1).single(),
         supabase.from("invoice_settings").select("*").limit(1).single(),
         supabase.from("delivery_locations").select("*"),
+        supabase.from("developer_info").select("*").limit(1).single(), // Nouveau
       ]);
 
       // Combiner toutes les données réelles de la base de données
@@ -136,6 +156,7 @@ export function useSiteSettings() {
         shipping: shippingData || defaultShippingSettings,
         invoiceSettings: invoiceData || defaultInvoiceSettings,
         deliveryLocations: deliveryLocationsData || defaultDeliveryLocations,
+        developerInfo: developerData || defaultDeveloperInfo,
       };
 
       setSettings(combinedSettings);
@@ -151,113 +172,119 @@ export function useSiteSettings() {
     }
   }, []);
 
-// hooks/useSiteSettings.ts
-const saveSettings = async (newSettings: SiteSettingsData): Promise<boolean> => {
-  try {
-    setError(null);
+  const saveSettings = async (
+    newSettings: SiteSettingsData
+  ): Promise<boolean> => {
+    try {
+      setError(null);
 
-    console.log('Données à sauvegarder:', {
-      store: newSettings.store,
-      socialLinks: newSettings.socialLinks,
-      paymentMethods: newSettings.paymentMethods,
-      shipping: newSettings.shipping,
-      invoiceSettings: newSettings.invoiceSettings,
-      deliveryLocations: newSettings.deliveryLocations
-    });
-    
-    // Séparer les nouveaux lieux des existants
-    const newLocations = newSettings.deliveryLocations.filter(loc => !loc.id || loc.id.startsWith('temp-'));
-    const existingLocations = newSettings.deliveryLocations.filter(loc => loc.id && !loc.id.startsWith('temp-'));
+      console.log("Données à sauvegarder:", newSettings);
 
-    // Mise à jour des lieux existants
-    const updatePromises = existingLocations.map(location => {
-      // N'envoyer que les champs nécessaires, pas l'objet complet
-      return supabase
-        .from("delivery_locations")
-        .update({
-          name: location.name,
-          delivery_fee: location.delivery_fee,
-          is_active: location.is_active,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", location.id);
-    });
+      // 1. Gestion des delivery_locations
+      const newLocations = newSettings.deliveryLocations.filter(
+        (loc) => !loc.id || loc.id.startsWith("temp-")
+      );
+      const existingLocations = newSettings.deliveryLocations.filter(
+        (loc) => loc.id && !loc.id.startsWith("temp-")
+      );
 
-    // Insertion des nouveaux lieux (sans l'ID temporaire)
-    const insertPromises = newLocations.map(location => {
-      return supabase
-        .from("delivery_locations")
-        .insert([
+      const updatePromises = existingLocations.map((location) =>
+        supabase
+          .from("delivery_locations")
+          .update({
+            name: location.name,
+            delivery_fee: location.delivery_fee,
+            is_active: location.is_active,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", location.id)
+      );
+
+      const insertPromises = newLocations.map((location) =>
+        supabase.from("delivery_locations").insert([
           {
             name: location.name,
             delivery_fee: location.delivery_fee,
             is_active: location.is_active,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }
-        ]);
-    });
+          },
+        ])
+      );
 
-    // Exécuter toutes les opérations sur delivery_locations
-    const deliveryOperations = [...updatePromises, ...insertPromises];
-    const deliveryResults = await Promise.all(deliveryOperations);
-    
-    // Vérifier les erreurs
-    const deliveryErrors = deliveryResults.filter(result => result.error);
-    if (deliveryErrors.length > 0) {
-      console.error('Delivery location errors:', deliveryErrors);
-      throw new Error("Erreur lors de la sauvegarde des lieux de livraison");
+      const deliveryResults = await Promise.all([
+        ...updatePromises,
+        ...insertPromises,
+      ]);
+      const deliveryErrors = deliveryResults.filter((result) => result.error);
+      if (deliveryErrors.length > 0) {
+        console.error("Delivery location errors:", deliveryErrors);
+        throw new Error("Erreur lors de la sauvegarde des lieux de livraison");
+      }
+
+      // 2. Fonction pour nettoyer les données avant upsert
+      const cleanDataForUpsert = <
+        T extends { created_at?: string; updated_at?: string; id?: string }
+      >(
+        data: T
+      ): any => {
+        const { created_at, updated_at, id, ...rest } = data;
+
+        // Ne pas inclure l'ID s'il est vide
+        const cleanedData: any = { ...rest };
+        if (id && id !== "") {
+          cleanedData.id = id;
+        }
+
+        // Toujours utiliser la date actuelle pour updated_at
+        cleanedData.updated_at = new Date().toISOString();
+
+        // Ne pas inclure created_at s'il est vide, laisser la base de données gérer la valeur par défaut
+        if (created_at && created_at !== "") {
+          cleanedData.created_at = created_at;
+        }
+
+        return cleanedData;
+      };
+
+      // 3. Sauvegarde des autres tables avec données nettoyées
+      const otherPromises = [
+        supabase
+          .from("store_settings")
+          .upsert(cleanDataForUpsert(newSettings.store)),
+        supabase
+          .from("social_links")
+          .upsert(cleanDataForUpsert(newSettings.socialLinks)),
+        supabase
+          .from("payment_methods")
+          .upsert(cleanDataForUpsert(newSettings.paymentMethods)),
+        supabase
+          .from("shipping_settings")
+          .upsert(cleanDataForUpsert(newSettings.shipping)),
+        supabase
+          .from("invoice_settings")
+          .upsert(cleanDataForUpsert(newSettings.invoiceSettings)),
+      ];
+
+      const otherResults = await Promise.all(otherPromises);
+      const otherErrors = otherResults.filter((result) => result.error);
+
+      if (otherErrors.length > 0) {
+        console.error("Other settings errors:", otherErrors);
+        throw new Error("Erreur lors de la sauvegarde des paramètres");
+      }
+
+      // Recharger les données
+      await fetchSettings();
+      return true;
+    } catch (err) {
+      console.error("Error saving settings:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Erreur lors de la sauvegarde des paramètres"
+      );
+      return false;
     }
-
-    // Sauvegarder dans les autres tables
-    const otherPromises = [
-      supabase.from("store_settings").upsert({
-        ...newSettings.store,
-        updated_at: new Date().toISOString(),
-      }),
-
-      supabase.from("social_links").upsert({
-        ...newSettings.socialLinks,
-        updated_at: new Date().toISOString(),
-      }),
-
-      supabase.from("payment_methods").upsert({
-        ...newSettings.paymentMethods,
-        updated_at: new Date().toISOString(),
-      }),
-
-      supabase.from("shipping_settings").upsert({
-        ...newSettings.shipping,
-        updated_at: new Date().toISOString(),
-      }),
-
-      supabase.from("invoice_settings").upsert({
-        ...newSettings.invoiceSettings,
-        updated_at: new Date().toISOString(),
-      }),
-    ];
-
-    const otherResults = await Promise.all(otherPromises);
-    const otherErrors = otherResults.filter(result => result.error);
-
-    if (otherErrors.length > 0) {
-      console.error('Other settings errors:', otherErrors);
-      throw new Error("Erreur lors de la sauvegarde des paramètres");
-    }
-
-    // Recharger les données pour avoir les vrais IDs des nouveaux lieux
-    await fetchSettings();
-    return true;
-  } catch (err) {
-    console.error('Error saving settings:', err);
-    setError(
-      err instanceof Error
-        ? err.message
-        : "Erreur lors de la sauvegarde des paramètres"
-    );
-    return false;
-  }
-};
+  };
 
   const toggleDeliveryLocation = async (
     id: string,
@@ -352,6 +379,5 @@ export function useParsedSettings() {
     settings,
     loading,
     error,
-    
   };
 }
