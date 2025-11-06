@@ -9,6 +9,7 @@ interface DeliveryOrderDetailsModalProps {
   canMarkAsDelivered: boolean;
 }
 
+
 export default function DeliveryOrderDetailsModal({
   order,
   onClose,

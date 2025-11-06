@@ -57,6 +57,7 @@ export default function DeliveryOrdersSection({
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
       if (user) {
         setCurrentUserId(user.id);
         const { data: profile } = await supabase
@@ -64,7 +65,13 @@ export default function DeliveryOrdersSection({
           .select("full_name, role")
           .eq("id", user.id)
           .single();
-        setCurrentUserName(profile?.full_name);
+
+        console.log("👤 User profile:", profile);
+
+        // Utiliser le full_name s'il existe, sinon utiliser l'email ou un nom par défaut
+        setCurrentUserName(
+          profile?.full_name || user.email?.split("@")[0] || "Livreur"
+        );
         setCurrentUserRole(profile?.role);
       }
     };
@@ -178,17 +185,35 @@ export default function DeliveryOrdersSection({
   });
 
   const handleMarkAsDelivered = async (): Promise<void> => {
-    if (!orderToMark || !currentUserId || !currentUserName) return;
+    console.log("🔍 handleMarkAsDelivered called", {
+      orderToMark,
+      currentUserId,
+      currentUserName,
+    });
+
+    if (!orderToMark || !currentUserId || !currentUserName) {
+      console.log("❌ Missing required data:", {
+        hasOrder: !!orderToMark,
+        hasUserId: !!currentUserId,
+        hasUserName: !!currentUserName,
+      });
+      return;
+    }
 
     setIsConfirming(true);
     try {
+      console.log("🔄 Calling updateOrderStatus...");
+
       await updateOrderStatus(
         orderToMark.id,
         "delivered",
         currentUserId,
-        "livreur",
+        "livreur", // ou currentUserRole si disponible
         currentUserName
       );
+
+      console.log("✅ Order marked as delivered successfully");
+
       success(
         "Commande livrée",
         "La commande a été marquée comme livrée avec succès"
@@ -196,7 +221,7 @@ export default function DeliveryOrdersSection({
       setOrderToMark(null);
       refetch();
     } catch (error) {
-      console.error("Error marking order as delivered:", error);
+      console.error("❌ Error marking order as delivered:", error);
       toastError(
         "Erreur",
         error instanceof Error

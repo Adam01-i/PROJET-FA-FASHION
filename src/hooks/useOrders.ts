@@ -35,178 +35,117 @@ export function useOrders() {
     }
   };
 
-  const updateOrderStatus = async (
-    orderId: string,
-    status: Order["status"],
-    processedBy?: string,
-    currentUserRole?: string,
-    userName?: string
-  ): Promise<boolean> => {
-    try {
-      // Récupérer la commande complète avec ses items
-      const { data: order } = await supabase
-        .from("orders")
-        .select(
-          `
+const updateOrderStatus = async (
+  orderId: string,
+  status: Order["status"],
+  processedBy?: string,
+  currentUserRole?: string,
+  userName?: string
+): Promise<boolean> => {
+  try {
+    console.log('🔍 updateOrderStatus called', { orderId, status, processedBy, currentUserRole, userName });
+
+    // Récupérer la commande complète avec ses items
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select(
+        `
         *,
         order_items (
           *,
           product:products (*)
         )
       `
-        )
-        .eq("id", orderId)
-        .single();
+      )
+      .eq("id", orderId)
+      .single();
 
-      if (!order) {
-        throw new Error("Commande non trouvée");
-      }
+    console.log('📦 Order fetched:', { order, fetchError });
 
-      // Vérifications de sécurité selon le rôle
-      const allowedRoles = ["admin", "assistant", "livreur"];
-      if (!currentUserRole || !allowedRoles.includes(currentUserRole)) {
-        throw new Error(
-          "Seuls les administrateurs, assistants et livreurs peuvent modifier le statut des commandes"
-        );
-      }
-
-      // Vérifications spécifiques pour la livraison
-      if (status === "delivered") {
-        // Vérifier que l'utilisateur a le droit de marquer comme livré
-        const allowedRolesForDelivery = ["livreur", "admin", "assistant"];
-        if (
-          !currentUserRole ||
-          !allowedRolesForDelivery.includes(currentUserRole)
-        ) {
-          throw new Error(
-            "Seuls les livreurs, assistants et administrateurs peuvent marquer les commandes comme livrées"
-          );
-        }
-
-        // Vérifier que la commande est dans un état qui peut être livré
-        if (order.status !== "confirmed" && order.status !== "shipped") {
-          throw new Error(
-            `Impossible de livrer une commande avec le statut "${order.status}"`
-          );
-        }
-
-        if (order.payment_status !== "paid") {
-          throw new Error("Impossible de livrer une commande non payée");
-        }
-      }
-
-      // Dans updateOrderStatus - La logique actuelle est correcte
-      if (status === "confirmed") {
-        for (const item of order.order_items) {
-          if (item.product.stock_quantity < item.quantity) {
-            throw new Error(
-              `Stock insuffisant pour ${item.product.name}. Stock disponible: ${item.product.stock_quantity}, Quantité demandée: ${item.quantity}`
-            );
-          }
-        }
-
-        // Diminuer le stock seulement lors de la confirmation
-        for (const item of order.order_items) {
-          const newStock = item.product.stock_quantity - item.quantity;
-
-          const { error: stockError } = await supabase
-            .from("products")
-            .update({ stock_quantity: newStock })
-            .eq("id", item.product_id);
-
-          if (stockError) throw stockError;
-        }
-      }
-
-      // Vérifier la confirmation de commande
-      if (status === "confirmed" && order.payment_status !== "paid") {
-        throw new Error(
-          "⚠️ Pour confirmer cette commande, le paiement doit être marqué comme Payé"
-        );
-      }
-
-      // Mettre à jour les stocks si la commande est confirmée
-      if (status === "confirmed") {
-        for (const item of order.order_items) {
-          const newStock = item.product.stock_quantity - item.quantity;
-
-          const { error: stockError } = await supabase
-            .from("products")
-            .update({ stock_quantity: newStock })
-            .eq("id", item.product_id);
-
-          if (stockError) {
-            console.error("Error updating product stock:", stockError);
-            throw new Error(
-              `Erreur de mise à jour du stock pour ${item.product.name}`
-            );
-          }
-        }
-      }
-
-      // Restaurer les stocks si la commande est annulée
-      if (status === "cancelled" && order.status === "confirmed") {
-        for (const item of order.order_items) {
-          const newStock = item.product.stock_quantity + item.quantity;
-
-          const { error: stockError } = await supabase
-            .from("products")
-            .update({ stock_quantity: newStock })
-            .eq("id", item.product_id);
-
-          if (stockError) {
-            console.error("Error restoring product stock:", stockError);
-            throw new Error(
-              `Erreur de restauration du stock pour ${item.product.name}`
-            );
-          }
-        }
-      }
-
-      const updates: {
-        status: Order["status"];
-        updated_at: string;
-        payment_status?: Order["payment_status"];
-        delivered_by?: string;
-        delivered_by_name?: string;
-        delivered_at?: string;
-        processed_by?: string;
-      } = {
-        status,
-        updated_at: new Date().toISOString(),
-      };
-
-      // Gestion spécifique pour l'annulation
-      if (status === "cancelled") {
-        updates.payment_status = "refunded";
-      }
-
-      // Gestion spécifique pour la livraison
-      if (status === "delivered" && processedBy && userName) {
-        updates.delivered_by = processedBy;
-        updates.delivered_by_name = userName;
-        updates.delivered_at = new Date().toISOString();
-        updates.payment_status = "paid";
-      }
-
-      // Enregistrer qui a traité la commande (sauf pour la livraison où on utilise delivered_by)
-      if (processedBy && status !== "delivered") {
-        updates.processed_by = processedBy;
-      }
-
-      const { error } = await supabase
-        .from("orders")
-        .update(updates)
-        .eq("id", orderId);
-
-      if (error) throw error;
-
-      return true;
-    } catch (err) {
-      console.error("Error updating order:", err);
-      throw err;
+    if (!order) {
+      throw new Error("Commande non trouvée");
     }
-  };
+
+    // Vérifications de sécurité selon le rôle
+    const allowedRoles = ["admin", "assistant", "livreur"];
+    if (!currentUserRole || !allowedRoles.includes(currentUserRole)) {
+      console.log('❌ Role check failed:', { currentUserRole, allowedRoles });
+      throw new Error(
+        "Seuls les administrateurs, assistants et livreurs peuvent modifier le statut des commandes"
+      );
+    }
+
+    // Vérifications spécifiques pour la livraison
+    if (status === "delivered") {
+      console.log('🚚 Delivery validation started');
+      
+      // Vérifier que l'utilisateur a le droit de marquer comme livré
+      const allowedRolesForDelivery = ["livreur", "admin", "assistant"];
+      if (
+        !currentUserRole ||
+        !allowedRolesForDelivery.includes(currentUserRole)
+      ) {
+        throw new Error(
+          "Seuls les livreurs, assistants et administrateurs peuvent marquer les commandes comme livrées"
+        );
+      }
+
+      // Vérifier que la commande est dans un état qui peut être livré
+      if (order.status !== "confirmed" && order.status !== "shipped") {
+        throw new Error(
+          `Impossible de livrer une commande avec le statut "${order.status}"`
+        );
+      }
+
+      if (order.payment_status !== "paid") {
+        throw new Error("Impossible de livrer une commande non payée");
+      }
+      
+      console.log('✅ Delivery validation passed');
+    }
+
+    const updates: {
+      status: Order["status"];
+      updated_at: string;
+      payment_status?: Order["payment_status"];
+      delivered_by?: string;
+      delivered_by_name?: string;
+      delivered_at?: string;
+      processed_by?: string;
+    } = {
+      status,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Gestion spécifique pour la livraison
+    if (status === "delivered" && processedBy && userName) {
+      updates.delivered_by = processedBy;
+      updates.delivered_by_name = userName;
+      updates.delivered_at = new Date().toISOString();
+      updates.payment_status = "paid";
+      
+      console.log('📝 Delivery updates:', updates);
+    }
+
+    console.log('🔄 Updating order in database...');
+    const { error } = await supabase
+      .from("orders")
+      .update(updates)
+      .eq("id", orderId);
+
+    if (error) {
+      console.error('❌ Database update error:', error);
+      throw error;
+    }
+
+    console.log('✅ Order updated successfully');
+    return true;
+  } catch (err) {
+    console.error('❌ Error in updateOrderStatus:', err);
+    throw err;
+  }
+};
+
   // Fonction dédiée pour les livreurs
   const markOrderAsDelivered = async (
     orderId: string,
