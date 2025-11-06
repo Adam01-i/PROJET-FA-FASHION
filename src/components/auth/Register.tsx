@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { UserPlus, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { UserPlus, Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState(""); // NOUVEAU CHAMP
+  const [phone, setPhone] = useState(""); // NOUVEAU CHAMP
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,6 +89,24 @@ export default function Register() {
     }
   }, [user, userRole, redirectBasedOnRole]);
 
+  // Fonction pour formater le numéro de téléphone
+  const handlePhoneChange = (value: string) => {
+    const cleaned = value.replace(/\D/g, "");
+    let formatted = cleaned;
+
+    if (cleaned.length > 2) {
+      formatted = cleaned.slice(0, 2) + " " + cleaned.slice(2);
+    }
+    if (cleaned.length > 5) {
+      formatted = formatted.slice(0, 6) + " " + formatted.slice(6);
+    }
+    if (cleaned.length > 7) {
+      formatted = formatted.slice(0, 9) + " " + formatted.slice(9);
+    }
+
+    setPhone(formatted.slice(0, 12));
+  };
+
   // ✅ Inscription Supabase
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +130,16 @@ export default function Register() {
       return;
     }
 
+    // Validation du numéro de téléphone (optionnel mais formaté si fourni)
+    if (phone.trim()) {
+      const phoneRegex = /^(77|76|70|75|78)[0-9]{7}$/;
+      const cleanPhone = phone.replace(/\s/g, "");
+      if (!phoneRegex.test(cleanPhone)) {
+        setLocalError("Veuillez entrer un numéro de téléphone sénégalais valide (ex: 77 123 45 67)");
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
       // Inscription avec Supabase
@@ -118,6 +148,10 @@ export default function Register() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            full_name: fullName.trim() || null,
+            phone: phone.trim() || null,
+          },
         },
       });
 
@@ -132,8 +166,10 @@ export default function Register() {
         setEmail("");
         setPassword("");
         setConfirmPassword("");
+        setFullName("");
+        setPhone("");
         
-        // Créer le profil utilisateur avec rôle par défaut 'client'
+        // Créer le profil utilisateur avec rôle par défaut 'client' et les informations supplémentaires
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
@@ -141,12 +177,19 @@ export default function Register() {
               id: data.user.id,
               email: data.user.email,
               role: 'client',
+              full_name: fullName.trim() || null,
+              phone: phone.trim() ? phone.replace(/\s/g, "") : null,
               created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             }
           ]);
 
         if (profileError) {
           console.error("Erreur création profil:", profileError);
+          // Ne pas bloquer l'utilisateur même en cas d'erreur de profil
+          if (profileError.code === '23505') {
+            console.warn("Le numéro de téléphone est déjà utilisé, création sans numéro");
+          }
         }
       }
     } catch (err: unknown) {
@@ -235,13 +278,66 @@ export default function Register() {
               </div>
             )}
             <form className="space-y-6" onSubmit={handleSubmit}>
+              {/* Champ Nom complet */}
+              <div>
+                <label
+                  htmlFor="fullName"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Nom complet
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    autoComplete="name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    placeholder="Votre nom complet"
+                  />
+                </div>
+              </div>
+
+              {/* Champ Téléphone */}
+              <div>
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Numéro de téléphone
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    placeholder="77 123 45 67 (optionnel)"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Format: 77, 76, 70, 75 ou 78
+                </p>
+              </div>
+
               {/* Champ Email */}
               <div>
                 <label
                   htmlFor="email"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Adresse email
+                  Adresse email *
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -267,7 +363,7 @@ export default function Register() {
                   htmlFor="password"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Mot de passe
+                  Mot de passe *
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -304,7 +400,7 @@ export default function Register() {
                   htmlFor="confirmPassword"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Confirmer le mot de passe
+                  Confirmer le mot de passe *
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

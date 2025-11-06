@@ -1,14 +1,15 @@
+// src/lib/supabase.ts
 import { createClient } from '@supabase/supabase-js';
 import type { User } from '@supabase/supabase-js';
 
 export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  "https://sswseulxnmphjvopuxph.supabase.co", // Remplace l'env variable
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzd3NldWx4bm1waGp2b3B1eHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1NzA2NjgsImV4cCI6MjA3NTE0NjY2OH0.8F2MayaUOUbvPBZLB79l0jkUjok1YBWhcrsK3KZi19s", // Remplace l'env variable
   {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true, // ⚠️ Empêche les rechargements infinis
+      detectSessionInUrl: true,
       flowType: 'pkce',
       storage: window.localStorage,
     },
@@ -16,7 +17,7 @@ export const supabase = createClient(
 );
 
 // Types
-export type UserRole = 'admin' | 'assistant' | 'client';
+export type UserRole = 'admin' | 'assistant' | 'client' | 'livreur';
 
 // Récupération du rôle utilisateur depuis la base
 export async function getUserRoleFromDB(userId: string): Promise<UserRole> {
@@ -34,8 +35,8 @@ export async function getUserRoleFromDB(userId: string): Promise<UserRole> {
   }
 }
 
-// Création / mise à jour du profil
-export async function createUserProfile(user: User): Promise<void> {
+// Création / mise à jour du profil - VERSION MODIFIÉE
+export async function createUserProfile(user: User, fullName?: string, phone?: string): Promise<void> {
   const { data: existing } = await supabase
     .from('profiles')
     .select('id, role')
@@ -47,6 +48,8 @@ export async function createUserProfile(user: User): Promise<void> {
       id: user.id,
       email: user.email ?? '',
       role: 'client',
+      full_name: fullName || null,
+      phone: phone || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
@@ -55,6 +58,8 @@ export async function createUserProfile(user: User): Promise<void> {
       .from('profiles')
       .update({
         email: user.email ?? '',
+        full_name: fullName || null,
+        phone: phone || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', user.id);
