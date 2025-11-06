@@ -19,37 +19,59 @@ export default function Login() {
     const fetchUser = async () => {
       const { data } = await supabase.auth.getUser();
       setUser(data?.user);
-      
+
       // Récupérer le rôle depuis la table profiles
       if (data?.user) {
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
+          .from("profiles")
+          .select("role")
+          .eq("id", data.user.id)
           .single();
-        
-        setUserRole(profile?.role || 'client');
+
+        setUserRole(profile?.role || "client");
       }
     };
     fetchUser();
 
     // Écouter les changements d'authentification
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user || null);
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        setUserRole(profile?.role || 'client');
-      } else {
-        setUserRole(null);
-      }
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("🔄 Changement d'état auth:", event);
 
+        if (event === "SIGNED_IN" && session?.user) {
+          // Vérifier si l'utilisateur est actif
+          const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("is_active, role")
+            .eq("id", session.user.id)
+            .single();
+
+          if (error) {
+            console.error("Erreur vérification profil:", error);
+            return;
+          }
+
+          if (profile && profile.is_active === false) {
+            // Déconnecter l'utilisateur si désactivé
+            console.log("🚫 Utilisateur désactivé, déconnexion forcée");
+            await supabase.auth.signOut();
+            setError(
+              "Votre compte a été désactivé. Veuillez contacter l'administrateur."
+            );
+            setUser(null);
+            setUserRole(null);
+            return;
+          }
+
+          // Utilisateur actif, continuer
+          setUser(session.user);
+          setUserRole(profile?.role || "client");
+        } else if (event === "SIGNED_OUT") {
+          setUser(null);
+          setUserRole(null);
+        }
+      }
+    );
     return () => {
       listener?.subscription.unsubscribe();
     };
@@ -94,27 +116,76 @@ export default function Login() {
     }
   }, [user, userRole, navigate, redirectBasedOnRole]);
 
-  // ✅ Connexion Supabase
+  // ✅ Connexion Supabase avec vérification du statut actif
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log("🔐 Tentative de connexion...");
-      
+
+      // D'abord, vérifier si l'utilisateur existe et est actif
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, is_active")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Erreur vérification profil:", profileError);
+      }
+
+      // Si l'utilisateur existe mais est désactivé
+      if (profile && profile.is_active === false) {
+        setError(
+          "Votre compte a été désactivé. Veuillez contacter l'administrateur."
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      // Si l'utilisateur n'existe pas encore (première connexion), on continue
+      // Sinon, procéder à la connexion
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        setError(error.message);
+        // Gérer les erreurs spécifiques
+        if (error.message === "Invalid login credentials") {
+          setError("Email ou mot de passe incorrect");
+        } else if (error.message === "Email not confirmed") {
+          setError(
+            "Veuillez confirmer votre adresse email avant de vous connecter"
+          );
+        } else {
+          setError(error.message);
+        }
         return;
       }
 
       if (data.user) {
         console.log("✅ Connexion réussie");
+
+        // Vérifier une seconde fois le statut après connexion (au cas où)
+        const { data: userProfile } = await supabase
+          .from("profiles")
+          .select("is_active, role")
+          .eq("id", data.user.id)
+          .single();
+
+        if (userProfile && userProfile.is_active === false) {
+          // Déconnecter l'utilisateur si son compte est désactivé
+          await supabase.auth.signOut();
+          setError(
+            "Votre compte a été désactivé. Veuillez contacter l'administrateur."
+          );
+          return;
+        }
+
+        console.log("🎉 Utilisateur actif, connexion autorisée");
         // La redirection se fera automatiquement via le useEffect
       }
     } catch (err) {
