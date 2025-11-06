@@ -6,10 +6,10 @@ import {
   Shield,
   CheckCircle,
   Star,
-  Phone,
   Calendar,
   Truck,
 } from "lucide-react";
+import { Phone, UserCheck, UserX } from "lucide-react";
 import { useUsers } from "../../../../hooks/useUsers";
 import { supabase } from "../../../../lib/supabase";
 import { useToastContext } from "../../../../hooks/ToastProvider";
@@ -33,7 +33,8 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
     (user) =>
       user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleUpdateUserRole = async (
@@ -98,9 +99,10 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
 
   // Statistiques
   const totalUsers = users.length;
-  const activeUsers = users.filter((u) => u.is_active).length;
+  // const activeUsers = users.filter((u) => u.is_active).length;
   const adminUsers = users.filter((u) => u.role === "admin").length;
   const assistantUsers = users.filter((u) => u.role === "assistant").length;
+  const livreurUsers = users.filter((u) => u.role === "livreur").length;
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -120,16 +122,30 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
 
   const getStatusBadge = (user: UserType) => {
     if (!user.is_active) {
-      return { text: "Désactivé", color: "bg-red-100 text-red-800" };
+      return {
+        text: "Désactivé",
+        color: "bg-red-100 text-red-800",
+        icon: UserX,
+      };
     }
 
     const accountAge = Math.floor(
       (Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    if (accountAge < 7)
-      return { text: "Nouveau", color: "bg-green-100 text-green-800" };
-    return { text: "Actif", color: "bg-blue-100 text-blue-800" };
+    if (accountAge < 7) {
+      return {
+        text: "Nouveau",
+        color: "bg-green-100 text-green-800",
+        icon: UserCheck,
+      };
+    }
+
+    return {
+      text: "Actif",
+      color: "bg-blue-100 text-blue-800",
+      icon: UserCheck,
+    };
   };
 
   const getRoleDisplayName = (role: string) => {
@@ -146,6 +162,32 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
       default:
         return role;
     }
+  };
+
+  // Fonction pour formater le numéro de téléphone
+  const formatPhoneNumber = (phone: string | undefined): string => {
+    if (!phone) return "Non renseigné";
+
+    // Format: 77 123 45 67
+    const cleaned = phone.replace(/\D/g, "");
+    if (cleaned.length === 9) {
+      return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(
+        5,
+        7
+      )} ${cleaned.slice(7)}`;
+    }
+    return phone;
+  };
+
+  // AJOUTER: Fonction pour obtenir l'initiale du nom
+  const getUserInitial = (user: UserType): string => {
+    if (user.full_name) {
+      return user.full_name.charAt(0).toUpperCase();
+    }
+    if (user.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return "U";
   };
 
   const canPromoteToAssistant = (user: UserType): boolean => {
@@ -217,7 +259,7 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200">
+        {/* <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-gray-600">
@@ -231,7 +273,7 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
               <CheckCircle className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
             </div>
           </div>
-        </div>
+        </div> */}
 
         <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200">
           <div className="flex items-center justify-between">
@@ -264,6 +306,22 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
             </div>
           </div>
         </div>
+        <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">
+                Livreur
+              </p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                {livreurUsers}
+              </p>
+            </div>
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Star className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600" />
+            </div>
+          </div>
+        </div>
+
       </div>
 
       {/* Tableau Desktop */}
@@ -320,7 +378,7 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <div className="h-10 w-10 flex-shrink-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                            {user.email?.charAt(0).toUpperCase()}
+                            {getUserInitial(user)}
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
@@ -352,7 +410,10 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {user.phone || "Non renseigné"}
+                        <div className="flex items-center">
+                          <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                          {formatPhoneNumber(user.phone)}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -380,11 +441,16 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <div className="py-1">
-                                  {/* <button
-                                    onClick={() => handleToggleUserStatus(user.id, user.is_active ?? true)}
+                                  <button
+                                    onClick={() =>
+                                      handleToggleUserStatus(
+                                        user.id,
+                                        user.is_active ?? true
+                                      )
+                                    }
                                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                   >
-                                    {(user.is_active ?? true) ? (
+                                    {user.is_active ?? true ? (
                                       <>
                                         <CheckCircle className="h-4 w-4 mr-2" />
                                         Désactiver
@@ -395,7 +461,7 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
                                         Activer
                                       </>
                                     )}
-                                  </button> */}
+                                  </button>
 
                                   {canPromoteToAssistant(user) && (
                                     <button
@@ -423,57 +489,45 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
                                       Promouvoir Livreur
                                     </button>
                                   )}
-                                  {
-                                    canDemoteFromLivreur(user) && (
-                                      <button
-                                        onClick={() =>
-                                          handleUpdateUserRole(
-                                            user.id,
-                                            "client"
-                                          )
-                                        }
-                                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                      >
-                                        <User className="h-4 w-4 mr-2" />
-                                        Rétrograder en Client
-                                      </button>
-                                    )
-                                  }
+                                  {canDemoteFromLivreur(user) && (
+                                    <button
+                                      onClick={() =>
+                                        handleUpdateUserRole(user.id, "client")
+                                      }
+                                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                      <User className="h-4 w-4 mr-2" />
+                                      Rétrograder en Client
+                                    </button>
+                                  )}
 
-                                  {
-                                    canDemoteFromAssistant(user) && (
-                                      <button
-                                        onClick={() =>
-                                          handleUpdateUserRole(
-                                            user.id,
-                                            "client"
-                                          )
-                                        }
-                                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                      >
-                                        <User className="h-4 w-4 mr-2" />
-                                        Rétrograder en Client
-                                      </button>
-                                    )
-                                  }
+                                  {canDemoteFromAssistant(user) && (
+                                    <button
+                                      onClick={() =>
+                                        handleUpdateUserRole(user.id, "client")
+                                      }
+                                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                      <User className="h-4 w-4 mr-2" />
+                                      Rétrograder en Client
+                                    </button>
+                                  )}
 
-                                  {
-                                    canDemoteFromAdmin(user) && (
-                                      <button
-                                        onClick={() =>
-                                          handleUpdateUserRole(
-                                            user.id,
-                                            "assistant"
-                                          )
-                                        }
-                                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                      >
-                                        <User className="h-4 w-4 mr-2" />
-                                        Rétrograder en Assistant
-                                      </button>
-                                    )
-                                  }
-                                  
+                                  {canDemoteFromAdmin(user) && (
+                                    <button
+                                      onClick={() =>
+                                        handleUpdateUserRole(
+                                          user.id,
+                                          "assistant"
+                                        )
+                                      }
+                                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                      <User className="h-4 w-4 mr-2" />
+                                      Rétrograder en Assistant
+                                    </button>
+                                  )}
+
                                   {canPromoteToAdmin(user) && (
                                     <button
                                       onClick={() =>
@@ -485,8 +539,6 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
                                       Promouvoir Admin
                                     </button>
                                   )}
-
-                                 
                                 </div>
                               </div>
                             )}

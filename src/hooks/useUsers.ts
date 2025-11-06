@@ -1,3 +1,4 @@
+// hooks/useUsers.ts
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '../models';
@@ -11,7 +12,7 @@ export function useUsers() {
     try {
       setLoading(true);
       
-      // Récupérer uniquement depuis la table profiles
+      // Récupérer tous les champs depuis la table profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -23,10 +24,11 @@ export function useUsers() {
       const usersData: User[] = (profiles || []).map(profile => ({
         id: profile.id,
         email: profile.email,
-        role: profile.role || 'client', // Utiliser 'client' comme valeur par défaut
+        role: profile.role || 'client',
         full_name: profile.full_name,
         phone: profile.phone,
-        is_active: profile.is_active !== false, // Par défaut true
+        is_active: profile.is_active !== false, // Gérer les valeurs null/undefined
+        is_guest_user: profile.is_guest_user || false,
         created_at: profile.created_at,
         updated_at: profile.updated_at,
         avatar_url: profile.avatar_url
