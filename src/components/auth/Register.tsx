@@ -170,27 +170,27 @@ export default function Register() {
         setPhone("");
         
         // Créer le profil utilisateur avec rôle par défaut 'client' et les informations supplémentaires
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              email: data.user.email,
-              role: 'client',
-              full_name: fullName.trim() || null,
-              phone: phone.trim() ? phone.replace(/\s/g, "") : null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            }
-          ]);
+        // const { error: profileError } = await supabase
+        //   .from('profiles')
+        //   .insert([
+        //     {
+        //       id: data.user.id,
+        //       email: data.user.email,
+        //       role: 'client',
+        //       full_name: fullName.trim() || null,
+        //       phone: phone.trim() ? phone.replace(/\s/g, "") : null,
+        //       created_at: new Date().toISOString(),
+        //       updated_at: new Date().toISOString(),
+        //     }
+        //   ]);
 
-        if (profileError) {
-          console.error("Erreur création profil:", profileError);
-          // Ne pas bloquer l'utilisateur même en cas d'erreur de profil
-          if (profileError.code === '23505') {
-            console.warn("Le numéro de téléphone est déjà utilisé, création sans numéro");
-          }
-        }
+        // if (profileError) {
+        //   console.error("Erreur création profil:", profileError);
+        //   // Ne pas bloquer l'utilisateur même en cas d'erreur de profil
+        //   if (profileError.code === '23505') {
+        //     console.warn("Le numéro de téléphone est déjà utilisé, création sans numéro");
+        //   }
+        // }
       }
     } catch (err: unknown) {
       console.error("Registration error:", err);
