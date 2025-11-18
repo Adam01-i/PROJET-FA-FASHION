@@ -207,10 +207,10 @@ export default function ProductModal({
       toastError("Erreur", "La description du produit est requise");
       return;
     }
-    // if (product.price <= 0) {
-    //   toastError("Erreur", "Le prix doit être supérieur à 0");
-    //   return;
-    // }
+    if (product.price <= 0) {
+      toastError("Erreur", "Le prix doit être supérieur à 0");
+      return;
+    }
     if (product.stock_quantity < 0) {
       toastError("Erreur", "Le stock ne peut pas être négatif");
       return;
@@ -509,7 +509,6 @@ export default function ProductModal({
                         placeholder="Ex: T-shirt Premium Cotton"
                       />
                     </div>
-
                     {/* Description */}
                     <div className="lg:col-span-2">
                       <label className="block text-sm font-semibold text-gray-900 mb-3 items-center">
@@ -533,7 +532,6 @@ export default function ProductModal({
                         <span>{product.description.length} caractères</span>
                       </div>
                     </div>
-
                     {/* Prix et Stock */}
                     <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
@@ -558,19 +556,20 @@ export default function ProductModal({
                                 parseFloat(e.target.value) || 0
                               )
                             }
-                            className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl bg-gray-50 cursor-not-allowed text-gray-600"
+                            className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             min="0"
                             step="0.01"
                             required
                             placeholder="0.00"
-                            disabled={true}
-                            title="Utilisez le bouton 'Réapprovisionner' pour modifier le prix"
+                            disabled={mode === "edit"} // ← CHANGEMENT ICI : désactivé seulement en mode édition
                           />
                         </div>
-                        <p className="text-xs text-gray-500 mt-2 flex items-center">
-                          <Info className="h-3 w-3 mr-1" />
-                          Modifiable via réapprovisionnement
-                        </p>
+                        {mode === "edit" && ( // ← CHANGEMENT ICI : afficher le message seulement en mode édition
+                          <p className="text-xs text-gray-500 mt-2 flex items-center">
+                            <Info className="h-3 w-3 mr-1" />
+                            Modifiable via réapprovisionnement
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -589,20 +588,20 @@ export default function ProductModal({
                               parseInt(e.target.value) || 0
                             )
                           }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 cursor-not-allowed text-gray-600"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                           min="0"
                           required
                           placeholder="0"
-                          disabled={true}
-                          title="Utilisez le bouton 'Réapprovisionnement' pour modifier le stock"
+                          disabled={mode === "edit"} // ← CHANGEMENT ICI : désactivé seulement en mode édition
                         />
-                        <p className="text-xs text-gray-500 mt-2 flex items-center">
-                          <Info className="h-3 w-3 mr-1" />
-                          Modifiable via réapprovisionnement
-                        </p>
+                        {mode === "edit" && ( // ← CHANGEMENT ICI : afficher le message seulement en mode édition
+                          <p className="text-xs text-gray-500 mt-2 flex items-center">
+                            <Info className="h-3 w-3 mr-1" />
+                            Modifiable via réapprovisionnement
+                          </p>
+                        )}
                       </div>
                     </div>
-
                     {/* Catégorie */}
                     {/* Catégorie avec option d'ajout */}
                     {/* Catégorie avec option d'ajout - Version responsive */}
