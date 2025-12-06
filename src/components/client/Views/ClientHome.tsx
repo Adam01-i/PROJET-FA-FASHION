@@ -13,7 +13,9 @@ export default function ClientHome() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
@@ -23,52 +25,58 @@ export default function ClientHome() {
     const fetchData = async () => {
       try {
         // console.log('🔄 Début du chargement des données...');
-        
+
         // Récupérer les produits
         const { data: productsData, error: productsError } = await supabase
-          .from('products')
-          .select(`
-            *,
-            category:categories(name)
-          `)
-          .gt('stock_quantity', 0)
-          .eq('is_public', true)
-          .order('created_at', { ascending: false })
+          .from("products")
+          .select(
+            `
+              *,
+              category:categories(name),
+              wholesale_tiers:wholesale_pricing(
+                min_quantity,
+                wholesale_price,
+                is_active
+              )
+            `
+          )
+          .gt("stock_quantity", 0)
+          .eq("is_public", true)
+          .order("created_at", { ascending: false })
           .limit(12);
 
         if (productsError) throw productsError;
 
         // Récupérer TOUTES les catégories
         const { data: categoriesData, error: categoriesError } = await supabase
-          .from('categories')
-          .select('*')
+          .from("categories")
+          .select("*")
           .limit(6);
 
         if (categoriesError) {
-          console.warn('⚠️ Erreur catégories:', categoriesError);
+          console.warn("⚠️ Erreur catégories:", categoriesError);
         }
 
         // Récupérer les paramètres du store
         const { data: settingsData, error: settingsError } = await supabase
-          .from('store_settings')
-          .select('*')
+          .from("store_settings")
+          .select("*")
           .single();
 
         if (settingsError) {
-          console.warn('⚠️ Paramètres store non trouvés:', settingsError);
+          console.warn("⚠️ Paramètres store non trouvés:", settingsError);
         }
 
         setProducts(productsData || []);
         setCategories(categoriesData || []);
         setFeaturedProducts(productsData?.slice(0, 4) || []);
         setStoreSettings(settingsData);
-        
       } catch (error) {
-        console.error('❌ Erreur fetching data:', error);
-        setError('Erreur lors du chargement des données');
+        console.error("❌ Erreur fetching data:", error);
+        setError("Erreur lors du chargement des données");
         success(
-          'Erreur de chargement',
-          'Impossible de charger les produits. Veuillez réessayer.',
+          "Erreur de chargement",
+          "Impossible de charger les produits. Veuillez réessayer.",
           5000
         );
       } finally {
@@ -84,9 +92,9 @@ export default function ClientHome() {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.image_url || '',
+      image: product.image_url || "",
       quantity: 1,
-      stock_quantity: product.stock_quantity
+      stock_quantity: product.stock_quantity,
     };
     addToCart(cartItem);
   };
@@ -100,7 +108,7 @@ export default function ClientHome() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Oups !</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="bg-pink-500 hover:bg-pink-600 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
           >
@@ -122,14 +130,15 @@ export default function ClientHome() {
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="absolute top-0 left-0 w-72 h-72 bg-pink-300 rounded-full -translate-x-1/2 -translate-y-1/2 opacity-20"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-rose-300 rounded-full translate-x-1/3 translate-y-1/3 opacity-20"></div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
               {storeSettings?.name || "Boutique en Ligne"}
             </h1>
             <p className="text-xl md:text-2xl lg:text-3xl mb-8 opacity-95 max-w-4xl mx-auto leading-relaxed">
-              {storeSettings?.description || "Découvrez une sélection exclusive de produits de qualité supérieure"}
+              {storeSettings?.description ||
+                "Découvrez une sélection exclusive de produits de qualité supérieure"}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
@@ -192,17 +201,21 @@ export default function ClientHome() {
       )}
 
       {/* Section Produits */}
-      <section id="featured" className="py-16 bg-gradient-to-b from-pink-50 to-white">
+      <section
+        id="featured"
+        className="py-16 bg-gradient-to-b from-pink-50 to-white"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              {products.length > 0 ? "✨ Nos Produits" : "📦 Aucun Produit Disponible"}
+              {products.length > 0
+                ? "✨ Nos Produits"
+                : "📦 Aucun Produit Disponible"}
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-              {products.length > 0 
-                ? "Découvrez nos coups de cœur et dernières nouveautés" 
-                : "Notre collection arrive bientôt ! Restez à l'affût"
-              }
+              {products.length > 0
+                ? "Découvrez nos coups de cœur et dernières nouveautés"
+                : "Notre collection arrive bientôt ! Restez à l'affût"}
             </p>
           </div>
 

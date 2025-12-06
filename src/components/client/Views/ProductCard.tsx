@@ -1,14 +1,28 @@
 // components/client/ProductCard.tsx
 import { useState } from "react";
 // import { Link } from "react-router-dom";
-import { ShoppingCart, Eye, X, Plus, Minus, Heart, Share2 } from "lucide-react";
+import {
+  ShoppingCart,
+  Eye,
+  X,
+  Plus,
+  Minus,
+  Heart,
+  Share2,
+  Tag,
+} from "lucide-react";
 import { formatXOF } from "../../../lib/currency";
-import { Product } from "../../../models";
+import { Product, WholesaleTier } from "../../../models";
 import { useToastContext } from "../../../hooks/ToastProvider";
 import { useFavorites } from "../../../hooks/FavoritesContext";
 
+// Étendre localement l'interface Product pour inclure wholesale_tiers
+interface ProductWithWholesale extends Product {
+  wholesale_tiers?: WholesaleTier[];
+}
+
 interface ProductCardProps {
-  product: Product;
+  product: ProductWithWholesale;
   onAddToCart: (product: Product) => void;
 }
 
@@ -18,6 +32,38 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   const { success } = useToastContext();
   const { isFavorite, toggleFavorite } = useFavorites();
 
+  // Fonction utilitaire pour récupérer les infos de prix en gros
+  const getWholesaleInfo = (product: ProductWithWholesale) => {
+    if (!product.wholesale_tiers || product.wholesale_tiers.length === 0) {
+      return null;
+    }
+
+    // Filtrer les paliers actifs et trier par quantité minimale
+    const activeTiers = product.wholesale_tiers
+      .filter((tier: WholesaleTier) => tier.is_active)
+      .sort(
+        (a: WholesaleTier, b: WholesaleTier) => a.min_quantity - b.min_quantity
+      );
+
+    if (activeTiers.length === 0) return null;
+
+    // Calculer le pourcentage de réduction pour le palier minimum
+    const minTier = activeTiers[0];
+    const discountPercentage = Math.round(
+      ((product.price - minTier.wholesale_price) / product.price) * 100
+    );
+
+    return {
+      hasWholesale: true,
+      minQuantity: minTier.min_quantity,
+      minPrice: minTier.wholesale_price,
+      discountPercentage,
+      tiers: activeTiers,
+    };
+  };
+
+  const wholesaleInfo = getWholesaleInfo(product);
+
   // Gérer proprement la catégorie
   const categoryName =
     product.category?.name || product.category_name || "Non catégorisé";
@@ -26,7 +72,6 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // console.log("🛒 Ajout au panier:", product.name);
     onAddToCart(product);
 
     // Afficher le toast de confirmation
@@ -123,7 +168,10 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   return (
     <>
       <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group hover:translate-y-[-4px] border border-gray-100">
-        <div className="relative overflow-hidden">
+        <div
+          className="relative overflow-hidden"
+          onClick={() => setShowModal(true)}
+        >
           <img
             src={product.image_url || "/api/placeholder/400/300"}
             alt={product.name}
@@ -138,6 +186,16 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
               {stockStatus.text}
             </span>
           </div>
+
+          {/* Badge prix en gros - Positionné sous le badge de stock */}
+          {wholesaleInfo && (
+            <div className="absolute top-14 left-3 z-10">
+              <div className="flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-lg">
+                <Tag size={10} />
+                <span>À partir de {wholesaleInfo.minQuantity}</span>
+              </div>
+            </div>
+          )}
 
           {/* Bouton favori */}
           <button
@@ -160,7 +218,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
               className="opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110"
               title="Voir les détails"
             >
-              <Eye className="w-5 h-5 text-gray-700" />
+              <Eye className="w-5 h-5 text-gray-700" /> 
             </button>
 
             {product.stock_quantity > 0 && (
@@ -199,6 +257,26 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
               <span className="text-2xl font-bold text-pink-600">
                 {formatXOF(product.price)}
               </span>
+
+              {/* Affichage du prix en gros si disponible */}
+              {wholesaleInfo && (
+                <div className="text-sm mt-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-blue-600 font-semibold">
+                      {formatXOF(wholesaleInfo.minPrice)}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      à partir de {wholesaleInfo.minQuantity}
+                    </span>
+                    {wholesaleInfo.discountPercentage > 0 && (
+                      <span className="text-xs font-medium bg-green-100 text-green-800 px-1.5 py-0.5 rounded ml-1">
+                        -{wholesaleInfo.discountPercentage}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <span className="text-xs text-gray-500 mt-1">
                 {product.stock_quantity > 0
                   ? `${product.stock_quantity} disponibles`
@@ -227,8 +305,14 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
 
       {/* Modal de détails du produit */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slideUp">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fadeIn"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="relative">
               {/* Bouton fermer */}
               <button
@@ -294,6 +378,76 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Section prix en gros (si disponible) */}
+                {wholesaleInfo && (
+                  <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                    <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2 text-lg">
+                      <Tag size={18} />
+                      Prix en gros disponible
+                    </h4>
+                    <div className="space-y-3">
+                      {wholesaleInfo.tiers.map(
+                        (tier: WholesaleTier, index: number) => {
+                          const tierDiscount = Math.round(
+                            ((product.price - tier.wholesale_price) /
+                              product.price) *
+                              100
+                          );
+                          return (
+                            <div
+                              key={index}
+                              className="flex justify-between items-center p-3 bg-white rounded-lg border border-blue-100 hover:border-blue-300 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-700 font-bold rounded-full">
+                                  {tier.min_quantity}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-gray-800">
+                                    À partir de{" "}
+                                    <strong>{tier.min_quantity}</strong> unités
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    Prix unitaire
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  <div className="text-xl font-bold text-blue-700">
+                                    {formatXOF(tier.wholesale_price)}
+                                  </div>
+                                  <div className="text-sm text-gray-500 line-through">
+                                    {formatXOF(product.price)}
+                                  </div>
+                                </div>
+                                <div
+                                  className={`text-sm font-bold px-2 py-1 rounded ${
+                                    tierDiscount >= 30
+                                      ? "bg-red-100 text-red-800"
+                                      : tierDiscount >= 20
+                                      ? "bg-orange-100 text-orange-800"
+                                      : "bg-green-100 text-green-800"
+                                  }`}
+                                >
+                                  -{tierDiscount}%
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-blue-200">
+                      <p className="text-sm text-blue-700">
+                        💡 <strong>Astuce :</strong> Plus vous achetez d'unités,
+                        plus le prix baisse ! Le prix s'ajuste automatiquement
+                        dans votre panier selon la quantité.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Informations détaillées */}
                 {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -394,6 +548,47 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
                         </button>
                       </div>
                     </div>
+
+                    {/* Indicateur de prix selon la quantité */}
+                    {wholesaleInfo && (
+                      <div className="mt-4 pt-4 border-t border-pink-200">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">
+                            Prix pour {quantity} unité{quantity > 1 ? "s" : ""}{" "}
+                            :
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {quantity >= wholesaleInfo.minQuantity ? (
+                              <>
+                                <span className="text-xl font-bold text-green-700">
+                                  {formatXOF(wholesaleInfo.minPrice * quantity)}
+                                </span>
+                                <span className="text-gray-400 line-through">
+                                  {formatXOF(product.price * quantity)}
+                                </span>
+                                <span className="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded">
+                                  Économie :{" "}
+                                  {formatXOF(
+                                    (product.price - wholesaleInfo.minPrice) *
+                                      quantity
+                                  )}
+                                </span>
+                              </>
+                            ) : quantity > 1 ? (
+                              <>
+                                <span className="text-xl font-bold text-pink-600">
+                                  {formatXOF(product.price * quantity)}
+                                </span>
+                                <div className="text-xs text-blue-600">
+                                  Ajoutez {wholesaleInfo.minQuantity - quantity}{" "}
+                                  pour avoir le prix en gros
+                                </div>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
