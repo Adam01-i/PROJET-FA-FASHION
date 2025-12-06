@@ -1,4 +1,4 @@
-// components/dashboard/sections/ProductsSection.tsx (version corrigée)
+// components/admin/SideBar/ContentSections/ProductsSection.tsx
 import { useState, useEffect } from "react";
 import { Edit, Plus, Package, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { useProducts } from "../../../../hooks/useProducts";

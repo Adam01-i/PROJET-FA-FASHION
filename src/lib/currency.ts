@@ -1,3 +1,4 @@
+// src/ 
 export function formatXOF(amount: number): string {
   try {
     return new Intl.NumberFormat('fr-SN', {

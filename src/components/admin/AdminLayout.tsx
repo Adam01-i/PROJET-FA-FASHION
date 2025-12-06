@@ -4,6 +4,7 @@ import SideBar, { Tab } from "./SideBar/SideBar";
 import Dashboard from "./Dashboard/Dashboard";
 import InventorySection from "../Inventory/InventorySection";
 import ProductsSection from "./SideBar/ContentSections/ProductsSection";
+import WholeSaleProductsSection from "./SideBar/ContentSections/WholeSaleProductsSection";
 import OrdersSection from "../AuthOrdersSection/OrdersSection";
 import UsersSection from "./SideBar/ContentSections/UsersSection";
 import SettingsSection from "./SideBar/ContentSections/SettingsSection";
@@ -24,6 +25,8 @@ export default function AdminLayout() {
         return "Tableau de bord";
       case "products":
         return "Gestion des produits";
+      case "wholeSaleproducts":
+        return "Gestion des produits en Gros";
       case "inventory":
         return "Gestion des inventaire";
       case "orders":
@@ -72,6 +75,7 @@ export default function AdminLayout() {
           <main className="flex-1 p-6 overflow-y-auto">
             {activeTab === "dashboard" && <Dashboard />}
 
+
             {activeTab === "products" && (
               <ProductsSection
                 searchTerm={searchTerm}
@@ -79,6 +83,14 @@ export default function AdminLayout() {
               />
             )}
 
+
+            {activeTab === "wholeSaleproducts" && (
+              <WholeSaleProductsSection
+                searchTerm={searchTerm}
+                onAddClick={() => setIsAddModalOpen(true)}
+              />
+            )}
+            
             {activeTab === "inventory" && <InventorySection />}
 
             {activeTab === "orders" && (

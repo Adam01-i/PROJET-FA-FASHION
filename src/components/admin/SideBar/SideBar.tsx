@@ -1,6 +1,7 @@
 import DashboardItem from "./SideBarItems/DashboardItem";
 import InventoryItem from "./SideBarItems/InventoryItem";
 import ProductsItem from "./SideBarItems/ProductsItem";
+import WholeSaleProductsItem from "./SideBarItems/WholeSaleProductsItem";
 import OrdersItem from "./SideBarItems/OrdersItem";
 import UsersItem from "./SideBarItems/UsersItem";
 import SettingsItem from "./SideBarItems/SettingsItem";
@@ -9,6 +10,7 @@ import DeliveryItem from "./SideBarItems/DeliveryItem";
 export type Tab =
   | "dashboard"
   | "products"
+  | "wholeSaleproducts"
   | "inventory"
   | "orders"
   | "deliveries"
@@ -83,6 +85,10 @@ export default function SideBar({
           <ProductsItem
             active={activeTab === "products"}
             onClick={() => onTabChange("products")}
+          />
+          <WholeSaleProductsItem
+            active={activeTab === "wholeSaleproducts"}
+            onClick={() => onTabChange("wholeSaleproducts")}
           />
           <InventoryItem
             active={activeTab === "inventory"}

@@ -263,3 +263,43 @@ export interface DeveloperInfo {
   created_at: string;
   updated_at: string;
 }
+
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+// Ajoutez ces interfaces à votre fichier models.ts
+export interface WholesaleProduct {
+  id: string;
+  product_id: string;
+  min_quantity: number;
+  wholesale_price: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WholesalePricing {
+  id: string;
+  product_id: string;
+  min_quantity: number;
+  wholesale_price: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductWithWholesale extends Product {
+  wholesale_tiers?: WholesaleTier[];
+  has_wholesale?: boolean;
+  min_wholesale_quantity?: number;
+  wholesale_price?: number;
+}
+
+export interface WholesaleTier {
+  min_quantity: number;
+  wholesale_price: number;
+  discount_percentage: number;
+}
