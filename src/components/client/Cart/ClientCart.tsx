@@ -1,4 +1,4 @@
-// components/client/ClientCart.tsx (version simplifiée)
+// components/client/Cart/ClientCart.tsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -7,90 +7,66 @@ import {
   Minus,
   ArrowLeft,
   ShoppingBag,
-  MessageCircle,
   User,
 } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
 import { formatXOF } from "../../../lib/currency";
 import { useCart } from "../../../contexts/CartContext";
 import { DeliveryLocation } from "../../../models";
+import { calculateCartWithWholesale } from "../../../services/pricingService";
+import PaymentSelector from "../../../payment/PaymentSelector";
+
+// Définition locale si CartItem n'est pas dans models.ts
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+  stock_quantity: number;
+}
+
+interface CartItemWithWholesale extends CartItem {
+  wholesalePrice?: number;
+  savings?: number;
+  isWholesaleApplied?: boolean;
+  appliedTier?: {
+    min_quantity: number;
+    wholesale_price: number;
+  };
+}
 
 export default function ClientCart() {
-  const [isProcessing, setIsProcessing] = useState(false);
+  // const [isProcessing, setIsProcessing] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
-  const [selectedLocation, setSelectedLocation] =
-    useState<DeliveryLocation | null>(null);
-  const [deliveryLocations, setDeliveryLocations] = useState<
-    DeliveryLocation[]
-  >([]);
+  const [selectedLocation, setSelectedLocation] = useState<DeliveryLocation | null>(null);
+  const [deliveryLocations, setDeliveryLocations] = useState<DeliveryLocation[]>([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+  const [cartWithWholesale, setCartWithWholesale] = useState<{
+    items: CartItemWithWholesale[];
+    subtotal: number;
+    totalWholesaleSavings: number;
+  } | null>(null);
 
-  const { items, removeFromCart, updateQuantity, clearCart, total, itemCount } =
-    useCart();
+  const { items, removeFromCart, updateQuantity, clearCart, total, itemCount } = useCart();
 
-  // ✅ Fonction simple pour créer une commande guest
-  const createOrder = async (): Promise<{ id: string }> => {
-    if (!phoneNumber.trim()) {
-      throw new Error("Le numéro de téléphone est obligatoire");
-    }
+  // Calculer les prix en gros
+  useEffect(() => {
+    const calculatePrices = async () => {
+      if (items.length > 0) {
+        const result = await calculateCartWithWholesale(items);
+        setCartWithWholesale(result);
+      } else {
+        setCartWithWholesale(null);
+      }
+    };
 
-    if (!selectedLocation) {
-      throw new Error("Veuillez sélectionner un lieu de livraison");
-    }
+    calculatePrices();
+  }, [items]);
 
-    // Valider le format du numéro de téléphone
-    const phoneRegex = /^(77|76|70|75|78)[0-9]{7}$/;
-    const cleanPhone = phoneNumber.replace(/\s/g, "");
-    if (!phoneRegex.test(cleanPhone)) {
-      throw new Error(
-        "Veuillez entrer un numéro de téléphone sénégalais valide (ex: 77 123 45 67)"
-      );
-    }
-
-    // Préparer les données des articles
-    const orderItemsData = items.map((item) => ({
-      product_id: item.id,
-      quantity: item.quantity,
-      price: item.price,
-    }));
-
-    // Calculer les montants
-    const subtotal = total;
-    const deliveryFee = selectedLocation.delivery_fee;
-    const totalWithDelivery = subtotal + deliveryFee;
-
-    // Dans ClientCart.tsx - AJOUTER cette fonction
-
-
-    // Utiliser RPC pour créer la commande guest
-    const { data, error } = await supabase.rpc("create_guest_order", {
-      customer_phone: cleanPhone,
-      customer_name: customerName.trim() || null,
-      subtotal_amount: subtotal,
-      delivery_fee: deliveryFee,
-      total_amount: totalWithDelivery,
-      delivery_location_id: selectedLocation.id,
-      delivery_location_name: selectedLocation.name,
-      order_items: orderItemsData,
-    });
-
-    if (error) {
-      console.error("RPC Error details:", error);
-      throw new Error(
-        `Erreur lors de la création de la commande: ${error.message}`
-      );
-    }
-
-    if (!data) {
-      throw new Error("Aucun ID de commande retourné");
-    }
-
-    return { id: data };
-  };
-
-  // AJOUTER après les états
+  // Récupérer les lieux de livraison
   useEffect(() => {
     const fetchDeliveryLocations = async () => {
       try {
@@ -101,20 +77,14 @@ export default function ClientCart() {
           .eq("is_active", true)
           .order("name");
 
-        if (error) {
-          console.error("Supabase error:", error);
-          throw error;
-        }
-
+        if (error) throw error;
         setDeliveryLocations(data || []);
-
-        // Sélectionner le premier lieu par défaut si disponible
+        
         if (data && data.length > 0) {
           setSelectedLocation(data[0]);
         }
       } catch (error) {
         console.error("Error fetching delivery locations:", error);
-        // Optionnel: afficher un message à l'utilisateur
       } finally {
         setIsLoadingLocations(false);
       }
@@ -122,119 +92,6 @@ export default function ClientCart() {
 
     fetchDeliveryLocations();
   }, []);
-  const generateWhatsAppMessage = (orderId: string) => {
-    const itemsText = items
-      .map(
-        (item) =>
-          `• ${item.quantity}x ${item.name} - ${formatXOF(
-            item.price * item.quantity
-          )}`
-      )
-      .join("\n");
-
-    const customerInfo = customerName
-      ? `Nom: ${customerName}\nTéléphone: ${phoneNumber}`
-      : `Téléphone: ${phoneNumber}`;
-
-    const deliveryInfo = selectedLocation
-      ? `Lieu de livraison: ${
-          selectedLocation.name
-        }\nFrais de livraison: ${formatXOF(selectedLocation.delivery_fee)}`
-      : "Livraison: Non spécifiée";
-
-    const subtotal = total;
-    const deliveryFee = selectedLocation?.delivery_fee || 0;
-    const totalWithDelivery = subtotal + deliveryFee;
-
-    return (
-      `Bonjour! Je souhaite passer une commande 🛍️\n\n` +
-      `*Informations client:*\n${customerInfo}\n\n` +
-      `*Informations de livraison:*\n${deliveryInfo}\n\n` +
-      `*Détails de la commande:*\n` +
-      `Numéro de commande: ${orderId}\n\n` +
-      `*Produits commandés:*\n${itemsText}\n\n` +
-      `Sous-total: ${formatXOF(subtotal)}\n` +
-      `Frais de livraison: ${formatXOF(deliveryFee)}\n` +
-      `*Total: ${formatXOF(totalWithDelivery)}*\n\n` +
-      `Je suis prêt(e) à procéder au paiement. Merci!`
-    );
-  };
-
-  const handleWhatsAppOrder = async () => {
-  try {
-    setIsProcessing(true);
-
-    if (!showCustomerForm) {
-      setShowCustomerForm(true);
-      return;
-    }
-
-    // Validation
-    if (!phoneNumber.trim()) {
-      throw new Error("Le numéro de téléphone est obligatoire");
-    }
-
-    if (!selectedLocation) {
-      throw new Error("Veuillez sélectionner un lieu de livraison");
-    }
-
-    // Créer la commande dans la base de données
-    const order = await createOrder();
-
-        const fetchWhatsAppNumber = async (): Promise<string> => {
-      try {
-        const { data, error } = await supabase
-          .from("store_settings")
-          .select("phone")
-          .single();
-
-        if (error) {
-          console.error("Error fetching WhatsApp number:", error);
-          return "221782906487"; // Fallback au numéro par défaut
-        }
-
-        // Nettoyer le numéro (supprimer les espaces, +, etc.)
-        const cleanNumber = data?.phone?.replace(/\D/g, "") || "221782906487";
-
-        // S'assurer que le numéro a le format international sans le +
-        return cleanNumber.startsWith("221")
-          ? cleanNumber
-          : `221${cleanNumber}`;
-      } catch (error) {
-        console.error("Exception fetching WhatsApp number:", error);
-        return "221782906487"; // Fallback au numéro par défaut
-      }
-    };
-    
-    // RÉCUPÉRER LE NUMÉRO WHATSAPP DEPUIS store_settings
-    const whatsappNumber = await fetchWhatsAppNumber();
-    console.log("Using WhatsApp number from store_settings:", whatsappNumber);
-
-    // Générer le message WhatsApp
-    const message = generateWhatsAppMessage(order.id);
-    const encodedMessage = encodeURIComponent(message);
-
-    // Ouvrir WhatsApp
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-    window.open(whatsappUrl, "_blank");
-
-    // Vider le panier après envoi
-    clearCart();
-    setShowCustomerForm(false);
-    setPhoneNumber("");
-    setCustomerName("");
-  } catch (error) {
-    console.error("Error creating order:", error);
-    alert(
-      error instanceof Error
-        ? error.message
-        : "Une erreur est survenue lors de la création de la commande."
-    );
-  } finally {
-    setIsProcessing(false);
-  }
-};
-  
 
   const handlePhoneChange = (value: string) => {
     const cleaned = value.replace(/\D/g, "");
@@ -251,6 +108,19 @@ export default function ClientCart() {
     }
 
     setPhoneNumber(formatted.slice(0, 12));
+  };
+
+  const handlePaymentSuccess = (orderId: string, method: string) => {
+    console.log(`Order ${orderId} created with ${method}`);
+    clearCart();
+    setShowCustomerForm(false);
+    setPhoneNumber("");
+    setCustomerName("");
+    // alert(`Commande créée avec succès! Numéro: ${orderId}`);
+  };
+
+  const handlePaymentError = (error: string) => {
+    alert(`Erreur: ${error}`);
   };
 
   if (items.length === 0) {
@@ -278,6 +148,12 @@ export default function ClientCart() {
     );
   }
 
+  const displayItems = cartWithWholesale?.items || items;
+  const subtotal = cartWithWholesale?.subtotal || total;
+  const deliveryFee = selectedLocation?.delivery_fee || 0;
+  const totalAmount = subtotal + deliveryFee;
+  const totalSavings = cartWithWholesale?.totalWholesaleSavings || 0;
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-8">
@@ -285,66 +161,89 @@ export default function ClientCart() {
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Section produits */}
         <div className="lg:col-span-8">
           <div className="bg-white shadow-sm rounded-lg">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center p-6 border-b border-gray-200 last:border-0"
-              >
-                <div className="flex-shrink-0 w-24 h-24">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover rounded-md"
-                  />
-                </div>
+            {displayItems.map((item) => {
+              const itemPrice = 'wholesalePrice' in item ? (item as CartItemWithWholesale).wholesalePrice || item.price : item.price;
+              const itemTotal = itemPrice * item.quantity;
+              const regularTotal = item.price * item.quantity;
+              const savings = 'savings' in item ? (item as CartItemWithWholesale).savings || 0 : 0;
 
-                <div className="ml-6 flex-1">
-                  <div className="flex justify-between">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {item.name}
-                    </h3>
-                    <p className="text-lg font-medium text-gray-900">
-                      {formatXOF(item.price * item.quantity)}
-                    </p>
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center p-6 border-b border-gray-200 last:border-0"
+                >
+                  <div className="flex-shrink-0 w-24 h-24">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover rounded-md"
+                    />
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center border rounded-md">
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, item.quantity - 1)
-                        }
-                        className="p-2 hover:bg-gray-100"
-                        disabled={item.quantity <= 1}
-                      >
-                        <Minus className="h-4 w-4 text-gray-600" />
-                      </button>
-                      <span className="px-4 py-2 text-gray-900">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, item.quantity + 1)
-                        }
-                        className="p-2 hover:bg-gray-100"
-                        disabled={item.quantity >= item.stock_quantity}
-                      >
-                        <Plus className="h-4 w-4 text-gray-600" />
-                      </button>
+                  <div className="ml-6 flex-1">
+                    <div className="flex justify-between">
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {item.name}
+                        </h3>
+                        {savings > 0 && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-sm text-green-600 bg-green-50 px-2 py-1 rounded">
+                              Économie: {formatXOF(savings)}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              Prix en gros appliqué
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-medium text-gray-900">
+                          {formatXOF(itemTotal)}
+                        </p>
+                        {savings > 0 && (
+                          <p className="text-sm text-gray-400 line-through">
+                            {formatXOF(regularTotal)}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex items-center border rounded-md">
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          className="p-2 hover:bg-gray-100"
+                          disabled={item.quantity <= 1}
+                        >
+                          <Minus className="h-4 w-4 text-gray-600" />
+                        </button>
+                        <span className="px-4 py-2 text-gray-900">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          className="p-2 hover:bg-gray-100"
+                          disabled={item.quantity >= item.stock_quantity}
+                        >
+                          <Plus className="h-4 w-4 text-gray-600" />
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-4">
@@ -356,21 +255,21 @@ export default function ClientCart() {
             </button>
           </div>
         </div>
+
+        {/* Section résumé et paiement */}
         <div className="lg:col-span-4">
           <div className="bg-white shadow-sm rounded-lg p-6 sticky top-8">
             <h2 className="text-lg font-medium text-gray-900 mb-4">
               Résumé de la commande
             </h2>
 
-            {/* Sélection du lieu de livraison */}
+            {/* Lieu de livraison */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Lieu de livraison *
               </label>
               {isLoadingLocations ? (
-                <div className="text-sm text-gray-500">
-                  Chargement des lieux de livraison...
-                </div>
+                <div className="text-sm text-gray-500">Chargement...</div>
               ) : deliveryLocations.length > 0 ? (
                 <select
                   value={selectedLocation?.id || ""}
@@ -395,21 +294,27 @@ export default function ClientCart() {
                   Aucun lieu de livraison disponible
                 </div>
               )}
-              {selectedLocation && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Livraison à {selectedLocation.name}
-                </p>
-              )}
             </div>
 
+            {/* Détails des prix */}
             <div className="flow-root">
               <dl className="-my-4 text-sm divide-y divide-gray-200">
                 <div className="py-4 flex items-center justify-between">
                   <dt className="text-gray-600">Sous-total</dt>
                   <dd className="font-medium text-gray-900">
-                    {formatXOF(total)}
+                    {formatXOF(subtotal)}
                   </dd>
                 </div>
+                
+                {totalSavings > 0 && (
+                  <div className="py-4 flex items-center justify-between">
+                    <dt className="text-green-600">Économies prix en gros</dt>
+                    <dd className="font-medium text-green-600">
+                      -{formatXOF(totalSavings)}
+                    </dd>
+                  </div>
+                )}
+
                 <div className="py-4 flex items-center justify-between">
                   <dt className="text-gray-600">Frais de livraison</dt>
                   <dd className="font-medium text-gray-900">
@@ -418,105 +323,99 @@ export default function ClientCart() {
                       : "---"}
                   </dd>
                 </div>
+                
                 <div className="py-4 flex items-center justify-between">
                   <dt className="text-base font-medium text-gray-900">Total</dt>
                   <dd className="text-base font-medium text-gray-900">
-                    {selectedLocation
-                      ? formatXOF(total + selectedLocation.delivery_fee)
-                      : formatXOF(total)}
+                    {formatXOF(totalAmount)}
                   </dd>
                 </div>
               </dl>
             </div>
 
-            {/* Formulaire informations client */}
-            {showCustomerForm && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg space-y-4">
-                <div className="flex items-center text-sm text-gray-700 mb-2">
-                  <User className="h-4 w-4 mr-2" />
-                  Informations de contact
+            {/* Formulaire client */}
+            {showCustomerForm ? (
+              <div className="mt-6 space-y-6">
+                <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+                  <div className="flex items-center text-sm text-gray-700 mb-2">
+                    <User className="h-4 w-4 mr-2" />
+                    Informations de contact
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Numéro de téléphone *
+                    </label>
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      placeholder="77 123 45 67"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Format: 77, 76, 70, 75 ou 78
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Votre nom (optionnel)
+                    </label>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Votre nom"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="phone"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Numéro de téléphone *
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    value={phoneNumber}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
-                    placeholder="77 123 45 67"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Format: 77, 76, 70, 75 ou 78
-                  </p>
-                </div>
+                {/* Sélecteur de paiement */}
+                <PaymentSelector
+                  amount={totalAmount}
+                  items={items}
+                  customerInfo={{
+                    phone: phoneNumber,
+                    name: customerName
+                  }}
+                  deliveryInfo={selectedLocation ? {
+                    location: selectedLocation.name,
+                    fee: selectedLocation.delivery_fee
+                  } : undefined}
+                  onPaymentSuccess={handlePaymentSuccess}
+                  onPaymentError={handlePaymentError}
+                />
 
-                <div>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Votre nom (optionnel)
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Votre nom"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6 space-y-4">
-              <button
-                onClick={handleWhatsAppOrder}
-                disabled={
-                  isProcessing ||
-                  (showCustomerForm &&
-                    (!phoneNumber.trim() || !selectedLocation))
-                }
-                className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white ${
-                  isProcessing ||
-                  (showCustomerForm &&
-                    (!phoneNumber.trim() || !selectedLocation))
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700"
-                }`}
-              >
-                <MessageCircle className="mr-2 h-5 w-5" />
-                {showCustomerForm
-                  ? isProcessing
-                    ? "Création de la commande..."
-                    : "Confirmer et passer commande"
-                  : "Passer la commande"}
-              </button>
-
-              {!showCustomerForm && (
-                <p className="text-xs text-gray-500 text-center">
-                  Aucune connexion nécessaire. Juste votre numéro pour confirmer
-                  la commande.
-                </p>
-              )}
-
-              {showCustomerForm && (
                 <button
                   onClick={() => setShowCustomerForm(false)}
                   className="w-full text-sm text-gray-600 hover:text-gray-800"
                 >
                   Retour
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowCustomerForm(true)}
+                  disabled={!selectedLocation}
+                  className={`w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white ${
+                    !selectedLocation
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-pink-500 hover:bg-pink-600"
+                  }`}
+                >
+                  Procéder au paiement
+                </button>
+                {!selectedLocation && (
+                  <p className="text-xs text-red-500 mt-2 text-center">
+                    Veuillez sélectionner un lieu de livraison
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

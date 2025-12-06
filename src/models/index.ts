@@ -88,6 +88,27 @@ export interface Order {
   delivery_location?: DeliveryLocation;
   delivered_by_user?: User;
 }
+ // Dans models.ts, ajoutez après l'interface Product :
+
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+  stock_quantity: number;
+}
+
+// Optionnel: Ajoutez aussi une interface étendue pour les prix en gros
+export interface CartItemWithWholesale extends CartItem {
+  wholesalePrice?: number;
+  savings?: number;
+  isWholesaleApplied?: boolean;
+  appliedTier?: {
+    min_quantity: number;
+    wholesale_price: number;
+  };
+}
 
 export interface Category {
   id: string;

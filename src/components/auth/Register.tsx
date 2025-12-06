@@ -209,7 +209,7 @@ export default function Register() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-pink-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Redirection en cours...</p>
           <p className="text-sm text-gray-500 mt-2">Rôle: {userRole}</p>
         </div>
@@ -224,7 +224,7 @@ export default function Register() {
         <div className="mx-auto w-full max-w-md">
           {/* Logo mobile */}
           <div className="lg:hidden flex justify-center mb-8">
-            <div className="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-pink-600 rounded-xl flex items-center justify-center">
               <UserPlus className="h-8 w-8 text-white" />
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function Register() {
                     autoComplete="name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200"
                     placeholder="Votre nom complet"
                   />
                 </div>
@@ -322,7 +322,7 @@ export default function Register() {
                     autoComplete="tel"
                     value={phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200"
                     placeholder="77 123 45 67 (optionnel)"
                   />
                 </div>
@@ -351,7 +351,7 @@ export default function Register() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200"
                     placeholder="votre@email.com"
                   />
                 </div>
@@ -377,7 +377,7 @@ export default function Register() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200"
                     placeholder="Minimum 6 caractères"
                   />
                   <button
@@ -414,7 +414,7 @@ export default function Register() {
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200"
                     placeholder="Confirmez votre mot de passe"
                   />
                   <button
@@ -436,7 +436,7 @@ export default function Register() {
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>Sécurité du mot de passe</span>
                   <span
-                    className={password.length >= 6 ? "text-green-600" : ""}
+                    className={password.length >= 6 ? "text-pink-600" : ""}
                   >
                     {password.length >= 6 ? "✓ Sécurisé" : "Faible"}
                   </span>
@@ -445,7 +445,7 @@ export default function Register() {
                   <div
                     className={`h-1.5 rounded-full transition-all duration-300 ${
                       password.length >= 6
-                        ? "bg-green-600 w-full"
+                        ? "bg-pink-600 w-full"
                         : password.length >= 4
                         ? "bg-yellow-500 w-2/3"
                         : "bg-red-500 w-1/3"
@@ -458,7 +458,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
+                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
               >
                 {isLoading ? (
                   <>
@@ -473,7 +473,7 @@ export default function Register() {
                 Déjà membre ?{" "}
                 <Link
                   to="/login"
-                  className="font-semibold text-green-600 hover:text-green-500 transition-colors duration-200"
+                  className="font-semibold text-pink-600 hover:text-pink-500 transition-colors duration-200"
                 >
                   Se connecter
                 </Link>
@@ -481,8 +481,8 @@ export default function Register() {
             </form>
             
             {isSuccess && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start space-x-3 animate-fade-in">
-                <div className="flex-shrink-0 w-5 h-5 text-green-400 mt-0.5">
+              <div className="mb-6 p-4 bg-pink-50 border border-pink-200 rounded-lg flex items-start space-x-3 animate-fade-in">
+                <div className="flex-shrink-0 w-5 h-5 text-pink-400 mt-0.5">
                   <svg fill="currentColor" viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
@@ -492,10 +492,10 @@ export default function Register() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-green-700 font-medium">
+                  <p className="text-sm text-pink-700 font-medium">
                     ✅ Inscription réussie !
                   </p>
-                  <p className="text-sm text-green-600 mt-1">
+                  <p className="text-sm text-pink-600 mt-1">
                     Un email de confirmation vous a été envoyé. Cliquez sur le
                     lien dans l'email pour activer votre compte et être redirigé
                     vers la page d'accueil.
@@ -515,13 +515,13 @@ export default function Register() {
       </div>
 
       {/* Section droite - Illustration */}
-      <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center bg-gradient-to-br from-green-600 to-emerald-700">
+      <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600">
         <div className="max-w-md text-center text-white px-8">
           <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-8">
             <UserPlus className="h-12 w-12 text-white" />
           </div>
           <h1 className="text-4xl font-bold mb-4">Rejoignez Fa-Fashion</h1>
-          <p className="text-lg text-green-100">
+          <p className="text-lg text-pink-100">
             Créez votre compte et profitez d'une expérience shopping unique avec
             des avantages exclusifs.
           </p>

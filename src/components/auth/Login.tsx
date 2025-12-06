@@ -201,7 +201,7 @@ export default function Login() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-pink-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Redirection en cours...</p>
           <p className="text-sm text-gray-500 mt-2">Rôle: {userRole}</p>
         </div>
@@ -212,13 +212,13 @@ export default function Login() {
   return (
     <div className="min-h-screen flex">
       {/* Section gauche - Illustration */}
-      <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center bg-gradient-to-br from-indigo-600 to-purple-700">
+      <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600">
         <div className="max-w-md text-center text-white px-8">
           <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-8">
             <LogIn className="h-12 w-12 text-white" />
           </div>
           <h1 className="text-4xl font-bold mb-4">Bienvenue sur Fa-Fashion</h1>
-          <p className="text-lg text-indigo-100">
+          <p className="text-lg text-pink-100">
             Votre destination shopping préférée. Découvrez une expérience
             d'achat exceptionnelle.
           </p>
@@ -230,7 +230,7 @@ export default function Login() {
         <div className="mx-auto w-full max-w-md">
           {/* Logo mobile */}
           <div className="lg:hidden flex justify-center mb-8">
-            <div className="w-16 h-16 bg-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-pink-600 rounded-xl flex items-center justify-center">
               <LogIn className="h-8 w-8 text-white" />
             </div>
           </div>
@@ -300,7 +300,7 @@ export default function Login() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200"
                     placeholder="votre@email.com"
                   />
                 </div>
@@ -326,7 +326,7 @@ export default function Login() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200"
                     placeholder="Votre mot de passe"
                   />
                   <button
@@ -347,7 +347,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
+                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
               >
                 {isLoading ? (
                   <>
@@ -362,7 +362,7 @@ export default function Login() {
                 Pas encore de compte ?{" "}
                 <Link
                   to="/register"
-                  className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
+                  className="font-semibold text-pink-600 hover:text-pink-400 transition-colors duration-200"
                 >
                   Créer un compte
                 </Link>
