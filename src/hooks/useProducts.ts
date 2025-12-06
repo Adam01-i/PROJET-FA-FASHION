@@ -1,11 +1,10 @@
-// hooks/useProducts.ts (version complète avec prix en gros)
+// hooks/useProducts.ts (version corrigée)
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Product, StockMovement, ProductWithWholesale } from '../models';
+import { Product, StockMovement } from '../models';
 
 export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [productsWithWholesale, setProductsWithWholesale] = useState<ProductWithWholesale[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isSubscribed = useRef(false);
@@ -13,43 +12,22 @@ export function useProducts() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      setError(null);
-
-      // Récupérer les produits avec leurs catégories ET prix en gros
       const { data, error } = await supabase
         .from('products')
         .select(`
           *,
-          category:categories (name),
-          wholesale_pricing (
-            id,
-            min_quantity,
-            wholesale_price,
-            is_active
-          )
+          category:categories (name)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Transformer les données pour les produits standard
       const formattedProducts: Product[] = (data || []).map(product => ({
         ...product,
         category_name: product.category?.name
       }));
-
-      // Transformer pour les produits avec info prix en gros
-      const formattedProductsWithWholesale: ProductWithWholesale[] = (data || []).map(product => ({
-        ...product,
-        category_name: product.category?.name,
-        has_wholesale: product.wholesale_pricing && product.wholesale_pricing.length > 0,
-        wholesale_tiers: product.wholesale_pricing || [],
-        min_wholesale_quantity: product.wholesale_pricing?.[0]?.min_quantity,
-        wholesale_price: product.wholesale_pricing?.[0]?.wholesale_price
-      }));
       
       setProducts(formattedProducts);
-      setProductsWithWholesale(formattedProductsWithWholesale);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur de chargement');
     } finally {
@@ -57,131 +35,10 @@ export function useProducts() {
     }
   };
 
-  // Fonction pour récupérer spécifiquement les produits avec info de prix en gros
-  const fetchProductsWithWholesale = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          category:categories (name),
-          wholesale_pricing (
-            id,
-            min_quantity,
-            wholesale_price,
-            is_active
-          )
-        `)
-        .eq('is_public', true)
-        .order('name');
-
-      if (error) throw error;
-
-      const formattedProducts: ProductWithWholesale[] = (data || []).map(product => ({
-        ...product,
-        category_name: product.category?.name,
-        has_wholesale: product.wholesale_pricing && product.wholesale_pricing.length > 0,
-        wholesale_tiers: product.wholesale_pricing || [],
-        min_wholesale_quantity: product.wholesale_pricing?.[0]?.min_quantity,
-        wholesale_price: product.wholesale_pricing?.[0]?.wholesale_price
-      }));
-
-      setProductsWithWholesale(formattedProducts);
-      return formattedProducts;
-    } catch (err) {
-      console.error('Error fetching products with wholesale:', err);
-      throw err;
-    }
-  };
-
-  // Fonction pour ajouter un prix en gros à un produit
-  const addWholesalePrice = async (
-    productId: string, 
-    minQuantity: number, 
-    wholesalePrice: number
-  ) => {
-    try {
-      const { error } = await supabase.from('wholesale_pricing').insert({
-        product_id: productId,
-        min_quantity: minQuantity,
-        wholesale_price: wholesalePrice,
-        is_active: true,
-      });
-
-      if (error) throw error;
-      
-      await fetchProductsWithWholesale();
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message };
-    }
-  };
-
-  // Fonction pour mettre à jour un prix en gros
-  const updateWholesalePrice = async (
-    id: string,
-    updates: { min_quantity?: number; wholesale_price?: number; is_active?: boolean }
-  ) => {
-    try {
-      const { error } = await supabase
-        .from('wholesale_pricing')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      await fetchProductsWithWholesale();
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message };
-    }
-  };
-
-  // Fonction pour supprimer un prix en gros
-  const deleteWholesalePrice = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('wholesale_pricing')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      await fetchProductsWithWholesale();
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message };
-    }
-  };
-
-  // Fonction pour activer/désactiver un prix en gros
-  const toggleWholesalePrice = async (id: string, isActive: boolean) => {
-    return updateWholesalePrice(id, { is_active: !isActive });
-  };
-
-  // Fonction pour récupérer tous les seuils d'un produit
-  const getProductWholesaleTiers = async (productId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('wholesale_pricing')
-        .select('*')
-        .eq('product_id', productId)
-        .eq('is_active', true)
-        .order('min_quantity', { ascending: true });
-
-      if (error) throw error;
-      return { success: true, tiers: data || [] };
-    } catch (err: any) {
-      return { success: false, error: err.message };
-    }
-  };
-
   // NOUVELLE FONCTION POUR VENDRE UN PRODUIT
   const sellProduct = async (productId: string, quantity: number, reason?: string, createdBy?: string) => {
     try {
+      // Récupérer le produit actuel
       const { data: currentProduct } = await supabase
         .from('products')
         .select('stock_quantity, sales_count')
@@ -197,17 +54,19 @@ export function useProducts() {
         throw new Error('Stock insuffisant');
       }
 
+      // Mettre à jour le produit en UNE SEULE opération
       const { error: updateError } = await supabase
         .from('products')
         .update({ 
           stock_quantity: newStock,
-          sales_count: newSalesCount,
+          sales_count: newSalesCount, // ← METTRE À JOUR LE COMPTEUR DE VENTES
           updated_at: new Date().toISOString()
         })
         .eq('id', productId);
 
       if (updateError) throw updateError;
 
+      // Enregistrer le mouvement de vente
       const { error: movementError } = await supabase
         .from('stock_movements')
         .insert({
@@ -431,18 +290,9 @@ export function useProducts() {
 
   return {
     products,
-    productsWithWholesale,
     loading,
     error,
     refetch: fetchProducts,
-    refetchWholesaleInfo: fetchProductsWithWholesale,
-    // Fonctions pour prix en gros
-    addWholesalePrice,
-    updateWholesalePrice,
-    deleteWholesalePrice,
-    toggleWholesalePrice,
-    getProductWholesaleTiers,
-    // Fonctions existantes
     sellProduct,
     updateProductStock,
     restockProduct,
