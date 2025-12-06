@@ -303,3 +303,45 @@ export interface WholesaleTier {
   wholesale_price: number;
   discount_percentage: number;
 }
+
+// Dans models.ts, ajoutez ces interfaces :
+export interface WholesaleTier {
+  id: string;
+  product_id: string;
+  min_quantity: number;
+  wholesale_price: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductWithWholesale extends Product {
+  has_wholesale?: boolean;
+  wholesale_tiers?: WholesaleTier[];
+  min_wholesale_quantity?: number;
+  wholesale_price?: number;
+  discount_percentage?: number;
+}
+
+export interface WholesaleStats {
+  total_wholesale_products: number;
+  active_wholesale_tiers: number;
+  average_discount: number;
+  top_discount_product?: {
+    product_name: string;
+    discount_percentage: number;
+    regular_price: number;
+    wholesale_price: number;
+  };
+  total_potential_savings: number;
+}
+
+// Ajoutez aussi le type pour le filtre
+// MODELS.TS - Version corrigée
+export interface InventoryFilters {
+  category: string;
+  stockStatus: "all" | "in_stock" | "low_stock" | "out_of_stock";
+  sortBy: "name" | "stock" | "sales" | "revenue"; // Pas de "wholesale" ici
+  sortOrder: "asc" | "desc";
+  // Pas de "wholesale" ici - on le gère séparément
+}
