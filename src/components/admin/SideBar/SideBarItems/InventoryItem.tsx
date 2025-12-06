@@ -1,5 +1,3 @@
-import { Package } from 'lucide-react';
-
 interface InventoryItemProps {
   active: boolean;
   onClick: () => void;
@@ -17,7 +15,15 @@ export default function InventoryItem({ active, onClick }: InventoryItemProps) {
         }
       `}
     >
-      <Package className={`h-5 w-5 mr-3 transition-colors ${active ? 'text-white' : 'text-gray-400 group-hover:text-indigo-600'}`} />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className={`h-5 w-5 mr-3 transition-colors ${active ? 'text-white' : 'text-gray-400 group-hover:text-indigo-600'}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0h-4m-4 0H4" />
+      </svg>
       <span className="font-medium">Inventaire</span>
       
       {active && (

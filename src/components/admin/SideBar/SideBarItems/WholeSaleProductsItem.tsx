@@ -1,5 +1,3 @@
-import { Package } from 'lucide-react';
-
 interface WholeSaleProductsItemProps {
   active: boolean;
   onClick: () => void;
@@ -17,7 +15,15 @@ export default function WholeSaleProductsItem({ active, onClick }: WholeSaleProd
         }
       `}
     >
-      <Package className={`h-5 w-5 mr-3 transition-colors ${active ? 'text-white' : 'text-gray-400 group-hover:text-indigo-600'}`} />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className={`h-5 w-5 mr-3 transition-colors ${active ? 'text-white' : 'text-gray-400 group-hover:text-indigo-600'}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18M4 7v10a1 1 0 001 1h1a1 1 0 001-1V7M16 7v10a1 1 0 001 1h1a1 1 0 001-1V7" />
+      </svg>
       <span className="font-medium">Prix en Gros</span>
       
       {active && (

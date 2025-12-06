@@ -12,13 +12,14 @@ import {
   ArrowRight,
   ArrowLeft,
 } from "lucide-react";
+// Hooks pour récupérer les données
 import { useProducts } from "../../../hooks/useProducts";
 import { useOrders } from "../../../hooks/useOrders";
 import { useUsers } from "../../../hooks/useUsers";
 import { useProductSales } from "../../../hooks/useProductSales";
 import { useDailySales } from "../../../hooks/useDailySales";
 
-// Import des composants détaillés
+// Sections du dashboard
 import RevenueSection from "./sections/RevenueSection";
 import OrdersSection from "../../AuthOrdersSection/OrdersSection";
 import UsersSection from "../SideBar/ContentSections/UsersSection";
@@ -99,7 +100,7 @@ export default function Dashboard() {
   useEffect(() => {
     // Calcul des statistiques réelles
     const confirmedOrders = orders.filter(
-      (order) => order.status === "confirmed"
+      (order) => order.status === "confirmed" || order.status === "delivered"
     );
     const totalRevenue = confirmedOrders.reduce(
       (sum, order) => sum + order.total_amount,
