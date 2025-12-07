@@ -353,12 +353,12 @@ Merci pour votre confiance ! Nous vous tiendrons informé de l'avancement de vot
   return (
     <>
       <div className="flex justify-between items-center mb-6">
-        <div>
+        {/* <div>
           <h1 className="text-2xl font-bold text-gray-900">Commandes</h1>
           <p className="text-gray-600 mt-1">
             Gérez toutes les commandes de votre boutique
           </p>
-        </div>
+        </div> */}
 
         {/* Bouton pour créer une commande - visible seulement pour les assistants/admin */}
         {(currentUserRole === "assistant" || currentUserRole === "admin") && (

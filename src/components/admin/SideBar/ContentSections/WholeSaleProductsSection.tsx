@@ -668,14 +668,14 @@ return (
   <div className="space-y-4 sm:space-y-6 -mx-6 px-6"> {/* Ajout de -mx-6 px-6 pour compenser le padding parent */}
     {/* En-tête avec titre et actions */}
     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-      <div className="min-w-0">
+      {/* <div className="min-w-0">
         <h1 className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
           Gestion des prix en gros
         </h1>
         <p className="text-gray-600 mt-1 text-xs xs:text-sm sm:text-base truncate">
           Configurez les prix en gros par seuil de quantité
         </p>
-      </div>
+      </div> */}
       
       <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-3 mt-4 lg:mt-0">
         {/* Filtres */}
