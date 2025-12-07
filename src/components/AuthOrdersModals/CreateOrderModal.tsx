@@ -10,10 +10,12 @@ import {
   MapPin,
   ShoppingBag,
   Loader,
+  Percent,
 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useToastContext } from "../../hooks/ToastProvider";
 import { Product, DeliveryLocation } from "../../models";
+import { calculateCartWithWholesale } from "../../services/pricingService";
 
 interface CartItem {
   id: string;
@@ -22,6 +24,13 @@ interface CartItem {
   quantity: number;
   stock_quantity: number;
   image_url?: string | null;
+  wholesalePrice?: number; // AJOUT: Prix avec remise en gros
+  appliedTier?: { // AJOUT: Information sur le seuil appliqué
+    min_quantity: number;
+    wholesale_price: number;
+  };
+  savings?: number; // AJOUT: Économies pour cet article
+  isWholesaleApplied?: boolean; // AJOUT: Si le prix en gros est appliqué
 }
 
 interface CreateOrderModalProps {
@@ -73,6 +82,13 @@ export default function CreateOrderModal({
   const [isCreating, setIsCreating] = useState(false);
   const { success, error: toastError } = useToastContext();
 
+  // AJOUT: État pour les calculs de prix en gros
+  const [, setCartWithWholesale] = useState<{
+    items: CartItem[];
+    subtotal: number;
+    totalWholesaleSavings: number;
+  } | null>(null);
+
   // Charger les produits et les lieux de livraison
   useEffect(() => {
     const loadData = async () => {
@@ -116,6 +132,100 @@ export default function CreateOrderModal({
     loadData();
   }, [toastError]);
 
+  // AJOUT: Effet pour calculer les prix en gros quand le panier change
+  useEffect(() => {
+    const calculateWholesalePrices = async () => {
+      if (cart.length > 0) {
+        // Convertissez le panier au format attendu par calculateCartWithWholesale
+        const formattedCart = cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          image: item.image_url || '',
+          quantity: item.quantity,
+          stock_quantity: item.stock_quantity
+        }));
+
+        const result = await calculateCartWithWholesale(formattedCart);
+        
+        // Met à jour le panier avec les prix en gros
+        setCart(prevCart => 
+          prevCart.map(item => {
+            const wholesaleItem = result.items.find(wi => wi.id === item.id);
+            return wholesaleItem ? {
+              ...item,
+              wholesalePrice: wholesaleItem.wholesalePrice,
+              appliedTier: wholesaleItem.appliedTier,
+              savings: (wholesaleItem as any).savings,
+              isWholesaleApplied: (wholesaleItem as any).isWholesaleApplied ?? false
+            } : item;
+          })
+        );
+
+        setCartWithWholesale(result);
+      } else {
+        setCartWithWholesale(null);
+      }
+    };
+
+    calculateWholesalePrices();
+  }, [cart]);
+
+  // AJOUT: Fonction utilitaire pour calculer le prix d'un produit
+  async function calculateProductPrice(
+    productId: string,
+    quantity: number
+  ): Promise<{
+    finalPrice: number;
+    priceType: 'regular' | 'wholesale';
+    appliedTier?: {
+      min_quantity: number;
+      wholesale_price: number;
+    };
+  }> {
+    try {
+      const { data, error } = await supabase.rpc(
+        'get_product_pricing_info',
+        {
+          p_product_id: productId,
+          p_quantity: quantity
+        }
+      );
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const result = data[0];
+        return {
+          finalPrice: result.final_price,
+          priceType: result.price_type,
+          appliedTier: result.min_quantity_needed ? {
+            min_quantity: result.min_quantity_needed,
+            wholesale_price: result.final_price,
+          } : undefined,
+        };
+      }
+
+      // Fallback: récupérer le prix régulier
+      const { data: productData } = await supabase
+        .from('products')
+        .select('price')
+        .eq('id', productId)
+        .single();
+
+      return {
+        finalPrice: productData?.price || 0,
+        priceType: 'regular'
+      };
+    } catch (error) {
+      console.error('Error calculating price:', error);
+      return {
+        finalPrice: 0,
+        priceType: 'regular'
+      };
+    }
+  }
+
   // Filtrer les produits
   const filteredProducts = products.filter(
     (product) =>
@@ -123,8 +233,17 @@ export default function CreateOrderModal({
       product.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Gestion du panier
-  const addToCart = (product: Product) => {
+  // AJOUT: Gestion du panier avec calcul des prix en gros
+  const addToCart = async (product: Product) => {
+    // Vérifier le stock
+    if (product.stock_quantity === 0) {
+      toastError("Stock épuisé", "Ce produit n'est plus disponible");
+      return;
+    }
+
+    // Calculer le prix avec gros pour 1 unité
+    const priceInfo = await calculateProductPrice(product.id, 1);
+    
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
 
@@ -136,16 +255,17 @@ export default function CreateOrderModal({
           );
           return prevCart;
         }
+        
+        // Met à jour la quantité (les prix seront recalculés par l'effet)
         return prevCart.map((item) =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { 
+                ...item, 
+                quantity: item.quantity + 1,
+              }
             : item
         );
       } else {
-        if (product.stock_quantity === 0) {
-          toastError("Stock épuisé", "Ce produit n'est plus disponible");
-          return prevCart;
-        }
         return [
           ...prevCart,
           {
@@ -155,6 +275,12 @@ export default function CreateOrderModal({
             quantity: 1,
             stock_quantity: product.stock_quantity,
             image_url: product.image_url,
+            wholesalePrice: priceInfo.finalPrice,
+            appliedTier: priceInfo.appliedTier,
+            isWholesaleApplied: priceInfo.priceType === 'wholesale',
+            savings: priceInfo.priceType === 'wholesale' 
+              ? product.price - priceInfo.finalPrice 
+              : 0
           },
         ];
       }
@@ -189,11 +315,21 @@ export default function CreateOrderModal({
     setCart([]);
   };
 
-  // Calculs
+  // AJOUT: Calculs avec prise en compte des prix en gros
+  const displayItems = cart; // Les articles avec prix en gros déjà calculés
+
+  // Calcul du sous-total avec prix en gros
   const subtotal = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + (item.wholesalePrice || item.price) * item.quantity,
     0
   );
+
+  // Calcul des économies totales
+  const totalSavings = cart.reduce(
+    (sum, item) => sum + ((item.savings || 0) * item.quantity),
+    0
+  );
+
   const deliveryFee = selectedLocation?.delivery_fee || 0;
   const total = subtotal + deliveryFee;
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -243,11 +379,11 @@ export default function CreateOrderModal({
       throw new Error("Veuillez sélectionner un lieu de livraison");
     }
 
-    // Préparer les données des articles
+    // AJOUT: Préparer les données des articles avec prix en gros
     const orderItemsData = cart.map((item) => ({
       product_id: item.id,
       quantity: item.quantity,
-      price: item.price,
+      price: item.wholesalePrice || item.price, // Utilise le prix en gros si disponible
     }));
 
     const cleanPhone = customerPhone.replace(/\s/g, "");
@@ -417,66 +553,97 @@ export default function CreateOrderModal({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {cart.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center p-3 border border-gray-200 rounded-lg"
-                    >
-                      <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-md overflow-hidden">
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ShoppingBag className="w-full h-full text-gray-400 p-1" />
-                        )}
-                      </div>
+                  {displayItems.map((item) => {
+                    const itemPrice = item.wholesalePrice || item.price;
+                    // const itemTotal = itemPrice * item.quantity;
+                    // const regularTotal = item.price * item.quantity;
+                    const savings = item.savings || 0;
+                    const totalSavingsForItem = savings * item.quantity;
 
-                      <div className="ml-3 flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">
-                          {item.name}
-                        </h4>
-                        <p className="text-sm text-gray-500">
-                          {formatXOF(item.price)} × {item.quantity}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <div className="flex items-center border rounded-md">
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity - 1)
-                            }
-                            className="p-1 hover:bg-gray-100"
-                            disabled={item.quantity <= 1}
-                          >
-                            <Minus className="h-3 w-3 text-gray-600" />
-                          </button>
-                          <span className="px-2 py-1 text-sm text-gray-900 min-w-8 text-center">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
-                            }
-                            className="p-1 hover:bg-gray-100"
-                            disabled={item.quantity >= item.stock_quantity}
-                          >
-                            <Plus className="h-3 w-3 text-gray-600" />
-                          </button>
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center p-3 border border-gray-200 rounded-lg"
+                      >
+                        <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-md overflow-hidden">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <ShoppingBag className="w-full h-full text-gray-400 p-1" />
+                          )}
                         </div>
 
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-red-600 hover:text-red-700 p-1"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="ml-3 flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-gray-900 truncate">
+                            {item.name}
+                          </h4>
+                          
+                          {/* AJOUT: Affichage du prix et économies */}
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-sm font-medium text-green-600">
+                              {formatXOF(itemPrice)} × {item.quantity}
+                            </span>
+                            
+                            {item.isWholesaleApplied && savings > 0 && (
+                              <>
+                                <span className="text-xs text-gray-400 line-through">
+                                  {formatXOF(item.price)}
+                                </span>
+                                <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
+                                  -{formatXOF(totalSavingsForItem)}
+                                </span>
+                              </>
+                            )}
+                          </div>
+
+                          {/* AJOUT: Détail du seuil si prix en gros */}
+                          {item.appliedTier && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              <Percent className="inline h-3 w-3 mr-1" />
+                              Prix en gros (min: {item.appliedTier.min_quantity} unités)
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <div className="flex items-center border rounded-md">
+                            <button
+                              onClick={() =>
+                                updateQuantity(item.id, item.quantity - 1)
+                              }
+                              className="p-1 hover:bg-gray-100"
+                              disabled={item.quantity <= 1}
+                            >
+                              <Minus className="h-3 w-3 text-gray-600" />
+                            </button>
+                            <span className="px-2 py-1 text-sm text-gray-900 min-w-8 text-center">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() =>
+                                updateQuantity(item.id, item.quantity + 1)
+                              }
+                              className="p-1 hover:bg-gray-100"
+                              disabled={item.quantity >= item.stock_quantity}
+                            >
+                              <Plus className="h-3 w-3 text-gray-600" />
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="text-red-600 hover:text-red-700 p-1"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -569,7 +736,7 @@ export default function CreateOrderModal({
                 </div>
               </div>
 
-              {/* Résumé */}
+              {/* AJOUT: Résumé avec économies */}
               {cart.length > 0 && (
                 <div className="p-4 bg-white border border-gray-200 rounded-lg">
                   <div className="flow-root">
@@ -580,6 +747,16 @@ export default function CreateOrderModal({
                           {formatXOF(subtotal)}
                         </dd>
                       </div>
+                      
+                      {totalSavings > 0 && (
+                        <div className="py-2 flex items-center justify-between">
+                          <dt className="text-green-600">Économies prix en gros</dt>
+                          <dd className="font-medium text-green-600">
+                            -{formatXOF(totalSavings)}
+                          </dd>
+                        </div>
+                      )}
+                      
                       <div className="py-2 flex items-center justify-between">
                         <dt className="text-gray-600">Frais de livraison</dt>
                         <dd className="font-medium text-gray-900">
