@@ -1,17 +1,25 @@
-import { useState } from 'react';
-import DeliveryNavbar from './DeliveryNavbar';
-import DeliveryOrdersSection from './DeliveryOrdersSection';
+import { useState } from "react";
+import DeliveryNavbar from "./DeliveryNavbar";
+import DeliveryOrdersSection from "./DeliveryOrdersSection";
+import MyAccountSection from "../admin/sideBar/contentSections/MyAccountSection";
 
 export default function DeliveryLayout() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'delivered'>('orders');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<"orders" | "delivered" | "myAccount" >("orders");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'orders':
+      case "orders":
         return <DeliveryOrdersSection searchTerm={searchTerm} />;
-      case 'delivered':
-        return <DeliveryOrdersSection searchTerm={searchTerm} showDeliveredOnly={true} />;
+      case "delivered":
+        return (
+          <DeliveryOrdersSection
+            searchTerm={searchTerm}
+            showDeliveredOnly={true}
+          />
+        );
+      case "myAccount":
+        return <MyAccountSection/>;
       default:
         return <DeliveryOrdersSection searchTerm={searchTerm} />;
     }
@@ -19,17 +27,15 @@ export default function DeliveryLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DeliveryNavbar 
+      <DeliveryNavbar
         activeTab={activeTab}
         onTabChange={setActiveTab}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
       />
-      
+
       <div className="flex-1 min-h-screen flex flex-col">
-        <main className="flex-1 p-4 sm:p-6">
-          {renderContent()}
-        </main>
+        <main className="flex-1 p-4 sm:p-6">{renderContent()}</main>
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import ConfirmationModal from '../../../ui/ConfirmationModal';
 
 interface NavbarAssistantProps {
   activeTab: string;
-  onTabChange: (tab: 'orders' | 'inventory') => void;
+  onTabChange: (tab: 'orders' | 'inventory' | 'myAccount') => void;
 }
 
 export default function Navbar({ activeTab, onTabChange }: NavbarAssistantProps) {
@@ -62,7 +62,7 @@ export default function Navbar({ activeTab, onTabChange }: NavbarAssistantProps)
   const handleSignOutClick = () => setIsLogoutModalOpen(true);
   const handleCancelLogout = () => setIsLogoutModalOpen(false);
 
-  const handleNavClick = (tab: 'orders' | 'inventory') => {
+  const handleNavClick = (tab: 'orders' | 'inventory' | 'myAccount') => {
     onTabChange(tab);
     setIsMenuOpen(false);
   };
@@ -72,6 +72,7 @@ export default function Navbar({ activeTab, onTabChange }: NavbarAssistantProps)
   const navItems = [
     { key: 'orders' as const, icon: Package, label: 'Commandes', mobileLabel: 'Gestion Commandes' },
     { key: 'inventory' as const, icon: ClipboardList, label: 'Inventaire', mobileLabel: 'Vérification Inventaire' },
+    { key: 'myAccount' as const, icon: Shield, label: 'Mon Compte', mobileLabel: 'Mon Compte' },
   ];
 
   return (

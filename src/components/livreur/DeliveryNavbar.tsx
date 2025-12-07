@@ -5,8 +5,8 @@ import { supabase } from '../../lib/supabase';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 
 interface DeliveryNavbarProps {
-  activeTab: 'orders' | 'delivered';
-  onTabChange: (tab: 'orders' | 'delivered') => void;
+  activeTab: 'orders' | 'delivered' | 'myAccount';
+  onTabChange: (tab: 'orders' | 'delivered' | 'myAccount') => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
 }
@@ -69,7 +69,7 @@ export default function DeliveryNavbar({
   const handleSignOutClick = () => setIsLogoutModalOpen(true);
   const handleCancelLogout = () => setIsLogoutModalOpen(false);
 
-  const handleNavClick = (tab: 'orders' | 'delivered') => {
+  const handleNavClick = (tab: 'orders' | 'delivered' | 'myAccount') => {
     onTabChange(tab);
     setIsMenuOpen(false);
   };
@@ -79,6 +79,7 @@ export default function DeliveryNavbar({
   const navItems = [
     { key: 'orders' as const, icon: Truck, label: 'Commandes à Livrer', mobileLabel: 'Commandes à Livrer' },
     { key: 'delivered' as const, icon: PackageCheck, label: 'Livrées', mobileLabel: 'Commandes Livrées' },
+    { key: 'myAccount' as const, icon: User, label: 'Mon Compte', mobileLabel: 'Mon Compte' },
   ];
 
   return (
