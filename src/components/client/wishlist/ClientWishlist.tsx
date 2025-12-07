@@ -4,9 +4,9 @@ import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Trash2, ShoppingCart } from 'lucide-react';
 import { Product } from '../../../models';
 import { useToastContext } from '../../../hooks/ToastProvider';
-import ProductCard from '../Views/ProductCard';
+import ProductCard from '../views/ProductCard';
 import { useCart } from '../../../contexts/CartContext';
-import { useFavorites } from '../../../hooks/FavoritesContext';
+import { useFavorites } from '../../../contexts/FavoritesContext';
 import ConfirmationModal from '../../../ui/ConfirmationModal';
 
 export default function Wishlist() {

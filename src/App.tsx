@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 // Contextes et hooks globaux
 import { CartProvider } from "./contexts/CartContext";
 import { ToastProvider } from "./hooks/ToastProvider";
-import { FavoritesProvider } from "./hooks/FavoritesContext";
+import { FavoritesProvider } from "./contexts/FavoritesContext";
 
 // Auth
 import Login from "./components/auth/Login";
@@ -25,10 +25,10 @@ import AssistantLayout from "./components/assistant/AssistantLayout";
 
 
 // Pages Client
-import ClientHome from "./components/client/Views/ClientHome";
-import ClientCart from "./components/client/Cart/ClientCart";
-import ClientOrders from "./components/client/Orders/ClientOrders";
-import ClientWishlist from "./components/client/Wishlist/ClientWishlist";
+import ClientHome from "./components/client/views/ClientHome";
+import ClientCart from "./components/client/cart/ClientCart";
+import ClientOrders from "./components/client/orders/ClientOrders";
+import ClientWishlist from "./components/client/wishlist/ClientWishlist";
 import DeliveryLayout from "./components/livreur/DeliveryLayout";
 
 // ========================

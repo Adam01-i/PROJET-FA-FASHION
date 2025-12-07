@@ -16,9 +16,9 @@ import {
 import { Order } from "../../models";
 import { useOrders } from "../../hooks/useOrders";
 import { useToastContext } from "../../hooks/ToastProvider";
-import OrderDetailsModal from "../AuthOrdersModals/OrderDetailsModal";
+import OrderDetailsModal from "../admin/modals/OrderDetailsModal";
 import { supabase } from "../../lib/supabaseClient";
-import CreateOrderModal from "../AuthOrdersModals/CreateOrderModal";
+import CreateOrderModal from "../admin/modals/CreateOrderModal";
 
 interface OrdersSectionProps {
   searchTerm: string;

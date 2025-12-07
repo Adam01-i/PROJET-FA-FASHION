@@ -1,13 +1,13 @@
 import { useState } from "react";
-import NavBar from "./NavBar/NavBar";
-import SideBar, { Tab } from "./SideBar/SideBar";
-import Dashboard from "./Dashboard/Dashboard";
+import NavBar from "./navBar/NavBar";
+import SideBar, { Tab } from "./sideBar/SideBar";
+import Dashboard from "./dashboard/Dashboard";
 import InventorySection from "../Inventory/InventorySection";
-import ProductsSection from "./SideBar/ContentSections/ProductsSection";
-import WholeSaleProductsSection from "./SideBar/ContentSections/WholeSaleProductsSection";
-import OrdersSection from "../AuthOrdersSection/OrdersSection";
-import UsersSection from "./SideBar/ContentSections/UsersSection";
-import SettingsSection from "./SideBar/ContentSections/SettingsSection";
+import ProductsSection from "./sideBar/contentSections/ProductsSection";
+import WholeSaleProductsSection from "./sideBar/contentSections/WholeSaleProductsSection";
+import OrdersSection from "../ordersSection/OrdersSection";
+import UsersSection from "./sideBar/contentSections/UsersSection";
+import SettingsSection from "./sideBar/contentSections/SettingsSection";
 import DeliveryOrdersSection from "../livreur/DeliveryOrdersSection";
 
 export default function AdminLayout() {

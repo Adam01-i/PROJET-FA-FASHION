@@ -18,7 +18,7 @@ import { useProductsForWholesale } from '../../../../hooks/useProductsForWholesa
 import { useWholesaleStats } from '../../../../hooks/useWholesaleStats';
 import { useToastContext } from '../../../../hooks/ToastProvider';
 import { supabase } from '../../../../lib/supabase';
-import WholesaleModal from '../../Modals/WholesaleModal';
+import WholesaleModal from '../../modals/WholesaleModal';
 import ConfirmationModal from '../../../../ui/ConfirmationModal';
 
 interface WholeSaleProductsSectionProps {

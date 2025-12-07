@@ -12,10 +12,10 @@ import {
   Loader,
   Percent,
 } from "lucide-react";
-import { supabase } from "../../lib/supabaseClient";
-import { useToastContext } from "../../hooks/ToastProvider";
-import { Product, DeliveryLocation } from "../../models";
-import { calculateCartWithWholesale } from "../../services/pricingService";
+import { supabase } from "../../../lib/supabaseClient";
+import { useToastContext } from "../../../hooks/ToastProvider";
+import { Product, DeliveryLocation } from "../../../models";
+import { calculateCartWithWholesale } from "../../../services/pricingService";
 
 interface CartItem {
   id: string;

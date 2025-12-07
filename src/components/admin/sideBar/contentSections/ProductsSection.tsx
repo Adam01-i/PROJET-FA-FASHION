@@ -6,9 +6,9 @@ import { useInventoryStats } from "../../../../hooks/useInventoryStats";
 import { supabase } from "../../../../lib/supabase";
 import { Product } from "../../../../models";
 import { useToastContext } from "../../../../hooks/ToastProvider";
-import ProductModal from "../../Modals/ProductModal";
-import RestockModal from "../../Modals/RestockModal";
-import StatsDashboard from "../../Stats/StatsDashboard";
+import ProductModal from "../../modals/ProductModal";
+import RestockModal from "../../modals/RestockModal";
+import StatsDashboard from "../../stats/StatsDashboard";
 import ConfirmationModal from "../../../../ui/ConfirmationModal";
 
 interface ProductsSectionProps {

@@ -1,11 +1,11 @@
-import DashboardItem from "./SideBarItems/DashboardItem";
-import InventoryItem from "./SideBarItems/InventoryItem";
-import ProductsItem from "./SideBarItems/ProductsItem";
-import WholeSaleProductsItem from "./SideBarItems/WholeSaleProductsItem";
-import OrdersItem from "./SideBarItems/OrdersItem";
-import UsersItem from "./SideBarItems/UsersItem";
-import SettingsItem from "./SideBarItems/SettingsItem";
-import DeliveryItem from "./SideBarItems/DeliveryItem";
+import DashboardItem from "./sideBarItems/DashboardItem";
+import InventoryItem from "./sideBarItems/InventoryItem";
+import ProductsItem from "./sideBarItems/ProductsItem";
+import WholeSaleProductsItem from "./sideBarItems/WholeSaleProductsItem";
+import OrdersItem from "./sideBarItems/OrdersItem";
+import UsersItem from "./sideBarItems/UsersItem";
+import SettingsItem from "./sideBarItems/SettingsItem";
+import DeliveryItem from "./sideBarItems/DeliveryItem";
 
 export type Tab =
   | "dashboard"

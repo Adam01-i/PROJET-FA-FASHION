@@ -14,7 +14,7 @@ import {
 import { formatXOF } from "../../../lib/currency";
 import { Product, WholesaleTier } from "../../../models";
 import { useToastContext } from "../../../hooks/ToastProvider";
-import { useFavorites } from "../../../hooks/FavoritesContext";
+import { useFavorites } from "../../../contexts/FavoritesContext";
 
 // Étendre localement l'interface Product pour inclure wholesale_tiers
 interface ProductWithWholesale extends Product {

@@ -12,12 +12,12 @@ import {
   Clock,
   Truck,
 } from "lucide-react";
-import { Order } from "../../models";
+import { Order } from "../../../models";
 import {
   generateInvoicePDF,
   generateAdvancedInvoicePDF,
-} from "../../utils/invoiceGenerator";
-import { useInvoiceSettings } from "../../hooks/useInvoiceSettings";
+} from "../../../utils/invoiceGenerator";
+import { useInvoiceSettings } from "../../../hooks/useInvoiceSettings";
 
 interface OrderDetailsModalProps {
   order: Order;

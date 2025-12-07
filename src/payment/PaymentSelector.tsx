@@ -1,7 +1,7 @@
 // components/payment/PaymentSelector.tsx
 import { useState } from 'react';
 import { CreditCard, Smartphone, MessageCircle, Banknote } from 'lucide-react';
-import { PaymentMethod, PaymentProvider } from '../types/payment';
+import { PaymentMethod, PaymentProvider } from '../models/payment';
 import WhatsAppPayment from './WhatsAppPayment';
 // import WavePayment from './WavePayment'; // À créer
 // import OrangeMoneyPayment from './OrangeMoneyPayment'; // À créer

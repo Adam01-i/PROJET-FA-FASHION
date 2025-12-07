@@ -21,9 +21,9 @@ import { useDailySales } from "../../../hooks/useDailySales";
 
 // Sections du dashboard
 import RevenueSection from "./sections/RevenueSection";
-import OrdersSection from "../../AuthOrdersSection/OrdersSection";
-import UsersSection from "../SideBar/ContentSections/UsersSection";
-import ProductsSection from "../SideBar/ContentSections/ProductsSection";
+import OrdersSection from "../../ordersSection/OrdersSection";
+import UsersSection from "../sideBar/contentSections/UsersSection";
+import ProductsSection from "../sideBar/contentSections/ProductsSection";
 import SalesPerformanceSection from "./sections/SalesPerformanceSection";
 import RecentActivitySection from "./sections/RecentActivitySection";
 import PopularProductsSection from "./sections/PopularProductsSection";
