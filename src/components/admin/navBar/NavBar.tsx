@@ -1,6 +1,6 @@
-import { Search, User, LogOut, Menu } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import ConfirmationModal from '../../../ui/ConfirmationModal';
+import { Search, LogOut, Menu } from "lucide-react";
+import { useEffect, useState } from "react";
+import ConfirmationModal from "../../../ui/ConfirmationModal";
 import { supabase } from "../../../lib/supabase";
 
 interface NavBarProps {
@@ -34,13 +34,28 @@ export default function NavBar({
     const fetchUser = async () => {
       const { data } = await supabase.auth.getUser();
       setUser(data?.user);
+      if (data?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, avatar_url")
+          .eq("id", data.user.id)
+          .single();
+
+        setUser((prev: any) => ({
+          ...prev,
+          full_name: profile?.full_name || prev?.email,
+          avatar_url: profile?.avatar_url || null,
+        }));
+      }
     };
     fetchUser();
 
     // Écouter les changements d'authentification
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
 
     return () => {
       listener?.subscription.unsubscribe();
@@ -54,7 +69,7 @@ export default function NavBar({
       await supabase.auth.signOut();
       window.location.href = "/login"; // redirige vers la page de login
     } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
+      console.error("Erreur lors de la déconnexion:", error);
     } finally {
       setIsLoggingOut(false);
       setIsLogoutModalOpen(false);
@@ -111,9 +126,18 @@ export default function NavBar({
 
               {/* User Info */}
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                  {user?.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    user?.email?.[0]?.toUpperCase()
+                  )}
                 </div>
+
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-medium text-gray-900">
                     {user?.email || "Utilisateur"}
