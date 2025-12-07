@@ -340,9 +340,9 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            {/* <h1 className="text-xl sm:text-2xl font-bold">
-              Produits ({products.length})
-            </h1> */}
+            <p className="text-gray-600 mt-1 text-xs xs:text-sm sm:text-base truncate">
+              Gestion complete des produits de votre inventaire
+        </p>
             <p className="text-sm text-gray-600 mt-1 sm:hidden">
               {filteredProducts.length} produit(s) filtré(s)
             </p>
@@ -351,7 +351,7 @@ export default function ProductsSection({ searchTerm }: ProductsSectionProps) {
             onClick={handleAddClick}
             className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg w-full sm:w-auto"
           >
-            <Plus className="h-5 w-5 mr-2" />
+            <Plus className="h-5 w-5 mr-2" /> 
             <span className="whitespace-nowrap">Ajouter un produit</span>
           </button>
         </div>

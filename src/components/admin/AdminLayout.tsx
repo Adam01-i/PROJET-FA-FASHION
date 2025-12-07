@@ -9,6 +9,7 @@ import OrdersSection from "../ordersSection/OrdersSection";
 import UsersSection from "./sideBar/contentSections/UsersSection";
 import SettingsSection from "./sideBar/contentSections/SettingsSection";
 import DeliveryOrdersSection from "../livreur/DeliveryOrdersSection";
+import MyAccountSection from "./sideBar/contentSections/MyAccountSection";
 
 export default function AdminLayout() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
@@ -37,6 +38,8 @@ export default function AdminLayout() {
         return "Gestion des utilisateurs";
       case "settings":
         return "Paramètres";
+      case "myAccount":
+        return "Mon compte";
       default:
         return "Tableau de bord";
     }
@@ -75,7 +78,6 @@ export default function AdminLayout() {
           <main className="flex-1 p-6 overflow-y-auto">
             {activeTab === "dashboard" && <Dashboard />}
 
-
             {activeTab === "products" && (
               <ProductsSection
                 searchTerm={searchTerm}
@@ -83,14 +85,13 @@ export default function AdminLayout() {
               />
             )}
 
-
             {activeTab === "wholeSaleproducts" && (
               <WholeSaleProductsSection
                 searchTerm={searchTerm}
                 onAddClick={() => setIsAddModalOpen(true)}
               />
             )}
-            
+
             {activeTab === "inventory" && <InventorySection />}
 
             {activeTab === "orders" && (
@@ -107,6 +108,8 @@ export default function AdminLayout() {
             {activeTab === "users" && <UsersSection searchTerm={searchTerm} />}
 
             {activeTab === "settings" && <SettingsSection />}
+
+            {activeTab === "myAccount" && <MyAccountSection />}
           </main>
         </div>
       </div>

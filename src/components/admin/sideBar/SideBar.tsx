@@ -6,6 +6,7 @@ import OrdersItem from "./sideBarItems/OrdersItem";
 import UsersItem from "./sideBarItems/UsersItem";
 import SettingsItem from "./sideBarItems/SettingsItem";
 import DeliveryItem from "./sideBarItems/DeliveryItem";
+import MyAccountItem from "./sideBarItems/MyAccountItem";
 
 export type Tab =
   | "dashboard"
@@ -15,15 +16,16 @@ export type Tab =
   | "orders"
   | "deliveries"
   | "users"
-  | "settings";
+  | "settings"
+  | "myAccount";
 
 interface SideBarProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
-  deliveryTab?: 'orders' | 'delivered';
-  onDeliveryTabChange?: (tab: 'orders' | 'delivered') => void;
+  deliveryTab?: "orders" | "delivered";
+  onDeliveryTabChange?: (tab: "orders" | "delivered") => void;
 }
 
 export default function SideBar({
@@ -32,9 +34,8 @@ export default function SideBar({
   isMobileOpen = false,
   onCloseMobile,
   deliveryTab,
-  onDeliveryTabChange
+  onDeliveryTabChange,
 }: SideBarProps) {
-  
   return (
     <>
       {/* Mobile overlay */}
@@ -104,9 +105,8 @@ export default function SideBar({
             active={activeTab === "deliveries"}
             onClick={() => onTabChange("deliveries")}
             deliveryTab={deliveryTab}
-             onDeliveryTabChange={onDeliveryTabChange} // ← Passez directement la prop
+            onDeliveryTabChange={onDeliveryTabChange} // ← Passez directement la prop
           />
-
 
           <UsersItem
             active={activeTab === "users"}
@@ -116,12 +116,18 @@ export default function SideBar({
             active={activeTab === "settings"}
             onClick={() => onTabChange("settings")}
           />
+          <MyAccountItem
+            active={activeTab === "myAccount"}
+            onClick={() => onTabChange("myAccount")}
+          />
         </nav>
 
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-100">
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4">
-            <p className="text-sm font-medium text-indigo-900">Fa-Fashion Admin</p>
+            <p className="text-sm font-medium text-indigo-900">
+              Fa-Fashion Admin
+            </p>
             <p className="text-xs text-indigo-600 mt-1">Version 1.0.0</p>
           </div>
         </div>

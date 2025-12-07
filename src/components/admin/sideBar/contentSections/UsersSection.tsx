@@ -321,7 +321,6 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Tableau Desktop */}
@@ -377,9 +376,20 @@ export default function UsersSection({ searchTerm }: UsersSectionProps) {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <div className="h-10 w-10 flex-shrink-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                            {getUserInitial(user)}
+                          <div className="h-10 w-10 flex-shrink-0 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-white font-semibold text-sm">
+                            {user.avatar_url ? (
+                              <img
+                                src={user.avatar_url}
+                                alt={user.full_name || "Avatar"}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span className="bg-gradient-to-br from-blue-500 to-purple-600 h-full w-full flex items-center justify-center">
+                                {getUserInitial(user)}
+                              </span>
+                            )}
                           </div>
+
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
                               {user.full_name || "Nom non renseigné"}

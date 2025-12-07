@@ -668,29 +668,17 @@ return (
   <div className="space-y-4 sm:space-y-6 -mx-6 px-6"> {/* Ajout de -mx-6 px-6 pour compenser le padding parent */}
     {/* En-tête avec titre et actions */}
     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-      {/* <div className="min-w-0">
-        <h1 className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+      <div className="min-w-0">
+        {/* <h1 className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
           Gestion des prix en gros
-        </h1>
+        </h1> */}
         <p className="text-gray-600 mt-1 text-xs xs:text-sm sm:text-base truncate">
           Configurez les prix en gros par seuil de quantité
         </p>
-      </div> */}
+      </div>
       
       <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-3 mt-4 lg:mt-0">
-        {/* Filtres */}
-        <div className="flex items-center bg-white border border-gray-200 rounded-lg px-3 py-2 w-full xs:w-auto">
-          <Filter className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-          <select
-            value={viewMode}
-            onChange={(e) => setViewMode(e.target.value as any)}
-            className="bg-transparent border-none focus:outline-none text-sm w-full xs:w-auto min-w-0"
-          >
-            <option value="all">Tous les prix</option>
-            <option value="active">Actifs seulement</option>
-            <option value="inactive">Inactifs seulement</option>
-          </select>
-        </div>
+        
 
         <button
           onClick={handleAddClick}
@@ -709,38 +697,53 @@ return (
 
     {/* Contrôles de tri et info */}
     <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        {/* Première ligne de filtres */}
-        <div className="flex flex-col xs:flex-row xs:items-center gap-2 w-full sm:w-auto">
-          <span className="text-sm text-gray-600 whitespace-nowrap">Trier par:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full xs:w-auto"
-          >
-            <option value="discount">Remise (%)</option>
-            <option value="quantity">Seuil minimum</option>
-            <option value="name">Nom du produit</option>
-          </select>
-        </div>
-        
-        {/* Deuxième ligne de filtres */}
-        <div className="flex flex-col xs:flex-row xs:items-center gap-2">
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="flex items-center justify-center px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 w-full xs:w-auto"
-          >
-            <span className="truncate">
-              {sortOrder === 'asc' ? 'Croissant' : 'Décroissant'}
-            </span>
-          </button>
-          
-          <div className="text-sm text-gray-500 text-center xs:text-left border-t border-gray-100 xs:border-none pt-2 xs:pt-0">
-            <span className="font-medium">{sortedProducts.length}</span> prix en gros trouvés
-          </div>
-        </div>
+  <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-3">
+
+    {/* Filtre principal */}
+    <div className="flex items-center bg-white border border-gray-200 rounded-lg px-3 py-2 w-full sm:w-auto">
+      <Filter className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+      <select
+        value={viewMode}
+        onChange={(e) => setViewMode(e.target.value as any)}
+        className="bg-transparent border-none focus:outline-none text-sm w-full sm:w-auto"
+      >
+        <option value="all">Tous les prix</option>
+        <option value="active">Actifs seulement</option>
+        <option value="inactive">Inactifs seulement</option>
+      </select>
+    </div>
+
+    {/* Trier par */}
+    <div className="flex items-center gap-2 w-full sm:w-auto">
+      <span className="text-sm text-gray-600 whitespace-nowrap">Trier par:</span>
+      <select
+        value={sortBy}
+        onChange={(e) => setSortBy(e.target.value as any)}
+        className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto"
+      >
+        <option value="discount">Remise (%)</option>
+        <option value="quantity">Seuil minimum</option>
+        <option value="name">Nom du produit</option>
+      </select>
+    </div>
+
+    {/* Ordre + compteur */}
+    <div className="flex items-center gap-2 w-full sm:w-auto">
+      <button
+        onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+        className="flex items-center justify-center px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 w-full sm:w-auto"
+      >
+        {sortOrder === 'asc' ? 'Croissant' : 'Décroissant'}
+      </button>
+
+      <div className="text-sm text-gray-500 whitespace-nowrap">
+        <span className="font-medium">{sortedProducts.length}</span> prix en gros trouvés
       </div>
     </div>
+
+  </div>
+</div>
+
 
     {/* Tableau des produits */}
     <div className="overflow-hidden -mx-6 px-6"> {/* Ajout pour le tableau */}

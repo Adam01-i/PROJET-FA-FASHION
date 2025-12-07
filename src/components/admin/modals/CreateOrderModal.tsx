@@ -450,7 +450,9 @@ export default function CreateOrderModal({
               Créer une commande
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Assistant: {assistantName || "Non spécifié"}
+              {/* Assistant: {assistantName || "Non spécifié"} */}
+              Assistant ou Admin : {assistantName || "Assistant inconnu"}
+
             </p>
           </div>
           <button
