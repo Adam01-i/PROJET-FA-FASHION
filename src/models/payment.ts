@@ -1,5 +1,5 @@
 // types/payment.ts
-export type PaymentMethod = 'whatsapp' | 'wave' | 'orange_money' | 'mobile_money' | 'credit_card' | 'cash';
+export type PaymentMethod = 'whatsapp' | 'wave' | 'orange_money' | 'mobile_money' | 'credit_card' | 'cash' | 'paydunya';
 
 export interface PaymentProvider {
   id: PaymentMethod;
