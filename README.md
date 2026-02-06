@@ -78,6 +78,25 @@ adam@adaam:~/Bureau/MES_PROJETS/FAFASHION/FAFASHION FRONTEND$ tree -L 2
 │   ├── ui
 │   ├── utils
 
+## Captures d'écran du projet
+
+Voici quelques captures de l'application :
+
+![Accueil](src/screenshots/img_0.png)
+![Dashboard Admin](src/screenshots/img_1.png)
+![Gestion des produirs](src/screenshots/img_2.png)
+![Gestion des prix en Gros](src/screenshots/img_3.png)
+![Inventaire des Produits](src/screenshots/img_4.png)
+![Gestion des commandes](src/screenshots/img_5.png)
+![Gestion des Livraisons](src/screenshots/img_6.png)
+![Interface Assistant Gestion des Commandes](src/screenshots/img_10.png)
+![Interface Assistant Gestion des Inventaires](src/screenshots/img_11.png)
+![Interface Livreur Gestion des Commandes a livrer](src/screenshots/img_12.png)
+![Interface Livreur Gestion des Commandes livrees](src/screenshots/img_12.png)
+
+> Les fichiers complets se trouvent dans `assets/screenshots/`
+
+
 ## 🔧 Installation et Configuration
 
 ### Prérequis
