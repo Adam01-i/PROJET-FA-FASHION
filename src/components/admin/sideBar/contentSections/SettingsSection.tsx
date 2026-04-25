@@ -7,7 +7,8 @@ import {
   // ReactNode,
   // ReactPortal,
 } from "react";
-import { Github, Linkedin, ExternalLink, User, Code } from "lucide-react";
+import { ExternalLink, User, Code } from "lucide-react";
+import { FaGithub, FaLinkedin, FaInstagram } from 'react-icons/fa';
 import {
   Save,
   Settings,
@@ -32,7 +33,6 @@ import {
 } from "../../../../models";
 import { useSiteSettings } from "../../../../hooks/useSiteSettings";
 import { useToastContext } from "../../../../hooks/ToastProvider";
-import { Instagram } from "lucide-react";
 
 // Interface pour combiner tous les paramètres (à définir localement)
 interface SiteSettingsData {
@@ -989,7 +989,7 @@ export default function SettingsSection() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {localSettings.developerInfo.github_url && (
                   <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <Github className="h-5 w-5 text-gray-700" />
+                    <FaGithub className="h-5 w-5 text-gray-700" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         GitHub
@@ -1002,7 +1002,7 @@ export default function SettingsSection() {
                 )}
                 {localSettings.developerInfo.linkedin_url && (
                   <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <Linkedin className="h-5 w-5 text-blue-600" />
+                    <FaLinkedin className="h-5 w-5 text-blue-600" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         LinkedIn
@@ -1015,7 +1015,7 @@ export default function SettingsSection() {
                 )}
                 {localSettings.developerInfo.instagram_url && (
                   <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <Instagram className="h-5 w-5 text-blue-400" />
+                    <FaInstagram className="h-5 w-5 text-blue-400" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         Instagram

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Github, Linkedin, ExternalLink, Code } from 'lucide-react';
+import { Mail, Phone, MapPin, ExternalLink, Code } from 'lucide-react';
+import { FaFacebook, FaTwitter, FaInstagram, FaGithub, FaLinkedin } from 'react-icons/fa';
 import { useSiteSettings } from '../../../hooks/useSiteSettings';
 
 export default function Footer() {
@@ -102,7 +103,7 @@ export default function Footer() {
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                   title="GitHub"
                 >
-                  <Github className="h-5 w-5" />
+                  <FaGithub className="h-5 w-5" />
                 </a>
               )}
               
@@ -114,7 +115,7 @@ export default function Footer() {
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                   title="LinkedIn"
                 >
-                  <Linkedin className="h-5 w-5" />
+                  <FaLinkedin className="h-5 w-5" />
                 </a>
               )}
               
@@ -126,7 +127,7 @@ export default function Footer() {
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                   title="Instagram"
                 >
-                  <Instagram className="h-5 w-5" />
+                  <FaInstagram className="h-5 w-5" />
                 </a>
               )}
               
@@ -182,25 +183,25 @@ export default function Footer() {
               <div className="flex space-x-4">
                 {[
                   { 
-                    icon: Facebook, 
+                    icon: FaFacebook, 
                     href: socialLinks.facebook_url || "#", 
                     enabled: !!socialLinks.facebook_url,
                     title: "Facebook"
                   },
                   { 
-                    icon: Twitter, 
+                    icon: FaTwitter, 
                     href: socialLinks.twitter_url || "#", 
                     enabled: !!socialLinks.twitter_url,
                     title: "Twitter"
                   },
                   { 
-                    icon: Instagram, 
+                    icon: FaInstagram, 
                     href: socialLinks.instagram_url || "#", 
                     enabled: !!socialLinks.instagram_url,
                     title: "Instagram"
                   },
                   { 
-                    icon: Linkedin, 
+                    icon: FaLinkedin, 
                     href: socialLinks.linkedin_url || "#", 
                     enabled: !!socialLinks.linkedin_url,
                     title: "LinkedIn"
